@@ -1,0 +1,19 @@
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+  background: radial-gradient(1200px 600px at 50% -10%, #2d5fff 0%, #0b1426 100%);
+  color: white;
+  display: grid;
+  place-items: center;
+}
+
+#game {
+  width: 100vw;
+  height: 100vh;
+  display: block;
+  touch-action: none; /* allow pointer/touch gestures without scrolling */
+  user-select: none;
+}

@@ -3,19 +3,32 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
-    <title>Space Invaders - HTML5 Canvas</title>
-    <link rel="stylesheet" href="styles.css" />
+    <title>Game Hub</title>
+    <style>
+      body {
+        background: black;
+        color: #00ff00;
+        font-family: monospace;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        text-align: center;
+        margin: 0;
+      }
+      a {
+        color: #00ff00;
+        text-decoration: none;
+        font-size: 24px;
+        margin: 12px 0;
+      }
+      a:hover { color: #00ffaa; }
+    </style>
   </head>
   <body>
-    <canvas id="game" aria-label="Space Invaders game canvas" role="img"></canvas>
-
-    <!-- On-screen controls for touch devices -->
-    <div id="controls" aria-hidden="true">
-      <button id="btn-left" class="control-btn" aria-label="Move left">◀</button>
-      <button id="btn-right" class="control-btn" aria-label="Move right">▶</button>
-      <button id="btn-mute" class="control-btn small" aria-label="Toggle mute" title="M to toggle">🔊</button>
-    </div>
-
-    <script src="invaders.js"></script>
+    <h1>🎮 Retro Game Hub</h1>
+    <a href="flappy.html">🟡 Play Flappy Bird</a>
+    <a href="invaders.html">👾 Play Space Invaders</a>
   </body>
 </html>

@@ -462,7 +462,7 @@ class Game {
     this.enemyBullets.active.length = 0;
     for (let b of this.playerBullets.pool) b.active = false;
     for (let b of this.enemyBullets.pool) b.active = false;
-    this.timeToEnemyFire = 0.5;
+    this.timeToEnemyFire = this.sampleEnemyFireInterval();
   }
 
   frame(nowMs) {
@@ -489,12 +489,13 @@ class Game {
     this.player.update(dt);
     this.grid.update(dt);
 
-    // enemy fire logic (Poisson-like)
+    // enemy fire logic (Poisson process with exponential inter-arrival times)
     this.timeToEnemyFire -= dt;
     if (this.timeToEnemyFire <= 0) {
-      const shotsThisBeat = Math.max(1, Math.round(ENEMY_FIRE_RATE * 0.25));
-      for (let i = 0; i < shotsThisBeat; i++) this.enemyShoot();
-      this.timeToEnemyFire = 0.25; // schedule next beat
+      do {
+        this.enemyShoot();
+        this.timeToEnemyFire += this.sampleEnemyFireInterval();
+      } while (this.timeToEnemyFire <= 0);
     }
 
     // bullets update
@@ -525,6 +526,14 @@ class Game {
     const s = this.grid.pickRandomShooter();
     if (!s) return;
     this.enemyBullets.spawn(s.x, s.y, BULLET_SPEED * 0.7, true);
+  }
+
+  // Draw from exponential distribution with mean 1 / ENEMY_FIRE_RATE
+  sampleEnemyFireInterval() {
+    const rate = Math.max(ENEMY_FIRE_RATE, 0.0001);
+    const u = Math.random();
+    const interval = -Math.log(1 - u) / rate;
+    return Math.max(0.08, interval); // clamp to avoid bursts too fast
   }
 
   handlePlayerBulletCollisions() {

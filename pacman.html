@@ -1,81 +1,139 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
-    <meta name="theme-color" content="#0b1426" />
-    <title>Pac-Man</title>
-    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="./styles.css" />
-    <style>
-      .hud {
-        position: fixed;
-        top: 8px;
-        left: 0; right: 0;
-        display: flex;
-        justify-content: space-between;
-        gap: 10px;
-        padding: 0 12px;
-        font-size: 12px;
-        pointer-events: none;
-        text-shadow: 0 2px 0 #001829, 0 0 8px rgba(127,255,212,0.5);
-      }
-      .hud span, .hud button { pointer-events: auto; }
-      .hud .block { display: flex; flex-direction: column; gap: 6px; }
-      .lives {
-        display: flex; gap: 6px; align-items: center;
-        background: rgba(0,0,0,0.35); border: 2px solid #7fffd4; border-radius: 6px; padding: 6px 8px;
-      }
-      .life-dot { width: 10px; height: 10px; background: #ffd23f; border-radius: 50%; box-shadow: 0 0 8px rgba(255,210,63,0.9); }
-      .hud .pill { background: rgba(0,0,0,0.35); border: 2px solid #7fffd4; border-radius: 6px; padding: 6px 8px; }
-      .ctrls {
-        position: fixed;
-        bottom: 16px; left: 16px; right: 16px;
-        display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
-        pointer-events: none;
-      }
-      .dpad { pointer-events: auto; width: 164px; height: 164px; margin-left: 0; position: relative; }
-      .dpad button { position: absolute; width: 56px; height: 56px; border-radius: 10px; border: 2px solid #072a3f; background: rgba(0,0,0,0.45); color: #7fffd4; font-weight: 700; }
-      .dpad button:active { transform: translateY(2px); }
-      .btn-up { left: 54px; top: 0; }
-      .btn-down { left: 54px; bottom: 0; }
-      .btn-left { left: 0; top: 54px; }
-      .btn-right { right: 0; top: 54px; }
-      .panel { pointer-events: auto; display: flex; gap: 10px; align-items: center; justify-content: flex-end; }
-      .panel button { padding: 10px 12px; border-radius: 8px; border: 2px solid #072a3f; background: linear-gradient(#7fffd4, #35d0a6); color: #001b2e; font-weight: 700; }
-      @media (min-width: 860px) {
-        .ctrls { right: 24px; left: auto; width: 420px; }
-      }
-    </style>
-  </head>
-  <body>
-    <a class="back-link" href="./index.html" aria-label="Back to hub">← Back</a>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+  <meta name="theme-color" content="#0b1426" />
+  <title>Pac-Man</title>
 
-    <div class="hud" role="banner" aria-live="polite">
-      <div class="block">
-        <span id="hud-score" class="pill" aria-label="Score">Score: 0</span>
-        <span id="hud-best" class="pill" aria-label="Best score">Best: 0</span>
-      </div>
-      <div class="block" style="align-items: end;">
-        <div id="hud-lives" class="lives" aria-label="Lives"></div>
-      </div>
+  <link rel="stylesheet" href="./styles.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" />
+
+  <style>
+    :root{
+      --safe-top: env(safe-area-inset-top, 0px);
+      --ui-top: calc(var(--safe-top) + 56px); /* push UI below status bar */
+    }
+
+    /* Back button – keep clear of HUD */
+    .back-link{
+      position: fixed !important;
+      top: var(--ui-top) !important;
+      left: 12px !important;
+      z-index: 10000;
+    }
+
+    /* Make sure canvas fills screen behind HUD/controls */
+    html, body { height: 100%; margin: 0; }
+    #game { display: block; width: 100vw; height: 100vh; }
+
+    /* ---- HUD (Score / Best / Lives) ---- */
+    .hud {
+      position: fixed;
+      top: 8px;               /* actual HUD text sits at the very top */
+      left: 0; right: 0;
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 0 12px;
+      font: 12px "Press Start 2P", monospace;
+      pointer-events: none;
+      text-shadow: 0 2px 0 #001829, 0 0 8px rgba(127,255,212,0.5);
+      z-index: 9000;
+    }
+    .hud span, .hud button { pointer-events: auto; }
+    .hud .block { display: flex; flex-direction: column; gap: 6px; }
+    .hud .pill {
+      background: rgba(0,0,0,0.35);
+      border: 2px solid #7fffd4;
+      border-radius: 6px;
+      padding: 6px 8px;
+    }
+    .lives {
+      display: flex; gap: 6px; align-items: center;
+      background: rgba(0,0,0,0.35);
+      border: 2px solid #7fffd4; border-radius: 6px; padding: 6px 8px;
+    }
+    .life-dot {
+      width: 10px; height: 10px; background: #ffd23f; border-radius: 50%;
+      box-shadow: 0 0 8px rgba(255,210,63,0.9);
+    }
+
+    /* ---- Mobile controls ---- */
+    .ctrls {
+      position: fixed;
+      bottom: 16px; left: 16px; right: 16px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      pointer-events: none;
+      z-index: 9500;
+    }
+    .dpad { pointer-events: auto; width: 164px; height: 164px; margin-left: 0; position: relative; }
+    .dpad button {
+      position: absolute; width: 56px; height: 56px;
+      border-radius: 10px; border: 2px solid #072a3f;
+      background: rgba(0,0,0,0.45); color: #7fffd4; font-weight: 700;
+    }
+    .dpad button:active { transform: translateY(2px); }
+    .btn-up    { left: 54px; top: 0; }
+    .btn-down  { left: 54px; bottom: 0; }
+    .btn-left  { left: 0;    top: 54px; }
+    .btn-right { right: 0;   top: 54px; }
+
+    .panel {
+      pointer-events: auto;
+      display: flex; gap: 10px; align-items: center; justify-content: flex-end;
+    }
+    .panel button {
+      padding: 10px 12px; border-radius: 8px; border: 2px solid #072a3f;
+      background: linear-gradient(#7fffd4, #35d0a6); color: #001b2e; font-weight: 700;
+    }
+
+    @media (min-width: 860px) {
+      .ctrls { right: 24px; left: auto; width: 420px; }
+    }
+  </style>
+</head>
+<body>
+  <a class="back-link" href="./index.html" aria-label="Back to hub">← Back</a>
+
+  <div class="hud" role="banner" aria-live="polite">
+    <div class="block">
+      <span id="hud-score" class="pill" aria-label="Score">Score: 0</span>
+      <span id="hud-best" class="pill" aria-label="Best score">Best: 0</span>
     </div>
-
-    <canvas id="game" aria-label="Pac-Man game canvas"></canvas>
-
-    <div class="ctrls" aria-label="Mobile controls">
-      <div class="dpad" role="group" aria-label="D-pad">
-        <button class="btn-up" data-dir="up" aria-label="Move up">⬆️</button>
-        <button class="btn-down" data-dir="down" aria-label="Move down">⬇️</button>
-        <button class="btn-left" data-dir="left" aria-label="Move left">⬅️</button>
-        <button class="btn-right" data-dir="right" aria-label="Move right">➡️</button>
-      </div>
-      <div class="panel" role="group" aria-label="Game toggles">
-        <button id="mute-btn" aria-label="Toggle mute" aria-pressed="false">🔊 Sound</button>
-        <button id="pause-btn" aria-label="Pause or resume">⏸️ Pause</button>
-      </div>
+    <div class="block" style="align-items: end;">
+      <div id="hud-lives" class="lives" aria-label="Lives"></div>
     </div>
+  </div>
 
-    <script src="./pacman.js?v=1"></script>
-  </body>
+  <canvas id="game" aria-label="Pac-Man game canvas"></canvas>
+
+  <div class="ctrls" aria-label="Mobile controls">
+    <div class="dpad" role="group" aria-label="D-pad">
+      <button class="btn-up" data-dir="up" aria-label="Move up">⬆️</button>
+      <button class="btn-down" data-dir="down" aria-label="Move down">⬇️</button>
+      <button class="btn-left" data-dir="left" aria-label="Move left">⬅️</button>
+      <button class="btn-right" data-dir="right" aria-label="Move right">➡️</button>
+    </div>
+    <div class="panel" role="group" aria-label="Game toggles">
+      <button id="mute-btn"  aria-label="Toggle mute" aria-pressed="false">🔊 Sound</button>
+      <button id="pause-btn" aria-label="Pause or resume">⏸️ Pause</button>
+    </div>
+  </div>
+
+  <!-- Show JS errors on-screen (mobile friendly) -->
+  <script>
+    window.onerror = function (msg, src, line, col) {
+      const d = document.createElement('div');
+      d.style.cssText = 'position:fixed;left:8px;bottom:8px;color:#7fffd4;font:12px monospace;white-space:pre-wrap;z-index:9999';
+      d.textContent = String(msg) + (src ? `\n${src}:${line}:${col||0}` : '');
+      document.body.appendChild(d);
+    };
+  </script>
+
+  <!-- Load the game (cache-busted) -->
+  <script src="./pacman.js?v=2"></script>
+</body>
 </html>

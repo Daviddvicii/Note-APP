@@ -1,11 +1,36 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
-    <title>Space Invaders - HTML5 Canvas</title>
-    <link rel="stylesheet" href="styles.css" />
-  </head>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+  <title>Space Invaders - HTML5 Canvas</title>
+  <link rel="stylesheet" href="styles.css" />
+
+  <style>
+    /* Space-Invaders on-screen controls */
+    #controls{
+      position:fixed;
+      left:50%;
+      bottom:22px;
+      transform:translateX(-50%);
+      display:flex;
+      gap:14px;
+      z-index:9999;
+      pointer-events:auto;
+    }
+    .control-btn{
+      font:600 22px/1 monospace;
+      padding:10px 14px;
+      border:2px solid #7fffd4;
+      border-radius:14px;
+      color:#7fffd4;
+      background:rgba(0,0,0,0.45);
+      backdrop-filter: blur(2px);
+      touch-action: manipulation;
+    }
+    .control-btn.small{ font-size:18px; padding:8px 10px; }
+  </style>
+</head>
   <body>
     <a class="back-link" href="./index.html" aria-label="Back to game menu">← Back</a>
 

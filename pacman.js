@@ -1,8 +1,6 @@
 'use strict';
 
-// Pac-Man HTML5 Canvas implementation
-// Organized into small classes: Game, Maze, Pacman, Ghost, Input, Sound
-
+// Pac-Man HTML5 Canvas
 (() => {
   const GRID_W = 28;
   const GRID_H = 31;
@@ -16,24 +14,38 @@
   };
 
   const DIRS = {
-    up: { x: 0, y: -1, name: 'up' },
-    down: { x: 0, y: 1, name: 'down' },
-    left: { x: -1, y: 0, name: 'left' },
-    right: { x: 1, y: 0, name: 'right' },
-    none: { x: 0, y: 0, name: 'none' },
+    up:    { x:  0, y: -1, name: 'up' },
+    down:  { x:  0, y:  1, name: 'down' },
+    left:  { x: -1, y:  0, name: 'left' },
+    right: { x:  1, y:  0, name: 'right' },
+    none:  { x:  0, y:  0, name: 'none' },
   };
   const DIR_ARRAY = [DIRS.left, DIRS.right, DIRS.up, DIRS.down];
 
-  function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
   function dist2(ax, ay, bx, by) { const dx = ax - bx, dy = ay - by; return dx*dx + dy*dy; }
 
-  // Simple deterministic pseudo-random for frightened wiggle
+  // Deterministic pseudo-random (for frightened wiggle / tie-breakers)
   let seed = 1337;
   function rand() { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; }
   function randInt(n) { return (rand() * n) | 0; }
 
-  // Classic-ish maze 28x31 (using # walls, . dots, o power, - gate, spaces empty)
-  // Layout is adapted to fit 28x31 and play well; not pixel-perfect arcade map but close.
+  // --- movement helpers
+  function nextTileFromCenter(cx, cy, dir) {
+    const tx = Math.floor(cx), ty = Math.floor(cy);
+    const nx = tx + (dir.x > 0 ? 1 : dir.x < 0 ? -1 : 0);
+    const ny = ty + (dir.y > 0 ? 1 : dir.y < 0 ? -1 : 0);
+    return { nx, ny };
+  }
+  function blockedAhead(maze, cx, cy, dir, allowGate = false) {
+    const { nx, ny } = nextTileFromCenter(cx, cy, dir);
+    if (!maze.isInside(nx, ny)) return false; // wrap allowed
+    const t = maze.tileAt(nx, ny);
+    if (t === TILE.WALL) return true;
+    if (!allowGate && t === TILE.GATE) return true;
+    return false;
+  }
+
+  // Classic-ish maze 28x31
   const MAZE_ASCII = [
     '############################',
     '#............##............#',
@@ -67,12 +79,10 @@
     '############################',
     '############################',
   ];
-  // Ensure 31 rows; above includes 31 lines (index 0..30)
 
   class Input {
     constructor() {
       this.queued = DIRS.none;
-      this.keysDown = new Set();
       this.swipeStart = null;
       this.bind();
     }
@@ -84,23 +94,20 @@
         else if (k === 'arrowleft' || k === 'a') this.queued = DIRS.left;
         else if (k === 'arrowright' || k === 'd') this.queued = DIRS.right;
       });
-
-      // D-pad buttons
       const dpad = document.querySelector('.dpad');
       if (dpad) {
         dpad.addEventListener('pointerdown', (e) => {
-          const target = e.target;
-          if (target && target.dataset && target.dataset.dir) {
-            this.setDirFromString(target.dataset.dir);
+          const t = e.target;
+          if (t && t.dataset && t.dataset.dir) {
+            const s = t.dataset.dir;
+            this.queued = DIRS[s] || DIRS.none;
           }
         });
       }
-
-      // Swipe gestures
       const canvas = document.getElementById('game');
       if (canvas) {
         canvas.addEventListener('pointerdown', (e) => {
-          this.swipeStart = { x: e.clientX, y: e.clientY, t: performance.now() };
+          this.swipeStart = { x: e.clientX, y: e.clientY };
         });
         canvas.addEventListener('pointerup', (e) => {
           if (!this.swipeStart) return;
@@ -108,23 +115,14 @@
           const dy = e.clientY - this.swipeStart.y;
           const adx = Math.abs(dx), ady = Math.abs(dy);
           if (Math.max(adx, ady) > 24) {
-            if (adx > ady) this.queued = dx > 0 ? DIRS.right : DIRS.left;
-            else this.queued = dy > 0 ? DIRS.down : DIRS.up;
+            this.queued = adx > ady ? (dx > 0 ? DIRS.right : DIRS.left)
+                                    : (dy > 0 ? DIRS.down  : DIRS.up);
           }
           this.swipeStart = null;
         });
       }
     }
-    setDirFromString(s) {
-      if (s === 'up') this.queued = DIRS.up;
-      else if (s === 'down') this.queued = DIRS.down;
-      else if (s === 'left') this.queued = DIRS.left;
-      else if (s === 'right') this.queued = DIRS.right;
-    }
-    consumeQueued() {
-      const d = this.queued; this.queued = d; // non-consuming; Pac-Man uses queued persistently
-      return d;
-    }
+    consumeQueued() { return this.queued; } // persistent
   }
 
   class Sound {
@@ -136,30 +134,19 @@
       window.addEventListener('pointerdown', this.initContext, { once: true });
       window.addEventListener('keydown', this.initContext, { once: true });
     }
-    initContext() {
-      if (!this.ctx) {
-        try { this.ctx = new (window.AudioContext || window.webkitAudioContext)(); }
-        catch (e) { /* no audio */ }
-      }
-    }
+    initContext() { if (!this.ctx) { try { this.ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch (_) {} } }
     setMuted(m) { this.muted = m; }
-    now() { return this.ctx ? this.ctx.currentTime : 0; }
     beep(freq = 440, dur = 0.08, type = 'square', gain = 0.02) {
       if (this.muted || !this.ctx) return;
       const t0 = this.ctx.currentTime;
-      const osc = this.ctx.createOscillator();
+      const o = this.ctx.createOscillator();
       const g = this.ctx.createGain();
-      osc.type = type; osc.frequency.value = freq;
+      o.type = type; o.frequency.value = freq;
       g.gain.value = gain;
-      osc.connect(g).connect(this.ctx.destination);
-      osc.start(t0);
-      osc.stop(t0 + dur);
+      o.connect(g).connect(this.ctx.destination);
+      o.start(t0); o.stop(t0 + dur);
     }
-    waka() {
-      // Alternating two short bleeps to simulate waka
-      this.beep(this.wakaToggle ? 380 : 320, 0.05, 'square', 0.02);
-      this.wakaToggle = !this.wakaToggle;
-    }
+    waka() { this.beep(this.wakaToggle ? 380 : 320, 0.05, 'square', 0.02); this.wakaToggle = !this.wakaToggle; }
     dot() { this.beep(700, 0.04, 'square', 0.02); }
     power() { this.beep(220, 0.25, 'sawtooth', 0.02); }
     eatGhost() { this.beep(180, 0.2, 'triangle', 0.03); }
@@ -185,19 +172,15 @@
           this.grid[y][x] = t;
         }
       }
-      // Ghost house location
-      this.house = { x: 13, y: 15 }; // center tiles near 'GG' markers
+      this.house = { x: 13, y: 15 };
     }
     isInside(x, y) { return x >= 0 && x < this.w && y >= 0 && y < this.h; }
-    tileAt(tx, ty) {
-      if (!this.isInside(tx, ty)) return TILE.WALL;
-      return this.grid[ty][tx];
-    }
+    tileAt(tx, ty) { if (!this.isInside(tx, ty)) return TILE.WALL; return this.grid[ty][tx]; }
     isWall(tx, ty) { return this.tileAt(tx, ty) === TILE.WALL; }
     isGate(tx, ty) { return this.tileAt(tx, ty) === TILE.GATE; }
     eatAt(tx, ty) {
       const t = this.tileAt(tx, ty);
-      if (t === TILE.DOT) { this.grid[ty][tx] = TILE.EMPTY; this.dotCount--; return 'dot'; }
+      if (t === TILE.DOT)   { this.grid[ty][tx] = TILE.EMPTY; this.dotCount--; return 'dot'; }
       if (t === TILE.POWER) { this.grid[ty][tx] = TILE.EMPTY; this.dotCount--; return 'power'; }
       return null;
     }
@@ -219,56 +202,59 @@
 
   class Entity {
     constructor(x, y, speedTilesPerSec) {
-      this.x = x; // in tiles
-      this.y = y; // in tiles
+      this.x = x; this.y = y;               // in tiles (floating)
       this.dir = DIRS.left;
-      this.desiredDir = DIRS.left;
-      this.speed = speedTilesPerSec; // tiles per second
+      this.speed = speedTilesPerSec;
     }
-    setDir(d) { this.desiredDir = d; }
     centerOfTile() { return { cx: Math.floor(this.x) + 0.5, cy: Math.floor(this.y) + 0.5 }; }
   }
 
   class Pacman extends Entity {
     constructor(x, y) {
-      super(x, y, 5.6); // ~5.6 tiles/s → ~90 px/s if tile 16
+      super(x, y, 5.6);
       this.radiusFrac = 0.44;
-      this.alive = true;
-      this.mouth = 0; // animate mouth
-    }
-    canMove(maze, dir) {
-      const nx = this.x + dir.x * 0.51;
-      const ny = this.y + dir.y * 0.51;
-      const tx = Math.floor(nx + (dir.x > 0 ? 0.5 : dir.x < 0 ? -0.5 : 0));
-      const ty = Math.floor(ny + (dir.y > 0 ? 0.5 : dir.y < 0 ? -0.5 : 0));
-      if (!maze.isInside(tx, ty)) return true; // allow wrap; handled outside
-      const wall = maze.isWall(tx, ty) || maze.isGate(tx, ty);
-      return !wall;
+      this.mouth = 0;
     }
     update(dt, maze, input) {
-      // Queue turn if near center and desiredDir is open
       const desired = input.consumeQueued();
-      if (desired && desired !== this.dir) {
-        const { cx, cy } = this.centerOfTile();
-        const dx = Math.abs(this.x - cx), dy = Math.abs(this.y - cy);
-        const nearCenter = dx < 0.2 && dy < 0.2;
-        if (nearCenter && this.canMove(maze, desired)) {
-          this.x = cx; this.y = cy;
-          this.dir = desired;
+      const { cx, cy } = this.centerOfTile();
+      const nearCenter = Math.abs(this.x - cx) < 0.18 && Math.abs(this.y - cy) < 0.18;
+
+      // take queued turn exactly at center (if legal)
+      if (desired && desired !== this.dir && nearCenter && !blockedAhead(maze, cx, cy, desired, false)) {
+        this.x = cx; this.y = cy;
+        this.dir = desired;
+      }
+
+      // if next tile in current dir is blocked, snap to center and stop
+      if (this.dir !== DIRS.none && blockedAhead(maze, cx, cy, this.dir, false)) {
+        const toCx = cx - this.x, toCy = cy - this.y;
+        const step = this.speed * dt;
+        const len = Math.hypot(toCx, toCy);
+        if (len > 0.0001) {
+          const ux = toCx / len, uy = toCy / len;
+          const move = Math.min(step, len);
+          this.x += ux * move; this.y += uy * move;
         }
+        if (Math.abs(this.x - cx) <= 0.01 && Math.abs(this.y - cy) <= 0.01) {
+          this.x = cx; this.y = cy;
+          this.dir = DIRS.none;
+        }
+      } else {
+        this.x += this.dir.x * this.speed * dt;
+        this.y += this.dir.y * this.speed * dt;
       }
-      // If blocked, try to change to desired if possible
-      if (!this.canMove(maze, this.dir)) {
-        if (desired && this.canMove(maze, desired)) this.dir = desired;
-        else this.dir = DIRS.none;
+
+      // if stopped and desired is open now, take it
+      if (this.dir === DIRS.none && desired && !blockedAhead(maze, this.centerOfTile().cx, this.centerOfTile().cy, desired, false)) {
+        const c2 = this.centerOfTile(); this.x = c2.cx; this.y = c2.cy;
+        this.dir = desired;
       }
-      // Move
-      this.x += this.dir.x * this.speed * dt;
-      this.y += this.dir.y * this.speed * dt;
-      // Wrap tunnels horizontally
+
+      // Wrap tunnels
       if (this.x < -0.5) this.x = maze.w - 0.5;
       if (this.x > maze.w + 0.5) this.x = -0.5;
-      // Mouth animation
+
       this.mouth += dt * 10;
     }
     draw(ctx, tileSize, offX, offY) {
@@ -276,18 +262,16 @@
       const py = offY + this.y * tileSize;
       const r = tileSize * this.radiusFrac;
       const open = 0.2 + 0.2 * Math.abs(Math.sin(this.mouth));
-      let angStart = 0, angEnd = Math.PI * 2;
-      if (this.dir === DIRS.right) { angStart = open; angEnd = Math.PI * 2 - open; }
-      else if (this.dir === DIRS.left) { angStart = Math.PI + open; angEnd = Math.PI - open; }
-      else if (this.dir === DIRS.up) { angStart = -Math.PI/2 + open; angEnd = Math.PI*1.5 - open; }
-      else if (this.dir === DIRS.down) { angStart = Math.PI/2 + open; angEnd = Math.PI/2 - open; }
+      let a0 = 0, a1 = Math.PI*2;
+      if (this.dir === DIRS.right) { a0 = open; a1 = Math.PI*2 - open; }
+      else if (this.dir === DIRS.left) { a0 = Math.PI + open; a1 = Math.PI - open; }
+      else if (this.dir === DIRS.up) { a0 = -Math.PI/2 + open; a1 = Math.PI*1.5 - open; }
+      else if (this.dir === DIRS.down) { a0 = Math.PI/2 + open; a1 = Math.PI/2 - open; }
 
       ctx.fillStyle = '#ffd23f';
-      ctx.beginPath();
-      ctx.moveTo(px, py);
-      ctx.arc(px, py, r, angStart, angEnd, false);
-      ctx.closePath();
-      ctx.fill();
+      ctx.beginPath(); ctx.moveTo(px, py);
+      ctx.arc(px, py, r, a0, a1, false);
+      ctx.closePath(); ctx.fill();
     }
   }
 
@@ -297,110 +281,97 @@
       this.baseSpeed = 5.2;
       this.color = color;
       this.name = name;
-      this.mode = 'scatter'; // 'chase' | 'scatter' | 'frightened' | 'eyes'
+      this.mode = 'scatter';   // 'chase'|'scatter'|'frightened'|'eyes'
       this.frightenedTimer = 0;
       this.scatterTarget = { x: 1, y: 1 };
       this.home = { x, y };
     }
-    setScatterCorner(cornerIndex) {
-      // 0: top-right, 1: top-left, 2: bottom-right, 3: bottom-left
+    setScatterCorner(k) {
       const corners = [
         { x: GRID_W - 2, y: 1 },
         { x: 1, y: 1 },
         { x: GRID_W - 2, y: GRID_H - 2 },
         { x: 1, y: GRID_H - 2 },
       ];
-      this.scatterTarget = corners[cornerIndex % corners.length];
+      this.scatterTarget = corners[k % corners.length];
     }
-    enterFrightened(duration) {
-      if (this.mode !== 'eyes') { // eyes mode ignores frightened
-        this.mode = 'frightened';
-        this.frightenedTimer = duration;
-      }
+    enterFrightened(dur) {
+      if (this.mode !== 'eyes') { this.mode = 'frightened'; this.frightenedTimer = dur; }
     }
     update(dt, maze, pacman, blinkyRef) {
-      // Speed modifiers
       let speed = this.baseSpeed;
       if (this.mode === 'frightened') speed *= 0.66;
       if (this.mode === 'eyes') speed *= 1.3;
 
-      // Decrement frightened timer
       if (this.mode === 'frightened') {
         this.frightenedTimer -= dt;
         if (this.frightenedTimer <= 0) this.mode = 'chase';
       }
 
-      // Choose direction at tile centers
       const { cx, cy } = this.centerOfTile();
-      const atCenter = Math.abs(this.x - cx) < 0.15 && Math.abs(this.y - cy) < 0.15;
-      if (atCenter) {
+      const atCenter = Math.abs(this.x - cx) < 0.12 && Math.abs(this.y - cy) < 0.12;
+
+      // if about to hit a wall, snap and re-choose
+      const hittingWall = this.dir !== DIRS.none && blockedAhead(maze, cx, cy, this.dir, this.mode === 'eyes');
+      if (hittingWall) { this.x = cx; this.y = cy; }
+
+      if (atCenter || hittingWall) {
         this.x = cx; this.y = cy;
+
         const target = this.computeTarget(pacman, blinkyRef);
-        const possible = [DIRS.up, DIRS.left, DIRS.down, DIRS.right].filter((d) => {
-          if (this.dir && d.x === -this.dir.x && d.y === -this.dir.y && this.mode !== 'frightened') return false; // don't reverse unless frightened
-          const nx = Math.floor(this.x + d.x);
-          const ny = Math.floor(this.y + d.y);
-          if (!maze.isInside(nx, ny)) return true; // allow wrap
-          if (maze.isWall(nx, ny)) return false;
-          if (maze.isGate(nx, ny) && this.mode !== 'eyes') return false; // only eyes can go through gate to home
-          return true;
+        const dirs = [DIRS.up, DIRS.left, DIRS.down, DIRS.right].filter((d) => {
+          if (this.mode !== 'frightened' && this.dir && d.x === -this.dir.x && d.y === -this.dir.y) return false;
+          return !blockedAhead(maze, cx, cy, d, this.mode === 'eyes');
         });
-        if (possible.length > 0) {
-          let next = possible[0];
+
+        if (dirs.length > 0) {
+          let next = dirs[0];
           if (this.mode === 'frightened') {
-            next = possible[randInt(possible.length)];
+            next = dirs[randInt(dirs.length)];
           } else {
-            // Greedy pick towards target by euclidean distance
-            let bestD = Infinity;
-            for (const d of possible) {
-              const nx = this.x + d.x;
-              const ny = this.y + d.y;
+            let best = Infinity;
+            const start = (this.name.charCodeAt(0) + Math.floor(seed % 4)) % 4; // de-sync selection
+            for (let i = 0; i < dirs.length; i++) {
+              const d = dirs[(start + i) % dirs.length];
+              const nx = cx + d.x, ny = cy + d.y;
               const dd = dist2(nx, ny, target.x, target.y);
-              if (dd < bestD) { bestD = dd; next = d; }
+              if (dd < best) { best = dd; next = d; }
             }
           }
           this.dir = next;
+        } else {
+          this.dir = { x: -this.dir.x, y: -this.dir.y, name: 'rev' };
         }
       }
 
-      // Move
       this.x += this.dir.x * speed * dt;
       this.y += this.dir.y * speed * dt;
 
-      // Wrap
       if (this.x < -0.5) this.x = maze.w - 0.5;
       if (this.x > maze.w + 0.5) this.x = -0.5;
 
-      // If eyes reached house center, switch to scatter
       if (this.mode === 'eyes') {
-        const d2 = dist2(this.x, this.y, maze.house.x + 0.5, maze.house.y + 0.5);
-        if (d2 < 0.1) {
-          this.mode = 'scatter';
-          this.dir = DIRS.left;
-        }
+        const d2v = dist2(this.x, this.y, maze.house.x + 0.5, maze.house.y + 0.5);
+        if (d2v < 0.1) { this.mode = 'scatter'; this.dir = DIRS.left; }
       }
     }
     computeTarget(pacman, blinkyRef) {
       if (this.mode === 'scatter') return this.scatterTarget;
       if (this.mode === 'eyes') return { x: blinkyRef ? blinkyRef.home.x : 13, y: 14 };
-      // chase rules per ghost
       const px = pacman.x, py = pacman.y;
       const pd = pacman.dir || DIRS.left;
       switch (this.name) {
-        case 'blinky': // target Pac-Man
-          return { x: px, y: py };
-        case 'pinky': { // 4 tiles ahead
-          return { x: px + pd.x * 4, y: py + pd.y * 4 };
-        }
-        case 'inky': { // vector from blinky to a point two tiles ahead of pacman
+        case 'blinky': return { x: px, y: py };
+        case 'pinky':  return { x: px + pd.x * 4, y: py + pd.y * 4 };
+        case 'inky': {
           const ahead = { x: px + pd.x * 2, y: py + pd.y * 2 };
           const bx = blinkyRef ? blinkyRef.x : px;
           const by = blinkyRef ? blinkyRef.y : py;
           return { x: ahead.x + (ahead.x - bx), y: ahead.y + (ahead.y - by) };
         }
-        case 'clyde': { // if far chase pacman, if close scatter
-          const d2 = dist2(this.x, this.y, px, py);
-          if (d2 > 64) return { x: px, y: py }; // >8 tiles away
+        case 'clyde': {
+          const d2v = dist2(this.x, this.y, px, py);
+          if (d2v > 64) return { x: px, y: py }; // > 8 tiles
           return this.scatterTarget;
         }
       }
@@ -409,26 +380,21 @@
     draw(ctx, tileSize, offX, offY) {
       const px = offX + this.x * tileSize;
       const py = offY + this.y * tileSize;
-      const w = tileSize * 0.9, h = tileSize * 0.9;
-      const r = h * 0.5;
+      const h = tileSize * 0.9, r = h * 0.5;
       const bodyColor = this.mode === 'frightened' ? '#1e90ff' : this.color;
 
-      // Body
       ctx.fillStyle = bodyColor;
       ctx.beginPath();
       ctx.arc(px, py - h * 0.1, r, Math.PI, 0);
       ctx.lineTo(px + r, py + r * 0.8);
-      // bottom frills
-      const frills = 4;
-      for (let i = frills; i >= 0; i--) {
-        const fx = px - r + (i / frills) * (2 * r);
+      const fr = 4;
+      for (let i = fr; i >= 0; i--) {
+        const fx = px - r + (i / fr) * (2 * r);
         const fy = py + r * 0.8 + (i % 2 === 0 ? -r * 0.15 : 0);
         ctx.lineTo(fx, fy);
       }
-      ctx.closePath();
-      ctx.fill();
+      ctx.closePath(); ctx.fill();
 
-      // Eyes
       const eyeOffsetX = (this.dir.x || 0) * r * 0.2;
       const eyeOffsetY = (this.dir.y || 0) * r * 0.2;
       ctx.fillStyle = '#fff';
@@ -447,7 +413,7 @@
       this.input = new Input();
       this.sound = new Sound();
       this.maze = new Maze();
-      this.pacman = new Pacman(13.5, 23); // near bottom center
+      this.pacman = new Pacman(13.5, 23);
       this.ghosts = [
         new Ghost(13.5, 11, '#ff3b3b', 'blinky'),
         new Ghost(13.5, 14, '#ff9be1', 'pinky'),
@@ -465,11 +431,11 @@
       this.lives = 3;
       this.paused = false;
       this.gameOver = false;
+
       this.lastTime = 0;
       this.accum = 0;
-      this.fixedDt = 1 / 120; // physics tick
-      this.tileSize = 16; // computed on resize
-      this.offX = 0; this.offY = 0;
+      this.fixedDt = 1 / 120;
+      this.tileSize = 16;
       this.scatterTimer = 0;
       this.inChase = false;
 
@@ -491,9 +457,7 @@
           muteBtn.setAttribute('aria-pressed', String(newState));
         });
       }
-      if (pauseBtn) {
-        pauseBtn.addEventListener('click', () => this.togglePause());
-      }
+      if (pauseBtn) pauseBtn.addEventListener('click', () => this.togglePause());
       window.addEventListener('keydown', (e) => {
         if (e.key.toLowerCase() === 'p') this.togglePause();
         if (e.key.toLowerCase() === 'm') {
@@ -515,8 +479,7 @@
 
     resize() {
       const dpr = Math.max(1, Math.min(3, window.devicePixelRatio || 1));
-      const cssW = window.innerWidth;
-      const cssH = window.innerHeight;
+      const cssW = window.innerWidth, cssH = window.innerHeight;
       this.canvas.style.width = cssW + 'px';
       this.canvas.style.height = cssH + 'px';
       this.canvas.width = Math.floor(cssW * dpr);
@@ -524,19 +487,17 @@
       const playableW = this.canvas.width / dpr;
       const playableH = this.canvas.height / dpr;
       this.tileSize = Math.floor(Math.min(playableW / GRID_W, playableH / GRID_H));
-      this.offX = Math.floor((playableW - this.tileSize * GRID_W) / 2) * dpr;
-      this.offY = Math.floor((playableH - this.tileSize * GRID_H) / 2) * dpr;
-      // Scale context to DPR; we'll draw in CSS pixels then multiply positions by dpr
+      // scale to DPR; draw in CSS pixels
       this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     }
 
-    resetPositions(afterDeath) {
+    resetPositions() {
       this.pacman.x = 13.5; this.pacman.y = 23; this.pacman.dir = DIRS.left;
-      const positions = [
-        [13.5, 11], [13.5, 14], [11.5, 14], [15.5, 14],
-      ];
-      this.ghosts.forEach((g, i) => {
-        g.x = positions[i][0]; g.y = positions[i][1]; g.dir = DIRS.left; g.mode = afterDeath ? 'scatter' : 'scatter';
+      const positions = [[13.5,11],[13.5,14],[11.5,14],[15.5,14]];
+      this.ghosts.forEach((g,i) => {
+        g.x = positions[i][0]; g.y = positions[i][1];
+        g.dir = DIR_ARRAY[randInt(4)];   // randomize start direction
+        g.mode = 'scatter';
       });
       this.scatterTimer = 0; this.inChase = false;
     }
@@ -544,10 +505,9 @@
     nextLevel() {
       this.level++;
       this.maze.resetDots();
-      // Slight speedup
       this.pacman.speed = Math.min(7, 5.6 + (this.level - 1) * 0.15);
       for (const g of this.ghosts) g.baseSpeed = Math.min(6.5, 5.2 + (this.level - 1) * 0.1);
-      this.resetPositions(false);
+      this.resetPositions();
     }
 
     loop(ts) {
@@ -566,24 +526,24 @@
     }
 
     update(dt) {
-      // Timers: scatter/chase cycles
+      // scatter/chase cycles
       this.scatterTimer += dt;
       const scatterLen = 7, chaseLen = 20;
       if (!this.inChase && this.scatterTimer > scatterLen) {
-        this.inChase = true; this.scatterTimer = 0; this.ghosts.forEach(g => { if (g.mode !== 'eyes') g.mode = 'chase'; });
+        this.inChase = true; this.scatterTimer = 0;
+        this.ghosts.forEach(g => { if (g.mode !== 'eyes') g.mode = 'chase'; });
       } else if (this.inChase && this.scatterTimer > chaseLen) {
-        this.inChase = false; this.scatterTimer = 0; this.ghosts.forEach(g => { if (g.mode !== 'eyes') g.mode = 'scatter'; });
+        this.inChase = false; this.scatterTimer = 0;
+        this.ghosts.forEach(g => { if (g.mode !== 'eyes') g.mode = 'scatter'; });
       }
 
-      // Pac-Man movement and eating
+      // Pac-Man
       const prevTile = { x: Math.floor(this.pacman.x), y: Math.floor(this.pacman.y) };
       this.pacman.update(dt, this.maze, this.input);
       const nowTile = { x: Math.floor(this.pacman.x), y: Math.floor(this.pacman.y) };
-      if (nowTile.x !== prevTile.x || nowTile.y !== prevTile.y) {
-        this.sound.waka();
-      }
+      if (nowTile.x !== prevTile.x || nowTile.y !== prevTile.y) this.sound.waka();
 
-      // Eat dots/power when centered
+      // Eat
       const c = this.pacman.centerOfTile();
       if (Math.abs(this.pacman.x - c.cx) < 0.3 && Math.abs(this.pacman.y - c.cy) < 0.3) {
         const eaten = this.maze.eatAt(Math.floor(c.cx), Math.floor(c.cy));
@@ -595,52 +555,38 @@
         }
       }
 
-      // Update ghosts
+      // Ghosts
       const blinky = this.ghosts.find(g => g.name === 'blinky');
       for (const g of this.ghosts) g.update(dt, this.maze, this.pacman, blinky);
 
-      // Collisions with ghosts
+      // Collisions
       for (const g of this.ghosts) {
         if (g.mode === 'eyes') continue;
-        const d2 = dist2(g.x, g.y, this.pacman.x, this.pacman.y);
-        if (d2 < 0.35) {
+        const d2v = dist2(g.x, g.y, this.pacman.x, this.pacman.y);
+        if (d2v < 0.35) {
           if (g.mode === 'frightened') {
-            // eat ghost
-            this.addScore(200);
-            g.mode = 'eyes';
-            this.sound.eatGhost();
+            this.addScore(200); g.mode = 'eyes'; this.sound.eatGhost();
           } else {
-            // lose a life
-            this.loseLife();
-            break;
+            this.loseLife(); break;
           }
         }
       }
 
-      // Level cleared
       if (this.maze.dotCount <= 0) this.nextLevel();
-
       this.updateHUD();
     }
 
     loseLife() {
-      this.lives--;
-      this.sound.death();
+      this.lives--; this.sound.death();
       if (this.lives <= 0) {
         this.gameOver = true;
-        // Update best
-        if (this.score > this.best) {
-          this.best = this.score;
-          localStorage.setItem('pacman_best_score', String(this.best));
-        }
+        if (this.score > this.best) { this.best = this.score; localStorage.setItem('pacman_best_score', String(this.best)); }
         setTimeout(() => {
-          // Reset for a new run
           this.level = 1; this.score = 0; this.lives = 3; this.maze.resetDots();
-          this.gameOver = false; this.resetPositions(false);
+          this.gameOver = false; this.resetPositions();
         }, 1500);
       } else {
-        // Reset positions after short pause
-        this.resetPositions(true);
+        this.resetPositions();
       }
     }
 
@@ -662,24 +608,16 @@
 
     draw() {
       const ctx = this.ctx;
-      // Clear background as transparent; page CSS shows background
       ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-      // Convert offsets from device to CSS pixels since ctx is scaled
-      const offX = this.offX / (this.canvas.width / (this.canvas.style.width.replace('px','')|0 || window.innerWidth));
-      const offY = this.offY / (this.canvas.height / (this.canvas.style.height.replace('px','')|0 || window.innerHeight));
+      const tileSize = this.tileSize;
+      const ox = Math.floor((window.innerWidth  - tileSize * GRID_W) / 2);
+      const oy = Math.floor((window.innerHeight - tileSize * GRID_H) / 2);
 
-      // Actually, we set transform to DPR already; use stored CSS offsets directly
-      const ox = Math.floor((window.innerWidth - this.tileSize * GRID_W) / 2);
-      const oy = Math.floor((window.innerHeight - this.tileSize * GRID_H) / 2);
-
-      this.drawMaze(ctx, this.tileSize, ox, oy);
-      // Draw dots and power pellets
-      this.drawDots(ctx, this.tileSize, ox, oy);
-
-      // Draw entities
-      this.pacman.draw(ctx, this.tileSize, ox, oy);
-      for (const g of this.ghosts) g.draw(ctx, this.tileSize, ox, oy);
+      this.drawMaze(ctx, tileSize, ox, oy);
+      this.drawDots(ctx, tileSize, ox, oy);
+      this.pacman.draw(ctx, tileSize, ox, oy);
+      for (const g of this.ghosts) g.draw(ctx, tileSize, ox, oy);
 
       if (this.paused || this.gameOver) this.drawOverlay(ctx);
     }
@@ -696,7 +634,6 @@
     }
 
     drawMaze(ctx, tileSize, offX, offY) {
-      // Walls
       for (let y = 0; y < this.maze.h; y++) {
         for (let x = 0; x < this.maze.w; x++) {
           const t = this.maze.grid[y][x];
@@ -734,8 +671,5 @@
     }
   }
 
-  // Initialize the game when DOM is ready
-  window.addEventListener('DOMContentLoaded', () => {
-    new Game();
-  });
+  window.addEventListener('DOMContentLoaded', () => new Game());
 })();

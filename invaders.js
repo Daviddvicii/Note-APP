@@ -926,3 +926,8 @@ window.addEventListener('load', () => {
   const game = new Game(canvas);
   updateMuteButton(true);
 });
+// Boot game after DOM is ready (safe on GitHub Pages)
+document.addEventListener('DOMContentLoaded', () => {
+  const canvas = document.getElementById('game');
+  if (canvas && typeof Game === 'function') new Game(canvas);
+});

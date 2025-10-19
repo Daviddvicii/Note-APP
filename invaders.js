@@ -7,8 +7,8 @@
 /* ===== Tuning ===== */
 const PLAYER_SPEED = 260;
 const BULLET_SPEED = 520;
-const ENEMY_SPEED  = 60;
-const DESCENT_STEP = 18;
+const ENEMY_SPEED  = 45;
+const DESCENT_STEP = 10;
 const SHOOT_COOLDOWN = 0.25;
 const ENEMY_FIRE_RATE = 0.9;
 const INVADER_COLS = 10, INVADER_ROWS = 5;

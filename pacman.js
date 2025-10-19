@@ -383,28 +383,183 @@
       const h = tileSize * 0.9, r = h * 0.5;
       const bodyColor = this.mode === 'frightened' ? '#1e90ff' : this.color;
 
-      ctx.fillStyle = bodyColor;
-      ctx.beginPath();
-      ctx.arc(px, py - h * 0.1, r, Math.PI, 0);
-      ctx.lineTo(px + r, py + r * 0.8);
-      const fr = 4;
-      for (let i = fr; i >= 0; i--) {
-        const fx = px - r + (i / fr) * (2 * r);
-        const fy = py + r * 0.8 + (i % 2 === 0 ? -r * 0.15 : 0);
-        ctx.lineTo(fx, fy);
-      }
-      ctx.closePath(); ctx.fill();
+class Ghost extends Entity {
+  constructor(x, y, color, name) {
+    super(x, y, 5.2);
+    this.baseSpeed = 5.2;
+    this.color = color;
+    this.name = name;
+    this.mode = 'scatter'; // 'chase' | 'scatter' | 'frightened' | 'eyes'
+    this.frightenedTimer = 0;
+    this.scatterTarget = { x: 1, y: 1 };
+    this.home = { x, y };
+  }
 
-      const eyeOffsetX = (this.dir.x || 0) * r * 0.2;
-      const eyeOffsetY = (this.dir.y || 0) * r * 0.2;
-      ctx.fillStyle = '#fff';
-      ctx.beginPath(); ctx.arc(px - r * 0.35 + eyeOffsetX, py - r * 0.2 + eyeOffsetY, r * 0.25, 0, Math.PI*2); ctx.fill();
-      ctx.beginPath(); ctx.arc(px + r * 0.35 + eyeOffsetX, py - r * 0.2 + eyeOffsetY, r * 0.25, 0, Math.PI*2); ctx.fill();
-      ctx.fillStyle = '#001b2e';
-      ctx.beginPath(); ctx.arc(px - r * 0.35 + eyeOffsetX, py - r * 0.2 + eyeOffsetY, r * 0.12, 0, Math.PI*2); ctx.fill();
-      ctx.beginPath(); ctx.arc(px + r * 0.35 + eyeOffsetX, py - r * 0.2 + eyeOffsetY, r * 0.12, 0, Math.PI*2); ctx.fill();
+  setScatterCorner(cornerIndex) {
+    const corners = [
+      { x: GRID_W - 2, y: 1 },
+      { x: 1, y: 1 },
+      { x: GRID_W - 2, y: GRID_H - 2 },
+      { x: 1, y: GRID_H - 2 },
+    ];
+    this.scatterTarget = corners[cornerIndex % corners.length];
+  }
+
+  inHouse() {
+    // loose bounds around the ghost-house
+    const { cx, cy } = this.centerOfTile();
+    return cx >= 11 && cx <= 16 && cy >= 13 && cy <= 17;
+  }
+
+  canMove(maze, dir, allowGate) {
+    // mirror Pac-Man’s collision probe so ghosts don’t push into walls
+    const nx = this.x + dir.x * 0.51;
+    const ny = this.y + dir.y * 0.51;
+    const tx = Math.floor(nx + (dir.x > 0 ? 0.5 : dir.x < 0 ? -0.5 : 0));
+    const ty = Math.floor(ny + (dir.y > 0 ? 0.5 : dir.y < 0 ? -0.5 : 0));
+    if (!maze.isInside(tx, ty)) return true; // allow wrap; handled later
+    const t = maze.tileAt(tx, ty);
+    if (t === TILE.WALL) return false;
+    if (t === TILE.GATE && !allowGate) return false;
+    return true;
+  }
+
+  enterFrightened(duration) {
+    if (this.mode !== 'eyes') {
+      this.mode = 'frightened';
+      this.frightenedTimer = duration;
     }
   }
+
+  computeTarget(pacman, blinkyRef) {
+    // While inside the house, aim just above the gate to get out
+    if (this.mode !== 'eyes' && this.inHouse()) {
+      return { x: 13.5, y: 12.5 };
+    }
+    if (this.mode === 'scatter') return this.scatterTarget;
+    if (this.mode === 'eyes') return { x: blinkyRef ? blinkyRef.home.x : 13, y: 14 };
+
+    // chase rules
+    const px = pacman.x, py = pacman.y;
+    const pd = pacman.dir || DIRS.left;
+    switch (this.name) {
+      case 'blinky': return { x: px, y: py };
+      case 'pinky':  return { x: px + pd.x * 4, y: py + pd.y * 4 };
+      case 'inky': {
+        const ahead = { x: px + pd.x * 2, y: py + pd.y * 2 };
+        const bx = blinkyRef ? blinkyRef.x : px;
+        const by = blinkyRef ? blinkyRef.y : py;
+        return { x: ahead.x + (ahead.x - bx), y: ahead.y + (ahead.y - by) };
+      }
+      case 'clyde': {
+        const d2v = (this.x - px) ** 2 + (this.y - py) ** 2;
+        return d2v > 64 ? { x: px, y: py } : this.scatterTarget;
+      }
+    }
+    return { x: px, y: py };
+  }
+
+  update(dt, maze, pacman, blinkyRef) {
+    // Speed modifiers
+    let speed = this.baseSpeed;
+    if (this.mode === 'frightened') speed *= 0.66;
+    if (this.mode === 'eyes') speed *= 1.3;
+
+    // frightened timer
+    if (this.mode === 'frightened') {
+      this.frightenedTimer -= dt;
+      if (this.frightenedTimer <= 0) this.mode = 'chase';
+    }
+
+    // allow crossing gate when eyes OR still inside (exiting)
+    const allowGate = (this.mode === 'eyes') || this.inHouse();
+
+    // Snap to center when close, so intersections work reliably
+    const { cx, cy } = this.centerOfTile();
+    const nearCenter = Math.abs(this.x - cx) < 0.22 && Math.abs(this.y - cy) < 0.22;
+    if (nearCenter) { this.x = cx; this.y = cy; }
+
+    // If forward is blocked, pick a new direction immediately
+    if (this.dir === DIRS.none || !this.canMove(maze, this.dir, allowGate)) {
+      const target = this.computeTarget(pacman, blinkyRef);
+
+      const options = [DIRS.up, DIRS.left, DIRS.down, DIRS.right].filter((d) => {
+        // don’t reverse unless frightened
+        if (this.mode !== 'frightened' && this.dir && d.x === -this.dir.x && d.y === -this.dir.y) return false;
+        return this.canMove(maze, d, allowGate);
+      });
+
+      if (options.length) {
+        if (this.mode === 'frightened') {
+          this.dir = options[randInt(options.length)];
+        } else {
+          // greedy towards target
+          let best = options[0], bestD = Infinity;
+          for (const d of options) {
+            const nx = this.x + d.x;
+            const ny = this.y + d.y;
+            const dd = dist2(nx, ny, target.x, target.y);
+            if (dd < bestD) { bestD = dd; best = d; }
+          }
+          this.dir = best;
+        }
+      } else {
+        this.dir = DIRS.none;
+      }
+    }
+
+    // Move only if the path is free
+    if (this.dir !== DIRS.none && this.canMove(maze, this.dir, allowGate)) {
+      this.x += this.dir.x * speed * dt;
+      this.y += this.dir.y * speed * dt;
+    }
+
+    // Wrap tunnels horizontally
+    if (this.x < -0.5) this.x = maze.w - 0.5;
+    if (this.x > maze.w + 0.5) this.x = -0.5;
+
+    // If eyes reached house center, switch back to scatter
+    if (this.mode === 'eyes') {
+      const d2 = dist2(this.x, this.y, maze.house.x + 0.5, maze.house.y + 0.5);
+      if (d2 < 0.1) {
+        this.mode = 'scatter';
+        this.dir = DIRS.left;
+      }
+    }
+  }
+
+  draw(ctx, tileSize, offX, offY) {
+    const px = offX + this.x * tileSize;
+    const py = offY + this.y * tileSize;
+    const w = tileSize * 0.9, h = tileSize * 0.9;
+    const r = h * 0.5;
+    const bodyColor = this.mode === 'frightened' ? '#1e90ff' : this.color;
+
+    // Body
+    ctx.fillStyle = bodyColor;
+    ctx.beginPath();
+    ctx.arc(px, py - h * 0.1, r, Math.PI, 0);
+    ctx.lineTo(px + r, py + r * 0.8);
+    const frills = 4;
+    for (let i = frills; i >= 0; i--) {
+      const fx = px - r + (i / frills) * (2 * r);
+      const fy = py + r * 0.8 + (i % 2 === 0 ? -r * 0.15 : 0);
+      ctx.lineTo(fx, fy);
+    }
+    ctx.closePath();
+    ctx.fill();
+
+    // Eyes
+    const eyeOffsetX = (this.dir.x || 0) * r * 0.2;
+    const eyeOffsetY = (this.dir.y || 0) * r * 0.2;
+    ctx.fillStyle = '#fff';
+    ctx.beginPath(); ctx.arc(px - r * 0.35 + eyeOffsetX, py - r * 0.2 + eyeOffsetY, r * 0.25, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(px + r * 0.35 + eyeOffsetX, py - r * 0.2 + eyeOffsetY, r * 0.25, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#001b2e';
+    ctx.beginPath(); ctx.arc(px - r * 0.35 + eyeOffsetX, py - r * 0.2 + eyeOffsetY, r * 0.12, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(px + r * 0.35 + eyeOffsetX, py - r * 0.2 + eyeOffsetY, r * 0.12, 0, Math.PI*2); ctx.fill();
+  }
+}
 
   class Game {
     constructor() {

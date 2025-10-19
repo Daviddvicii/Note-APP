@@ -18,5 +18,43 @@
 
     <!-- IMPORTANT: non-module script, after canvas -->
     <script src="invaders.js"></script>
+  <!-- Show JS errors on-screen (so mobile can see them) -->
+<script>
+  window.onerror = function (msg, src, line, col) {
+    const d = document.createElement('div');
+    d.style.cssText = 'position:fixed;left:8px;bottom:8px;color:#7fffd4;font:12px monospace;white-space:pre-wrap;';
+    d.textContent = String(msg) + (src ? `\n${src}:${line}:${col||0}` : '');
+    document.body.appendChild(d);
+    return false;
+  };
+</script>
+
+<!-- Force-size the canvas and start the game -->
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const c = document.getElementById('game');
+    if (!c) return;
+
+    function sizeCanvas() {
+      const dpr = Math.max(1, Math.min(3, window.devicePixelRatio || 1));
+      c.style.width  = window.innerWidth + 'px';
+      c.style.height = window.innerHeight + 'px';
+      c.width  = Math.floor(window.innerWidth  * dpr);
+      c.height = Math.floor(window.innerHeight * dpr);
+      const ctx = c.getContext('2d');
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    sizeCanvas();
+    window.addEventListener('resize', sizeCanvas);
+
+    // Start the game if Game() exists in invaders.js
+    if (typeof Game === 'function') {
+      try { new Game(c); } catch (e) {
+        window.onerror(e && e.message ? e.message : e, 'invaders.js', 0, 0);
+      }
+    }
+  });
+</script>
   </body>
 </html>

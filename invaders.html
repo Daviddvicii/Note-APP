@@ -5,7 +5,29 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
   <title>Space Invaders - HTML5 Canvas</title>
   <link rel="stylesheet" href="styles.css" />
+/* Keep UI clear of the Score/Lives HUD at the very top */
+:root {
+  /* push buttons down, respecting notches/status bars */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --ui-top: calc(var(--safe-top) + 56px);  /* adjust number if you want more/less */
+}
 
+/* Back button on the left */
+.back-link{
+  position: fixed !important;
+  top: var(--ui-top) !important;
+  left: 12px !important;
+  z-index: 10000;
+}
+
+/* Volume (mute) button on the right */
+#btn-mute{
+  position: fixed !important;
+  top: var(--ui-top) !important;
+  right: 12px !important;
+  z-index: 10000;
+}
+  
   <style>
     .control-btn{
       font:600 22px/1 monospace;

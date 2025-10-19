@@ -1,17 +1,33 @@
-* { box-sizing: border-box; }
-html, body { height: 100%; }
+/* Basic layout */
+:root {
+  --bg: #000;
+  --hud: #32ff7e; /* neon green */
+  --ship: #41c7ff; /* neon cyan */
+  --invader: #39ff14; /* neon green */
+  --bullet: #ffffff;
+  --overlay: #ffffff;
+}
 
-body {
+* { box-sizing: border-box; }
+
+html, body {
   margin: 0;
   font-family: 'Press Start 2P', system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
   background: radial-gradient(1200px 600px at 50% -10%, #2d5fff 0%, #0b1426 100%);
   color: white;
   display: grid;
   place-items: center;
+  padding: 0;
+  height: 100%;
+  background: var(--bg);
+  color: var(--hud);
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica Neue, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+  overscroll-behavior: none;
 }
 
 /* Fullscreen canvas for games */
 #game {
+  display: block;
   width: 100vw;
   height: 100vh;
   display: block;
@@ -101,3 +117,52 @@ body {
   font-weight: 700;
   letter-spacing: 1px;
 }
+  touch-action: none; /* prevent pull-to-refresh & pinch-zoom gestures on canvas */
+}
+
+/* On-screen controls */
+#controls {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 22vh;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: end;
+  gap: 1rem;
+  padding: 0 1rem 1.25rem;
+  pointer-events: none; /* controls opt-in pointer events per button */
+}
+
+.control-btn {
+  pointer-events: auto;
+  background: rgba(255,255,255,0.06);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 12px;
+  font-size: 28px;
+  padding: 0.8rem 1rem;
+  backdrop-filter: blur(6px);
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+.control-btn:active {
+  background: rgba(255,255,255,0.12);
+}
+
+#btn-left { justify-self: start; }
+#btn-right { justify-self: end; }
+
+#btn-mute.small {
+  position: fixed;
+  right: 12px;
+  top: 12px;
+  font-size: 18px;
+  padding: 0.35rem 0.5rem;
+  opacity: 0.9;
+}
+
+/* Accessibility: ensure focus outlines are visible */
+button:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }

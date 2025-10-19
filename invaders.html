@@ -1,47 +1,22 @@
 <!doctype html>
-
 <html lang="en">
-
   <head>
-
     <meta charset="utf-8" />
-
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
-
-    <meta name="theme-color" content="#0b1426" />
-
-    <title>Space Invaders</title>
-
-    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" />
-
-    <link rel="stylesheet" href="./styles.css" />
-
+    <title>Space Invaders - HTML5 Canvas</title>
+    <link rel="stylesheet" href="styles.css" />
   </head>
-
   <body>
-
-    <a class="back-link" href="./index.html" aria-label="Back to game menu">← Back</a>
-
     <canvas id="game" aria-label="Space Invaders game canvas" role="img"></canvas>
 
     <!-- On-screen controls for touch devices -->
-
     <div id="controls" aria-hidden="true">
-
       <button id="btn-left" class="control-btn" aria-label="Move left">◀</button>
-
       <button id="btn-right" class="control-btn" aria-label="Move right">▶</button>
-
       <button id="btn-mute" class="control-btn small" aria-label="Toggle mute" title="M to toggle">🔊</button>
-
     </div>
 
-    <noscript>This game requires JavaScript to run.</noscript>
-
-    <!-- Use plain script include (matches your repo setup) -->
-
-    <script src="./invaders.js"></script>
-
+    <!-- IMPORTANT: non-module script, after canvas -->
+    <script src="invaders.js"></script>
   </body>
-
 </html>

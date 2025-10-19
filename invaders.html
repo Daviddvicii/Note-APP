@@ -5,30 +5,32 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
   <title>Space Invaders - HTML5 Canvas</title>
   <link rel="stylesheet" href="styles.css" />
-/* Keep UI clear of the Score/Lives HUD at the very top */
-:root {
-  /* push buttons down, respecting notches/status bars */
-  --safe-top: env(safe-area-inset-top, 0px);
-  --ui-top: calc(var(--safe-top) + 56px);  /* adjust number if you want more/less */
-}
 
-/* Back button on the left */
-.back-link{
-  position: fixed !important;
-  top: var(--ui-top) !important;
-  left: 12px !important;
-  z-index: 10000;
-}
-
-/* Volume (mute) button on the right */
-#btn-mute{
-  position: fixed !important;
-  top: var(--ui-top) !important;
-  right: 12px !important;
-  z-index: 10000;
-}
-  
+  <!-- All custom CSS must live inside this <style> block -->
   <style>
+    /* Keep UI clear of the Score/Lives HUD at the very top */
+    :root{
+      --safe-top: env(safe-area-inset-top, 0px);
+      --ui-top: calc(var(--safe-top) + 56px); /* adjust if needed */
+    }
+
+    /* Back button on the left */
+    .back-link{
+      position: fixed !important;
+      top: var(--ui-top) !important;
+      left: 12px !important;
+      z-index: 10000;
+    }
+
+    /* Volume (mute) button on the right */
+    #btn-mute{
+      position: fixed !important;
+      top: var(--ui-top) !important;
+      right: 12px !important;
+      z-index: 10000;
+    }
+
+    /* On-screen controls styling */
     .control-btn{
       font:600 22px/1 monospace;
       padding:10px 14px;
@@ -40,26 +42,18 @@
       touch-action: manipulation;
       z-index:9999;
     }
+    .control-btn.small{ font-size:18px; padding:8px 10px; }
 
-    /* LEFT & RIGHT stay on bottom */
+    /* Left & Right fixed at bottom corners */
     #btn-left{
       position:fixed;
       left:20px;
       bottom:30px;
     }
-
     #btn-right{
       position:fixed;
       right:20px;
       bottom:30px;
-    }
-
-    /* MOVE MUTE TO TOP-RIGHT */
-    #btn-mute{
-      position:fixed;
-      top:20px;
-      right:20px;
-      transform:none;
     }
   </style>
 </head>
@@ -73,7 +67,7 @@
   <button id="btn-right" class="control-btn" aria-label="Move right">▶</button>
   <button id="btn-mute" class="control-btn small" aria-label="Toggle mute" title="M to toggle">🔊</button>
 
-  <!-- Error Display -->
+  <!-- Error Display (for mobile debugging) -->
   <script>
     window.onerror = function (msg, src, line, col) {
       const d = document.createElement('div');
@@ -83,7 +77,7 @@
     };
   </script>
 
-  <!-- Game Code -->
-  <script src="invaders.js?v=7"></script>
+  <!-- Game Code (cache-busted; bump the number if the browser shows an old copy) -->
+  <script src="invaders.js?v=9"></script>
 </body>
 </html>

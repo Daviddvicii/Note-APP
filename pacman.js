@@ -69,6 +69,24 @@
   ];
   // Ensure 31 rows; above includes 31 lines (index 0..30)
 
+  // ==== Grid helpers (must be right after MAZE_ASCII) ====
+  const TILE_SIZE = 16;
+
+  function nearCenter(x, y, tol = 0.2) {
+    const cx = Math.floor(x) + 0.5;
+    const cy = Math.floor(y) + 0.5;
+    return Math.abs(x - cx) < tol && Math.abs(y - cy) < tol;
+  }
+  function snapToCenterXY(obj) {
+    const cx = Math.floor(obj.x) + 0.5;
+    const cy = Math.floor(obj.y) + 0.5;
+    obj.x = cx; obj.y = cy;
+  }
+  function tunnelRow(y) {
+    if (y < 0 || y >= GRID_H) return false;
+    return MAZE_ASCII[y].includes(' ');
+  }
+
   class Input {
     constructor() {
       this.queued = DIRS.none;
@@ -246,29 +264,57 @@
       return !wall;
     }
     update(dt, maze, input) {
-      // Queue turn if near center and desiredDir is open
       const desired = input.consumeQueued();
-      if (desired && desired !== this.dir) {
-        const { cx, cy } = this.centerOfTile();
-        const dx = Math.abs(this.x - cx), dy = Math.abs(this.y - cy);
-        const nearCenter = dx < 0.2 && dy < 0.2;
-        if (nearCenter && this.canMove(maze, desired)) {
-          this.x = cx; this.y = cy;
+
+      // Turn only at cell centers and only if the turn is legal
+      if (desired && desired !== this.dir && nearCenter(this.x, this.y)) {
+        const tx = Math.floor(this.x), ty = Math.floor(this.y);
+        const nx = tx + desired.x, ny = ty + desired.y;
+        const blocked = (maze.isInside(nx, ny) && (maze.isWall(nx, ny) || maze.isGate(nx, ny)));
+        if (!blocked) {
+          snapToCenterXY(this);
           this.dir = desired;
         }
       }
-      // If blocked, try to change to desired if possible
-      if (!this.canMove(maze, this.dir)) {
-        if (desired && this.canMove(maze, desired)) this.dir = desired;
-        else this.dir = DIRS.none;
+
+      // If the next cell in current dir is blocked, stop on center and wait
+      {
+        const tx = Math.floor(this.x), ty = Math.floor(this.y);
+        const nx = tx + this.dir.x, ny = ty + this.dir.y;
+        const blocked = (maze.isInside(nx, ny) && (maze.isWall(nx, ny) || maze.isGate(nx, ny)));
+        if (blocked) {
+          snapToCenterXY(this);
+          if (desired && desired !== this.dir) {
+            const n2x = tx + desired.x, n2y = ty + desired.y;
+            const blocked2 = (maze.isInside(n2x, n2y) && (maze.isWall(n2x, n2y) || maze.isGate(n2x, n2y)));
+            if (!blocked2) this.dir = desired;
+          }
+          // Still blocked → no movement this frame
+          if (this.dir === DIRS.none ||
+              (maze.isInside(tx + this.dir.x, ty + this.dir.y) && (maze.isWall(tx + this.dir.x, ty + this.dir.y) || maze.isGate(tx + this.dir.x, ty + this.dir.y)))) {
+            return;
+          }
+        }
       }
-      // Move
+
+      // Move within corridor
       this.x += this.dir.x * this.speed * dt;
       this.y += this.dir.y * this.speed * dt;
-      // Wrap tunnels horizontally
-      if (this.x < -0.5) this.x = maze.w - 0.5;
-      if (this.x > maze.w + 0.5) this.x = -0.5;
-      // Mouth animation
+
+      // Keep on rails (snap the perpendicular axis)
+      if (this.dir === DIRS.left || this.dir === DIRS.right) {
+        this.y = Math.floor(this.y) + 0.5;
+      } else if (this.dir === DIRS.up || this.dir === DIRS.down) {
+        this.x = Math.floor(this.x) + 0.5;
+      }
+
+      // Horizontal tunnel wrap only on tunnel rows
+      const gy = Math.floor(this.y);
+      if (tunnelRow(gy)) {
+        if (this.x < -0.5) this.x = GRID_W - 0.5;
+        if (this.x > GRID_W + 0.5) this.x = -0.5;
+      }
+
       this.mouth += dt * 10;
     }
     draw(ctx, tileSize, offX, offY) {
@@ -319,65 +365,72 @@
       }
     }
     update(dt, maze, pacman, blinkyRef) {
-      // Speed modifiers
       let speed = this.baseSpeed;
       if (this.mode === 'frightened') speed *= 0.66;
       if (this.mode === 'eyes') speed *= 1.3;
 
-      // Decrement frightened timer
       if (this.mode === 'frightened') {
         this.frightenedTimer -= dt;
         if (this.frightenedTimer <= 0) this.mode = 'chase';
       }
 
-      // Choose direction at tile centers
-      const { cx, cy } = this.centerOfTile();
-      const atCenter = Math.abs(this.x - cx) < 0.15 && Math.abs(this.y - cy) < 0.15;
+      const atCenter = nearCenter(this.x, this.y, 0.15);
       if (atCenter) {
-        this.x = cx; this.y = cy;
+        snapToCenterXY(this);
         const target = this.computeTarget(pacman, blinkyRef);
-        const possible = [DIRS.up, DIRS.left, DIRS.down, DIRS.right].filter((d) => {
-          if (this.dir && d.x === -this.dir.x && d.y === -this.dir.y && this.mode !== 'frightened') return false; // don't reverse unless frightened
-          const nx = Math.floor(this.x + d.x);
-          const ny = Math.floor(this.y + d.y);
-          if (!maze.isInside(nx, ny)) return true; // allow wrap
+        const tx = Math.floor(this.x), ty = Math.floor(this.y);
+
+        const opposite = (this.dir === DIRS.left) ? DIRS.right :
+                         (this.dir === DIRS.right) ? DIRS.left :
+                         (this.dir === DIRS.up) ? DIRS.down :
+                         (this.dir === DIRS.down) ? DIRS.up : DIRS.none;
+
+        const options = [DIRS.up, DIRS.left, DIRS.down, DIRS.right].filter(d => {
+          if (this.mode !== 'frightened' && d === opposite) return false;
+          const nx = tx + d.x, ny = ty + d.y;
+          if (!maze.isInside(nx, ny)) return true; // allow wrap; walls checked next
           if (maze.isWall(nx, ny)) return false;
-          if (maze.isGate(nx, ny) && this.mode !== 'eyes') return false; // only eyes can go through gate to home
+          if (maze.isGate(nx, ny) && this.mode !== 'eyes') return false;
           return true;
         });
-        if (possible.length > 0) {
-          let next = possible[0];
+
+        if (options.length) {
           if (this.mode === 'frightened') {
-            next = possible[randInt(possible.length)];
+            this.dir = options[Math.floor(Math.random() * options.length)];
           } else {
-            // Greedy pick towards target by euclidean distance
-            let bestD = Infinity;
-            for (const d of possible) {
-              const nx = this.x + d.x;
-              const ny = this.y + d.y;
-              const dd = dist2(nx, ny, target.x, target.y);
-              if (dd < bestD) { bestD = dd; next = d; }
+            let best = options[0], bestD = Infinity;
+            for (const d of options) {
+              const nx = tx + d.x, ny = ty + d.y;
+              const dd = (nx - target.x) * (nx - target.x) + (ny - target.y) * (ny - target.y);
+              if (dd < bestD) { bestD = dd; best = d; }
             }
+            this.dir = best;
           }
-          this.dir = next;
         }
       }
 
-      // Move
+      const tx = Math.floor(this.x), ty = Math.floor(this.y);
+      const nx = tx + this.dir.x, ny = ty + this.dir.y;
+      const blocked = (maze.isInside(nx, ny) && (maze.isWall(nx, ny) || (maze.isGate(nx, ny) && this.mode !== 'eyes')));
+      if (blocked) {
+        snapToCenterXY(this);
+        return;
+      }
+
       this.x += this.dir.x * speed * dt;
       this.y += this.dir.y * speed * dt;
 
-      // Wrap
-      if (this.x < -0.5) this.x = maze.w - 0.5;
-      if (this.x > maze.w + 0.5) this.x = -0.5;
+      if (this.dir === DIRS.left || this.dir === DIRS.right) this.y = Math.floor(this.y) + 0.5;
+      else if (this.dir === DIRS.up || this.dir === DIRS.down) this.x = Math.floor(this.x) + 0.5;
 
-      // If eyes reached house center, switch to scatter
+      if (tunnelRow(Math.floor(this.y))) {
+        if (this.x < -0.5) this.x = GRID_W - 0.5;
+        if (this.x > GRID_W + 0.5) this.x = -0.5;
+      }
+
       if (this.mode === 'eyes') {
-        const d2 = dist2(this.x, this.y, maze.house.x + 0.5, maze.house.y + 0.5);
-        if (d2 < 0.1) {
-          this.mode = 'scatter';
-          this.dir = DIRS.left;
-        }
+        const d2h = (this.x - (this.home.x + 0.5)) ** 2 + (this.y - (this.home.y + 0.5)) ** 2;
+        if (d2h < 0.1) { this.mode = 'scatter'; this.dir = DIRS.left; }
       }
     }
     computeTarget(pacman, blinkyRef) {

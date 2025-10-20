@@ -162,46 +162,78 @@
   class Entity{ constructor(x,y,speed){ this.x=x; this.y=y; this.dir=DIRS.left; this.speed=speed; }
     center(){ return {cx:Math.floor(this.x)+0.5, cy:Math.floor(this.y)+0.5}; } }
 
-  class Pacman extends Entity{
-    constructor(x,y){ super(x,y,5.6); this.mouth=0; this.rFrac=0.44; }
-    canGo(maze,dir){ const {cx,cy}=this.center(); const nx=cx+dir.x, ny=cy+dir.y;
-      const tx=Math.floor(nx), ty=Math.floor(ny);
-      if(!maze.isInside(tx,ty)) return true; const t=maze.tileAt(tx,ty);
-      return t!==TILE.WALL && t!==TILE.GATE;
+  class Pacman extends Entity {
+  constructor(x,y){ super(x,y,5.6); this.mouth=0; this.radiusFrac=0.44; }
+
+  // helper: can we move into the next tile in dir?
+  canGo(maze, dir){
+    const { cx, cy } = this.center();
+    const nx = cx + dir.x, ny = cy + dir.y;
+    const tx = Math.floor(nx), ty = Math.floor(ny);
+    if (!maze.isInside(tx,ty)) return true;              // allow wrap
+    const t = maze.tileAt(tx,ty);
+    return t !== TILE.WALL && t !== TILE.GATE;           // treat gate as closed for Pac-Man
+  }
+
+  update(dt, maze, input){
+    const want = input.consumeQueued();
+    const { cx, cy } = this.center();
+    const near = Math.abs(this.x - cx) < 0.12 && Math.abs(this.y - cy) < 0.12;
+
+    // 1) Take the queued turn exactly at center (if legal)
+    if (want && want !== this.dir && near && this.canGo(maze, want)) {
+      this.x = cx; this.y = cy;
+      this.dir = want;
     }
-    update(dt,maze,input){
-      const want=input.consumeQueued();
-      const {cx,cy}=this.center();
-      const near=Math.abs(this.x-cx)<0.2 && Math.abs(this.y-cy)<0.2;
 
-      // snap when near center
-      if(near){ this.x=cx; this.y=cy; }
-
-      // if stopped OR near center, allow taking the queued direction if legal
-      if((this.dir===DIRS.none || near) && want && this.canGo(maze,want)) this.dir=want;
-
-      // if current dir blocked, stop (will take want next frame)
-      if(this.dir!==DIRS.none && !this.canGo(maze,this.dir)) this.dir=DIRS.none;
-
-      // move
-      this.x+=this.dir.x*this.speed*dt; this.y+=this.dir.y*this.speed*dt;
-
-      // wrap
-      if(this.x<-0.5) this.x=maze.w-0.5;
-      if(this.x>maze.w+0.5) this.x=-0.5;
-
-      this.mouth+=dt*10;
+    // 2) If current direction is blocked, glide to center and stop there
+    if (this.dir !== DIRS.none && !this.canGo(maze, this.dir)) {
+      const dx = cx - this.x, dy = cy - this.y;
+      const step = this.speed * dt;
+      const len = Math.hypot(dx, dy);
+      if (len > 1e-4) {
+        const move = Math.min(step, len);
+        this.x += dx / len * move;
+        this.y += dy / len * move;
+      }
+      if (Math.abs(this.x - cx) <= 0.01 && Math.abs(this.y - cy) <= 0.01) {
+        this.x = cx; this.y = cy;
+        this.dir = DIRS.none;
+      }
+    } else {
+      // 3) Otherwise, move
+      this.x += this.dir.x * this.speed * dt;
+      this.y += this.dir.y * this.speed * dt;
     }
-    draw(ctx,tile,ox,oy){
-      const px=ox+this.x*tile, py=oy+this.y*tile, r=tile*this.rFrac;
-      const open=0.2+0.2*Math.abs(Math.sin(this.mouth));
-      let a0=0,a1=Math.PI*2;
-      if(this.dir===DIRS.right){ a0=open; a1=Math.PI*2-open; }
-      else if(this.dir===DIRS.left){ a0=Math.PI+open; a1=Math.PI-open; }
-      else if(this.dir===DIRS.up){ a0=-Math.PI/2+open; a1=Math.PI*1.5-open; }
-      else if(this.dir===DIRS.down){ a0=Math.PI/2+open; a1=Math.PI/2-open; }
-      ctx.fillStyle='#ffd23f'; ctx.beginPath(); ctx.moveTo(px,py); ctx.arc(px,py,r,a0,a1,false); ctx.closePath(); ctx.fill();
+
+    // 4) If we’re stopped and the wanted dir is open now, go
+    if (this.dir === DIRS.none && want && this.canGo(maze, want)) {
+      this.dir = want;
     }
+
+    // 5) Wrap tunnels
+    if (this.x < -0.5) this.x = maze.w - 0.5;
+    if (this.x > maze.w + 0.5) this.x = -0.5;
+
+    this.mouth += dt * 10;
+  }
+
+  draw(ctx, tileSize, offX, offY) {
+    const px = offX + this.x * tileSize;
+    const py = offY + this.y * tileSize;
+    const r = tileSize * this.radiusFrac;
+    const open = 0.2 + 0.2 * Math.abs(Math.sin(this.mouth));
+    let a0 = 0, a1 = Math.PI * 2;
+    if (this.dir === DIRS.right) { a0 = open; a1 = Math.PI * 2 - open; }
+    else if (this.dir === DIRS.left) { a0 = Math.PI + open; a1 = Math.PI - open; }
+    else if (this.dir === DIRS.up) { a0 = -Math.PI/2 + open; a1 = Math.PI*1.5 - open; }
+    else if (this.dir === DIRS.down) { a0 = Math.PI/2 + open; a1 = Math.PI/2 - open; }
+
+    ctx.fillStyle = '#ffd23f';
+    ctx.beginPath(); ctx.moveTo(px, py);
+    ctx.arc(px, py, r, a0, a1, false);
+    ctx.closePath(); ctx.fill();
+  }
   }
 
   class Ghost extends Entity{

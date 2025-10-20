@@ -1,6 +1,7 @@
 'use strict';
 
 // Pac-Man – ghosts roam forever, no gate collision, fixed spawns.
+// Fix: stable intersection logic (no center jitter), center-based pathing.
 (() => {
   const GRID_W = 28, GRID_H = 31;
 
@@ -122,7 +123,7 @@
           if(c==='#') t=TILE.WALL;
           else if(c==='.'){ t=TILE.DOT; this.dotCount++; }
           else if(c==='o'){ t=TILE.POWER; this.dotCount++; }
-          // gates are **open** → treat '-' as EMPTY
+          // gates are open: '-' → EMPTY
           else if(c==='-'){ t=TILE.EMPTY; }
           this.grid[y][x]=t;
         }
@@ -147,7 +148,7 @@
           if(c=== '.') { this.grid[y][x]=TILE.DOT; this.dotCount++; }
           else if(c==='o'){ this.grid[y][x]=TILE.POWER; this.dotCount++; }
           else if(c==='#'){ this.grid[y][x]=TILE.WALL; }
-          else { this.grid[y][x]=TILE.EMPTY; } // '-' and spaces become open
+          else { this.grid[y][x]=TILE.EMPTY; } // '-' and spaces -> open
         }
       }
     }
@@ -224,34 +225,52 @@
       super(x,y,5.2); this.baseSpeed=5.2; this.color=color; this.name=name;
       this.mode='scatter'; this.frightenedTimer=0;
     }
-    canMove(maze,dir){
-      const nx=this.x+dir.x*0.51, ny=this.y+dir.y*0.51;
-      const tx=Math.floor(nx + (dir.x>0?0.5:dir.x<0?-0.5:0));
-      const ty=Math.floor(ny + (dir.y>0?0.5:dir.y<0?-0.5:0));
-      if(!maze.isInside(tx,ty)) return true;
-      return !maze.isWall(tx,ty); // gate removed → only walls block
+    // center-based: check the tile one step from the *center* (prevents jitter)
+    canMoveFromCenter(maze, cx, cy, dir){
+      const tx=Math.floor(cx)+ (dir.x>0?1:dir.x<0?-1:0);
+      const ty=Math.floor(cy)+ (dir.y>0?1:dir.y<0?-1:0);
+      if(!maze.isInside(tx,ty)) return true;  // allow wrap
+      return !maze.isWall(tx,ty);             // gate removed → only walls block
     }
     enterFrightened(d){ this.mode='frightened'; this.frightenedTimer=d; }
     update(dt,maze){
       let speed=this.baseSpeed;
-      if(this.mode==='frightened') { speed*=0.66; this.frightenedTimer-=dt; if(this.frightenedTimer<=0) this.mode='scatter'; }
+      if(this.mode==='frightened'){ speed*=0.66; this.frightenedTimer-=dt; if(this.frightenedTimer<=0) this.mode='scatter'; }
 
       const {cx,cy}=this.centerOfTile();
-      const near=Math.abs(this.x-cx)<0.22 && Math.abs(this.y-cy)<0.22;
-      if(near){ this.x=cx; this.y=cy; }
+      const atCenter = Math.abs(this.x-cx)<0.05 && Math.abs(this.y-cy)<0.05; // tighter to avoid lingering
+      if(atCenter){ this.x=cx; this.y=cy; }
 
-      const forwardBlocked = this.dir!==DIRS.none && !this.canMove(maze,this.dir);
-      if(this.dir===DIRS.none || near || forwardBlocked){
-        const legal=[DIRS.up,DIRS.left,DIRS.down,DIRS.right].filter(d=>{
+      // Decide turns only when: atCenter AND (blocked ahead OR intersection)
+      if(atCenter){
+        const forwardOK = (this.dir!==DIRS.none) && this.canMoveFromCenter(maze, cx, cy, this.dir);
+        const options = [DIRS.up,DIRS.left,DIRS.down,DIRS.right].filter(d=>{
+          // no reversing unless frightened
           const reversing=this.dir && d.x===-this.dir.x && d.y===-this.dir.y;
           if(reversing && this.mode!=='frightened') return false;
-          return this.canMove(maze,d);
+          return this.canMoveFromCenter(maze, cx, cy, d);
         });
-        this.dir = legal.length ? legal[randInt(legal.length)] : DIRS.none;
+
+        // An intersection if more than one non-reverse legal option OR forward is blocked
+        const intersection = options.length > (forwardOK ? 1 : 0);
+        if(!forwardOK || intersection || this.dir===DIRS.none){
+          // Prefer to keep going if available; else pick random legal
+          if(forwardOK && options.some(d=>d===this.dir)){
+            this.dir = this.dir;
+          }else if(options.length){
+            this.dir = options[randInt(options.length)];
+          }else{
+            this.dir = DIRS.none;
+          }
+          // nudge off the center so we don't pick again next frame
+          this.x += this.dir.x * 0.02;
+          this.y += this.dir.y * 0.02;
+        }
       }
 
-      if(this.dir!==DIRS.none && this.canMove(maze,this.dir)){
-        this.x+=this.dir.x*speed*dt; this.y+=this.dir.y*speed*dt;
+      if(this.dir!==DIRS.none){
+        this.x+=this.dir.x*speed*dt;
+        this.y+=this.dir.y*speed*dt;
       }
 
       if(this.x<-0.5) this.x=maze.w-0.5;
@@ -288,13 +307,13 @@
       this.canvas=document.getElementById('game'); this.ctx=this.canvas.getContext('2d');
       this.input=new Input(); this.sound=new Sound(); this.maze=new Maze();
 
-      // Pac-Man spawn (safe)
+      // Pac-Man spawn
       const pSpawn=nearestOpenTileCenter(this.maze,13.5,23);
       this.pacman=new Pacman(pSpawn.x,pSpawn.y);
 
-      // 4 ghosts INSIDE the house (safe)
+      // 4 ghosts in the house
       const homes=[
-        {x:13.5,y:15.5,color:'#ff3b3b',name:'blinky'}, // RED
+        {x:13.5,y:15.5,color:'#ff3b3b',name:'blinky'}, // red
         {x:13.5,y:14.5,color:'#ff9be1',name:'pinky'},
         {x:12.5,y:15.5,color:'#00e1ff',name:'inky'},
         {x:14.5,y:15.5,color:'#ffb24c',name:'clyde'},

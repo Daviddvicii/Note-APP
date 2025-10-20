@@ -6,24 +6,24 @@
   <meta name="theme-color" content="#0b1426" />
   <title>Pac-Man</title>
 
-  <!-- (optional) your existing styles -->
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="./styles.css" />
 
   <style>
-    /* minimal layout so HUD doesn’t cover the maze */
+    body{margin:0;background:#000;color:#7fffd4;font-family:"Press Start 2P",monospace}
+    canvas#game{display:block;width:100vw;height:100vh}
     .hud{position:fixed;top:8px;left:0;right:0;display:flex;justify-content:space-between;gap:10px;padding:0 12px;font-size:12px;pointer-events:none;text-shadow:0 2px 0 #001829,0 0 8px rgba(127,255,212,.5)}
     .hud span,.hud button{pointer-events:auto}
     .hud .block{display:flex;flex-direction:column;gap:6px}
-    .lives{display:flex;gap:6px;align-items:center;background:rgba(0,0,0,.35);border:2px solid #7fffd4;border-radius:6px;padding:6px 8px}
-    .life-dot{width:10px;height:10px;background:#ffd23f;border-radius:50%;box-shadow:0 0 8px rgba(255,210,63,.9)}
-    .hud .pill{background:rgba(0,0,0,.35);border:2px solid #7fffd4;border-radius:6px;padding:6px 8px}
+    .pill{background:rgba(0,0,0,.35);border:2px solid #7fffd4;border-radius:6px;padding:6px 8px}
+    .lives{display:flex;gap:6px;align-items:center} .life-dot{width:10px;height:10px;background:#ffd23f;border-radius:50%;box-shadow:0 0 8px rgba(255,210,63,.9)}
     .ctrls{position:fixed;bottom:16px;left:16px;right:16px;display:grid;grid-template-columns:1fr 1fr;gap:12px;pointer-events:none}
-    .dpad{pointer-events:auto;width:164px;height:164px;margin-left:0;position:relative}
+    .dpad{pointer-events:auto;width:164px;height:164px;position:relative}
     .dpad button{position:absolute;width:56px;height:56px;border-radius:10px;border:2px solid #072a3f;background:rgba(0,0,0,.45);color:#7fffd4;font-weight:700}
     .btn-up{left:54px;top:0}.btn-down{left:54px;bottom:0}.btn-left{left:0;top:54px}.btn-right{right:0;top:54px}
     .panel{pointer-events:auto;display:flex;gap:10px;align-items:center;justify-content:flex-end}
     .panel button{padding:10px 12px;border-radius:8px;border:2px solid #072a3f;background:linear-gradient(#7fffd4,#35d0a6);color:#001b2e;font-weight:700}
+    .back-link{position:fixed;left:12px;top:56px;border:2px solid #7fffd4;border-radius:10px;padding:8px 14px;color:#7fffd4;text-decoration:none}
   </style>
 </head>
 <body>
@@ -35,7 +35,7 @@
       <span id="hud-best"  class="pill" aria-label="Best score">Best: 0</span>
     </div>
     <div class="block" style="align-items:end">
-      <div id="hud-lives" class="lives" aria-label="Lives"></div>
+      <div id="hud-lives" class="lives pill" aria-label="Lives"></div>
     </div>
   </div>
 
@@ -54,7 +54,7 @@
     </div>
   </div>
 
-  <!-- bump v number when you update pacman.js -->
-  <script src="./pacman.js?v=6"></script>
+  <!-- bump this number whenever you replace pacman.js -->
+  <script src="./pacman.js?v=7"></script>
 </body>
 </html>

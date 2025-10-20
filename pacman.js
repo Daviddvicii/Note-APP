@@ -15,12 +15,12 @@
   };
   const DIR_ARRAY = [DIRS.left, DIRS.right, DIRS.up, DIRS.down];
 
-  function dist2(ax, ay, bx, by) { const dx = ax - bx, dy = ay - by; return dx*dx + dy*dy; }
+  const dist2 = (ax,ay,bx,by)=>{const dx=ax-bx,dy=ay-by;return dx*dx+dy*dy;};
 
   // tiny deterministic PRNG to de-sync choices a bit
   let seed = 1337;
-  function rand() { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; }
-  function randInt(n) { return (rand() * n) | 0; }
+  function rand(){ seed = (seed*1103515245+12345)&0x7fffffff; return seed/0x7fffffff; }
+  function randInt(n){ return (rand()*n)|0; }
 
   // movement helpers
   function nextTileFromCenter(cx, cy, dir) {
@@ -38,7 +38,7 @@
     return false;
   }
 
-  // Classic-ish maze 28x31
+  // Classic-ish maze 28x31 (keep the '--' gates!)
   const MAZE_ASCII = [
     '############################',
     '#............##............#',
@@ -234,7 +234,6 @@
       else if(this.dir===DIRS.left){ a0=Math.PI+open; a1=Math.PI-open; }
       else if(this.dir===DIRS.up){ a0=-Math.PI/2+open; a1=Math.PI*1.5-open; }
       else if(this.dir===DIRS.down){ a0=Math.PI/2+open; a1=Math.PI/2-open; }
-
       ctx.fillStyle='#ffd23f';
       ctx.beginPath(); ctx.moveTo(px,py); ctx.arc(px,py,r,a0,a1,false); ctx.closePath(); ctx.fill();
     }
@@ -263,7 +262,7 @@
       if(t===TILE.GATE && !allowGate) return false;
       return true;
     }
-    update(dt, maze, pacman, blinkyRef){
+    update(dt, maze){
       // roam-only behavior
       let speed=this.baseSpeed;
       if(this.mode==='frightened') speed*=0.66;
@@ -289,8 +288,7 @@
           const any=[DIRS.up,DIRS.left,DIRS.down,DIRS.right].filter(d=>this.canMove(maze,d,allowGate));
           this.dir = any.length ? any[randInt(any.length)] : DIRS.none;
         }else{
-          // random roam
-          this.dir = legal[randInt(legal.length)];
+          this.dir = legal[randInt(legal.length)]; // random roam
         }
       }
 
@@ -315,9 +313,8 @@
       ctx.beginPath();
       ctx.arc(px, py - h*0.1, r, Math.PI, 0);
       ctx.lineTo(px + r, py + r*0.8);
-      const fr=4;
-      for(let i=fr;i>=0;i--){
-        const fx=px - r + (i/fr)*(2*r);
+      for(let i=4;i>=0;i--){
+        const fx=px - r + (i/4)*(2*r);
         const fy=py + r*0.8 + (i%2===0 ? -r*0.15 : 0);
         ctx.lineTo(fx, fy);
       }
@@ -413,7 +410,7 @@
     }
 
     update(dt){
-      // Pac-Man movement + waka sound on tile change
+      // Pac-Man movement + waka on tile change
       const prevTile={ x:Math.floor(this.pacman.x), y:Math.floor(this.pacman.y) };
       this.pacman.update(dt,this.maze,this.input);
       const nowTile={ x:Math.floor(this.pacman.x), y:Math.floor(this.pacman.y) };
@@ -425,13 +422,12 @@
         const eaten=this.maze.eatAt(Math.floor(c.cx),Math.floor(c.cy));
         if(eaten==='dot'){ this.addScore(10); this.sound.dot(); }
         else if(eaten==='power'){ this.addScore(50); this.sound.power();
-          this.ghosts.forEach(g=>g.enterFrightened(5)); // shorter frightened (roam anyway)
+          this.ghosts.forEach(g=>g.enterFrightened(5));
         }
       }
 
       // Ghosts
-      const blinky=this.ghosts.find(g=>g.name==='blinky');
-      for(const g of this.ghosts) g.update(dt,this.maze,this.pacman,blinky);
+      for(const g of this.ghosts) g.update(dt,this.maze);
 
       // Collisions
       for(const g of this.ghosts){

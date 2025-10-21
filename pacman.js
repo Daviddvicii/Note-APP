@@ -1,6 +1,6 @@
 'use strict';
 
-// Pac-Man – open house carved to DOTS, roaming ghosts, solid movement
+// Pac-Man – OPEN house (dots), doorways + working side tunnel, roaming ghosts
 (() => {
   const GRID_W = 28, GRID_H = 31;
 
@@ -18,7 +18,7 @@
   const dist2 = (ax,ay,bx,by)=>{const dx=ax-bx,dy=ay-by;return dx*dx+dy*dy;};
   let seed = 1337; function rand(){seed=(seed*1103515245+12345)&0x7fffffff;return seed/0x7fffffff;} function randInt(n){return (rand()*n)|0;}
 
-  // baseline maze (we'll carve the house open by code)
+  // baseline maze (unchanged); we’ll carve openings programmatically
   const MAZE_ASCII = [
     '############################',
     '#............##............#',
@@ -105,6 +105,7 @@
     constructor(){
       this.w=GRID_W; this.h=GRID_H; this.grid=new Array(this.h); this.dotCount=0;
 
+      // 1) build from ASCII
       for(let y=0;y<this.h;y++){
         this.grid[y]=new Array(this.w);
         const row=MAZE_ASCII[y]||''.padEnd(this.w,'#');
@@ -119,25 +120,40 @@
         }
       }
 
-      // --- carve the ghost house OPEN and fill with DOTS ---
-      // rectangle covering the standard house area
-      const x0=10, x1=17, y0=13, y1=17; // inclusive bounds
-      for(let y=y0;y<=y1;y++){
-        for(let x=x0;x<=x1;x++){
-          this.grid[y][x]=TILE.DOT;
-        }
+      // 2) OPEN the ghost house area completely to DOTS and cut doorways
+      // house rectangle (center-ish)
+      const hx0=10, hx1=17, hy0=13, hy1=17;
+      for(let y=hy0;y<=hy1;y++){
+        for(let x=hx0;x<=hx1;x++) this.grid[y][x]=TILE.DOT;
+      }
+      // doorways to connect with maze
+      const openings = [
+        {x:13,y:12}, {x:14,y:12}, // top
+        {x:13,y:18}, {x:14,y:18}, // bottom
+        {x:9 ,y:15}, {x:9 ,y:16}, // left
+        {x:18,y:15}, {x:18,y:16}, // right
+      ];
+      openings.forEach(p=>{
+        if(p.x>=0&&p.x<this.w&&p.y>=0&&p.y<this.h) this.grid[p.y][p.x]=TILE.DOT;
+      });
+
+      // 3) OPEN side warp tunnel (row 17)
+      const ty = 17;
+      if(ty>=0 && ty<this.h){
+        this.grid[ty][0]  = TILE.EMPTY;
+        this.grid[ty][27] = TILE.EMPTY;
+        // make sure you can step into tunnel
+        this.grid[ty][1]  = (this.grid[ty][1]===TILE.WALL)?TILE.DOT:this.grid[ty][1];
+        this.grid[ty][26] = (this.grid[ty][26]===TILE.WALL)?TILE.DOT:this.grid[ty][26];
       }
 
-      // recompute dotCount accurately
+      // count dots
       this.dotCount=0;
-      for(let y=0;y<this.h;y++){
-        for(let x=0;x<this.w;x++){
-          const t=this.grid[y][x];
-          if(t===TILE.DOT||t===TILE.POWER) this.dotCount++;
-        }
+      for(let y=0;y<this.h;y++) for(let x=0;x<this.w;x++){
+        const t=this.grid[y][x]; if(t===TILE.DOT||t===TILE.POWER) this.dotCount++;
       }
 
-      this.house={x:13,y:15}; // center (not used for collision anymore)
+      this.house={x:13,y:15};
     }
     isInside(x,y){ return x>=0&&x<this.w&&y>=0&&y<this.h; }
     tileAt(tx,ty){ if(!this.isInside(tx,ty)) return TILE.WALL; return this.grid[ty][tx]; }
@@ -149,7 +165,7 @@
       return null;
     }
     resetDots(){
-      // rebuild from ASCII then carve again
+      // rebuild then re-open areas
       for(let y=0;y<this.h;y++){
         const row=MAZE_ASCII[y];
         for(let x=0;x<this.w;x++){
@@ -160,8 +176,10 @@
           else this.grid[y][x]=TILE.EMPTY;
         }
       }
-      const x0=10, x1=17, y0=13, y1=17;
-      for(let y=y0;y<=y1;y++) for(let x=x0;x<=x1;x++) this.grid[y][x]=TILE.DOT;
+      const hx0=10, hx1=17, hy0=13, hy1=17;
+      for(let y=hy0;y<=hy1;y++) for(let x=hx0;x<=hx1;x++) this.grid[y][x]=TILE.DOT;
+      [{x:13,y:12},{x:14,y:12},{x:13,y:18},{x:14,y:18},{x:9,y:15},{x:9,y:16},{x:18,y:15},{x:18,y:16}].forEach(p=>{ this.grid[p.y][p.x]=TILE.DOT; });
+      const ty=17; this.grid[ty][0]=TILE.EMPTY; this.grid[ty][27]=TILE.EMPTY; if(this.grid[ty][1]===TILE.WALL) this.grid[ty][1]=TILE.DOT; if(this.grid[ty][26]===TILE.WALL) this.grid[ty][26]=TILE.DOT;
 
       this.dotCount=0;
       for(let y=0;y<this.h;y++) for(let x=0;x<this.w;x++){
@@ -186,6 +204,13 @@
   class Entity {
     constructor(x,y,s){ this.x=x; this.y=y; this.dir=DIRS.left; this.speed=s; }
     centerOfTile(){ return {cx:Math.floor(this.x)+0.5, cy:Math.floor(this.y)+0.5}; }
+    canMove(maze,dir){
+      const nx=this.x+dir.x*0.51, ny=this.y+dir.y*0.51;
+      const tx=Math.floor(nx+(dir.x>0?0.5:dir.x<0?-0.5:0));
+      const ty=Math.floor(ny+(dir.y>0?0.5:dir.y<0?-0.5:0));
+      if(!maze.isInside(tx,ty)) return true; // allow wrap
+      return !maze.isWall(tx,ty);
+    }
   }
 
   class Pacman extends Entity {
@@ -195,16 +220,9 @@
       const {cx,cy}=this.centerOfTile();
       const nearC=Math.abs(this.x-cx)<0.22 && Math.abs(this.y-cy)<0.22;
 
-      const canGo=(d)=>{
-        const nx=this.x+d.x*0.51, ny=this.y+d.y*0.51;
-        const tx=Math.floor(nx+(d.x>0?0.5:d.x<0?-0.5:0));
-        const ty=Math.floor(ny+(d.y>0?0.5:d.y<0?-0.5:0));
-        return !maze.isWall(tx,ty);
-      };
+      if(desired!==this.dir && nearC && this.canMove(maze,desired)){ this.x=cx; this.y=cy; this.dir=desired; }
 
-      if(desired!==this.dir && nearC && canGo(desired)){ this.x=cx; this.y=cy; this.dir=desired; }
-
-      if(this.dir!==DIRS.none && !canGo(this.dir)){
+      if(this.dir!==DIRS.none && !this.canMove(maze,this.dir)){
         const dx=cx-this.x, dy=cy-this.y, step=this.speed*dt, len=Math.hypot(dx,dy);
         if(len>0.0001){ const ux=dx/len, uy=dy/len, mv=Math.min(step,len); this.x+=ux*mv; this.y+=uy*mv; }
         if(Math.abs(this.x-cx)<=0.01 && Math.abs(this.y-cy)<=0.01){ this.x=cx; this.y=cy; this.dir=DIRS.none; }
@@ -212,10 +230,11 @@
         this.x+=this.dir.x*this.speed*dt; this.y+=this.dir.y*this.speed*dt;
       }
 
-      if(this.dir===DIRS.none && desired && canGo(desired)){ const c2=this.centerOfTile(); this.x=c2.cx; this.y=c2.cy; this.dir=desired; }
+      if(this.dir===DIRS.none && desired && this.canMove(maze,desired)){ const c2=this.centerOfTile(); this.x=c2.cx; this.y=c2.cy; this.dir=desired; }
 
-      if(this.x<-0.5) this.x=maze.w-0.5;
-      if(this.x>maze.w+0.5) this.x=-0.5;
+      // wrap tunnel
+      if(this.x<-0.5){ this.x=maze.w-0.5; }
+      if(this.x>maze.w+0.5){ this.x=-0.5; }
 
       this.mouth+=dt*10;
     }
@@ -232,24 +251,18 @@
   }
 
   class Ghost extends Entity {
-    constructor(x,y,color,name){ super(x,y,5.0); this.color=color; this.name=name; this.mode='scatter'; }
-    canMove(maze,dir){
-      const nx=this.x+dir.x*0.51, ny=this.y+dir.y*0.51;
-      const tx=Math.floor(nx+(dir.x>0?0.5:dir.x<0?-0.5:0));
-      const ty=Math.floor(ny+(dir.y>0?0.5:dir.y<0?-0.5:0));
-      if(!maze.isInside(tx,ty)) return true;
-      return !maze.isWall(tx,ty);
-    }
+    constructor(x,y,color,name){ super(x,y,5.0); this.color=color; this.name=name; }
     update(dt,maze){
       const {cx,cy}=this.centerOfTile();
       const nearC=Math.abs(this.x-cx)<0.22 && Math.abs(this.y-cy)<0.22;
       if(nearC){ this.x=cx; this.y=cy; }
 
       const forwardBlocked=this.dir!==DIRS.none && !this.canMove(maze,this.dir);
+
       if(this.dir===DIRS.none || nearC || forwardBlocked){
         const legal=[DIRS.up,DIRS.left,DIRS.down,DIRS.right].filter(d=>{
           const rev=this.dir && d.x===-this.dir.x && d.y===-this.dir.y;
-          if(rev && !forwardBlocked) return false;
+          if(rev && !forwardBlocked) return false; // prefer not to reverse unless stuck
           return this.canMove(maze,d);
         });
         this.dir = legal.length ? legal[randInt(legal.length)] : DIRS.none;
@@ -284,7 +297,7 @@
       const pSpawn=nearestOpenTileCenter(this.maze,13.5,23);
       this.pacman=new Pacman(pSpawn.x,pSpawn.y);
 
-      // 2×2 ghost block inside the now-open house
+      // 2×2 block, different initial directions so they start moving
       const homes=[
         {x:13.5,y:15.5,color:'#ff3b3b',name:'blinky',dir:DIRS.left},
         {x:14.5,y:15.5,color:'#ff9be1',name:'pinky', dir:DIRS.right},
@@ -348,16 +361,13 @@
       if(Math.abs(this.pacman.x-c.cx)<0.3 && Math.abs(this.pacman.y-c.cy)<0.3){
         const eaten=this.maze.eatAt(Math.floor(c.cx),Math.floor(c.cy));
         if(eaten==='dot'){ this.addScore(10); this.sound.dot(); }
-        else if(eaten==='power'){ this.addScore(50); this.sound.power(); this.ghosts.forEach(g=>g.mode='frightened'); }
+        else if(eaten==='power'){ this.addScore(50); this.sound.power(); }
       }
 
       for(const g of this.ghosts) g.update(dt,this.maze);
 
       for(const g of this.ghosts){
-        if(dist2(g.x,g.y,this.pacman.x,this.pacman.y)<0.35){
-          if(g.mode==='frightened'){ this.addScore(200); g.mode='scatter'; this.sound.eatGhost(); }
-          else { this.loseLife(); break; }
-        }
+        if(dist2(g.x,g.y,this.pacman.x,this.pacman.y)<0.35){ this.loseLife(); break; }
       }
 
       if(this.maze.dotCount<=0){ this.level++; this.maze.resetDots(); this.resetPositions(); }

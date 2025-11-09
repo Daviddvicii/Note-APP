@@ -219,14 +219,16 @@
       }
 
       .touch-controls {
-        position: fixed;
-        right: clamp(0.9rem, 3vw, 1.8rem);
-        bottom: clamp(1.2rem, 5vw, 3rem);
-        display: none;
-        flex-direction: column;
-        gap: clamp(0.8rem, 2vw, 1.5rem);
-        pointer-events: none;
-        z-index: 10;
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: clamp(1.2rem, 5vw, 3rem);
+  display: none;
+  flex-direction: row;                         /* row instead of column   */
+  justify-content: space-between;             /* P1 left, P2 right       */
+  padding: 0 clamp(0.9rem, 3vw, 1.8rem);      /* same side padding       */
+  pointer-events: none;
+  z-index: 10;
       }
 
       .control-group {

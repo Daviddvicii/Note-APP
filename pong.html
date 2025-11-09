@@ -1,0 +1,281 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+    <meta name="theme-color" content="#000000" />
+    <title>Pong</title>
+    <link rel="stylesheet" href="./styles.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" />
+    <style>
+      :root {
+        --accent: #7fffd4;
+        --accent-soft: rgba(127, 255, 212, 0.65);
+        --bg: #000;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: var(--bg);
+        color: var(--accent);
+        font-family: 'Press Start 2P', system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, sans-serif;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start;
+        padding: clamp(12px, 2vw, 24px);
+      }
+
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+
+      .back-link {
+        align-self: flex-start;
+        padding: 8px 12px;
+        border: 2px solid var(--accent);
+        border-radius: 8px;
+        background: rgba(0, 0, 0, 0.45);
+        box-shadow: 0 0 12px rgba(127, 255, 212, 0.4);
+        margin-bottom: clamp(12px, 2vw, 16px);
+      }
+
+      .hud {
+        width: min(960px, 100%);
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
+        align-items: center;
+        gap: clamp(12px, 2vw, 24px);
+        padding: clamp(12px, 2vw, 18px);
+        border: 2px solid var(--accent);
+        border-radius: 12px;
+        background: rgba(0, 0, 0, 0.5);
+        box-shadow: 0 0 36px rgba(127, 255, 212, 0.2);
+        position: sticky;
+        top: clamp(12px, 2vw, 24px);
+        z-index: 5;
+      }
+
+      .score {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        font-size: clamp(12px, 2vw, 14px);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+
+      .score span {
+        font-size: clamp(18px, 4vw, 26px);
+        text-shadow: 0 0 12px rgba(127, 255, 212, 0.65);
+      }
+
+      .hud h1 {
+        margin: 0;
+        font-size: clamp(20px, 6vw, 32px);
+        text-shadow: 0 0 18px rgba(127, 255, 212, 0.7);
+      }
+
+      .mode-toggle {
+        margin: clamp(12px, 3vw, 24px) 0;
+        display: flex;
+        align-items: center;
+        gap: clamp(12px, 2vw, 24px);
+        background: rgba(0, 0, 0, 0.5);
+        border: 2px solid var(--accent);
+        border-radius: 10px;
+        padding: clamp(10px, 2vw, 16px) clamp(14px, 3vw, 24px);
+        font-size: clamp(12px, 2vw, 14px);
+      }
+
+      .mode-toggle label {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+      }
+
+      .mode-toggle input {
+        accent-color: var(--accent);
+        width: 18px;
+        height: 18px;
+      }
+
+      .game-shell {
+        position: relative;
+        width: min(960px, 100%);
+        aspect-ratio: 16 / 9;
+        border: 2px solid var(--accent);
+        border-radius: 14px;
+        box-shadow: 0 0 45px rgba(127, 255, 212, 0.35);
+        overflow: hidden;
+        background: radial-gradient(circle at 50% 50%, rgba(127, 255, 212, 0.08) 0%, transparent 60%);
+      }
+
+      canvas {
+        width: 100%;
+        height: 100%;
+        display: block;
+        background: #000;
+      }
+
+      .overlay {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        background: rgba(0, 0, 0, 0.72);
+        color: var(--accent);
+        gap: 12px;
+        padding: 24px;
+        font-size: clamp(14px, 3vw, 18px);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s ease;
+      }
+
+      .overlay.visible {
+        opacity: 1;
+        pointer-events: auto;
+        cursor: pointer;
+      }
+
+      .overlay small {
+        font-size: clamp(12px, 2vw, 14px);
+        opacity: 0.8;
+      }
+
+      .touch-controls {
+        position: fixed;
+        right: clamp(12px, 3vw, 24px);
+        bottom: clamp(12px, 3vw, 24px);
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        pointer-events: none;
+      }
+
+      .control-pad {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        background: rgba(0, 0, 0, 0.45);
+        border: 2px solid var(--accent);
+        border-radius: 12px;
+        padding: 10px;
+        pointer-events: auto;
+        box-shadow: 0 0 18px rgba(127, 255, 212, 0.2);
+      }
+
+      .control-pad h2 {
+        margin: 0;
+        font-size: 12px;
+        letter-spacing: 0.08em;
+        text-align: center;
+      }
+
+      .control-buttons {
+        display: grid;
+        gap: 8px;
+      }
+
+      .control-btn {
+        border: 2px solid var(--accent);
+        border-radius: 8px;
+        background: rgba(0, 0, 0, 0.7);
+        color: var(--accent);
+        font-size: 18px;
+        padding: 10px 16px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        transition: transform 0.15s ease, background 0.15s ease;
+        touch-action: none;
+      }
+
+      .control-btn:active {
+        background: var(--accent-soft);
+        color: #001b2e;
+        transform: translateY(2px);
+      }
+
+      @media (pointer: fine) and (min-width: 640px) {
+        .touch-controls {
+          display: none;
+        }
+      }
+
+      @media (max-width: 640px) {
+        body {
+          padding: 16px 12px 120px;
+        }
+
+        .hud {
+          position: static;
+          width: 100%;
+        }
+
+        .hud h1 {
+          font-size: clamp(18px, 6vw, 24px);
+        }
+
+        .mode-toggle {
+          width: 100%;
+          justify-content: center;
+        }
+
+        .game-shell {
+          width: 100%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <a class="back-link" href="./index.html" aria-label="Back to hub">← Back</a>
+
+    <header class="hud" role="banner" aria-live="polite">
+      <div class="score" aria-label="Player 1 score">
+        <span id="score-left">0</span>
+        <small>Player 1</small>
+      </div>
+      <h1>Pong</h1>
+      <div class="score" aria-label="Player 2 score">
+        <span id="score-right">0</span>
+        <small id="right-label">CPU</small>
+      </div>
+    </header>
+
+    <section class="mode-toggle" role="radiogroup" aria-label="Game mode">
+      <label>
+        <input type="radio" name="mode" value="single" checked />
+        1 Player
+      </label>
+      <label>
+        <input type="radio" name="mode" value="dual" />
+        2 Players
+      </label>
+    </section>
+
+    <main class="game-shell" role="main">
+      <canvas id="pong-canvas" width="800" height="450" aria-label="Pong game canvas"></canvas>
+      <div id="overlay" class="overlay">
+        <strong>Press Space or Tap to Start</strong>
+        <small>Use W/S or ↑/↓ to move · R to reset</small>
+      </div>
+    </main>
+
+    <aside class="touch-controls" id="touch-controls" aria-label="Touch controls"></aside>
+
+    <script src="./pong.js?v=1"></script>
+  </body>
+</html>

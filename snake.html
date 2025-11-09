@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Snake</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --accent: #7fffd4;
+        --bg: #000000;
+        --hud-height: 64px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: var(--bg);
+        color: var(--accent);
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start;
+      }
+
+      a.back-button {
+        position: fixed;
+        top: 16px;
+        left: 16px;
+        color: var(--accent);
+        text-decoration: none;
+        font-weight: 600;
+        padding: 6px 10px;
+        border: 2px solid transparent;
+        border-radius: 999px;
+        background: rgba(127, 255, 212, 0.12);
+        box-shadow: 0 0 10px rgba(127, 255, 212, 0.6);
+        transition: background 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      a.back-button:hover,
+      a.back-button:focus-visible {
+        background: rgba(127, 255, 212, 0.2);
+        box-shadow: 0 0 18px rgba(127, 255, 212, 0.8);
+      }
+
+      header.hud {
+        width: 100%;
+        max-width: 960px;
+        display: flex;
+        justify-content: center;
+        gap: 48px;
+        padding: 16px 0;
+        margin-top: 32px;
+        font-size: 1.1rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      header.hud span.value {
+        display: inline-block;
+        min-width: 72px;
+        text-align: center;
+        font-weight: 700;
+      }
+
+      main.game-wrapper {
+        position: relative;
+        width: 100%;
+        max-width: 960px;
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 16px;
+      }
+
+      canvas#game-canvas {
+        width: min(90vmin, 640px);
+        height: min(90vmin, 640px);
+        border: 2px solid var(--accent);
+        background: rgba(127, 255, 212, 0.08);
+        box-shadow: 0 0 25px rgba(127, 255, 212, 0.4);
+        border-radius: 12px;
+      }
+
+      .overlay {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: rgba(0, 0, 0, 0.8);
+        color: var(--accent);
+        font-size: clamp(1.5rem, 4vw, 2.5rem);
+        letter-spacing: 0.05em;
+        text-align: center;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s ease;
+      }
+
+      .overlay.visible {
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      .overlay small {
+        margin-top: 16px;
+        font-size: clamp(1rem, 2.5vw, 1.4rem);
+      }
+
+      .dpad {
+        margin: 32px 0 24px;
+        display: grid;
+        grid-template-columns: repeat(3, 60px);
+        grid-template-rows: repeat(3, 60px);
+        gap: 12px;
+        justify-items: center;
+        align-items: center;
+      }
+
+      .dpad button {
+        width: 60px;
+        height: 60px;
+        border-radius: 12px;
+        border: 2px solid var(--accent);
+        background: rgba(127, 255, 212, 0.08);
+        color: var(--accent);
+        font-size: 1.5rem;
+        cursor: pointer;
+        transition: background 0.2s ease, transform 0.1s ease;
+      }
+
+      .dpad button:active {
+        background: rgba(127, 255, 212, 0.25);
+        transform: scale(0.95);
+      }
+
+      .dpad button[data-direction="up"] {
+        grid-column: 2;
+        grid-row: 1;
+      }
+
+      .dpad button[data-direction="left"] {
+        grid-column: 1;
+        grid-row: 2;
+      }
+
+      .dpad button[data-direction="down"] {
+        grid-column: 2;
+        grid-row: 3;
+      }
+
+      .dpad button[data-direction="right"] {
+        grid-column: 3;
+        grid-row: 2;
+      }
+
+      @media (min-width: 768px) {
+        .dpad {
+          display: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <a class="back-button" href="./index.html" aria-label="Back to menu">← Back</a>
+    <header class="hud" role="status" aria-live="polite">
+      <div>
+        Score:
+        <span id="score" class="value">0</span>
+      </div>
+      <div>
+        Best:
+        <span id="best-score" class="value">0</span>
+      </div>
+    </header>
+
+    <main class="game-wrapper">
+      <canvas id="game-canvas" width="640" height="640"></canvas>
+      <div id="overlay" class="overlay" role="alert" aria-live="assertive">
+        <div>Game Over — Tap or Space to Restart</div>
+      </div>
+    </main>
+
+    <div class="dpad" aria-label="Directional pad">
+      <button type="button" data-direction="up" aria-label="Move up">⬆️</button>
+      <button type="button" data-direction="left" aria-label="Move left">⬅️</button>
+      <button type="button" data-direction="down" aria-label="Move down">⬇️</button>
+      <button type="button" data-direction="right" aria-label="Move right">➡️</button>
+    </div>
+
+    <script src="./snake.js?v=1"></script>
+  </body>
+</html>

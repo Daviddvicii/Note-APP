@@ -1,0 +1,351 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+    <meta name="theme-color" content="#000000" />
+    <title>Pong</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" />
+    <style>
+      :root {
+        --bg: #000000;
+        --primary: #39ff14;
+        --secondary: #35d0a6;
+        --overlay-bg: rgba(0, 0, 0, 0.72);
+        --header-bg: rgba(0, 0, 0, 0.6);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: var(--bg);
+        color: var(--primary);
+        font-family: "Press Start 2P", system-ui, -apple-system, "Segoe UI", sans-serif;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+
+      header {
+        position: sticky;
+        top: 0;
+        width: min(960px, 100%);
+        display: grid;
+        grid-template-columns: max-content 1fr max-content;
+        align-items: center;
+        padding: clamp(0.6rem, 1vw + 0.3rem, 1rem) clamp(0.9rem, 2vw, 1.6rem);
+        gap: 1rem;
+        background: var(--header-bg);
+        backdrop-filter: blur(6px);
+        z-index: 5;
+      }
+
+      .back-button {
+        padding: 0.45rem 0.9rem;
+        border: 2px solid var(--primary);
+        border-radius: 999px;
+        background: rgba(57, 255, 20, 0.1);
+        font-size: clamp(0.65rem, 0.4vw + 0.65rem, 0.85rem);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+      }
+
+      .back-button:hover,
+      .back-button:focus-visible {
+        background: var(--primary);
+        color: #00100a;
+        border-color: var(--secondary);
+      }
+
+      .title {
+        justify-self: center;
+        font-size: clamp(1rem, 2vw + 0.6rem, 1.6rem);
+        letter-spacing: 0.1em;
+        text-shadow: 0 0 12px rgba(57, 255, 20, 0.7);
+      }
+
+      .scoreboard {
+        display: flex;
+        gap: clamp(0.5rem, 1.5vw, 1.5rem);
+        font-size: clamp(0.7rem, 0.9vw + 0.46rem, 0.95rem);
+        letter-spacing: 0.08em;
+      }
+
+      .scoreboard span {
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+      }
+
+      main {
+        flex: 1;
+        width: min(960px, 100%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: clamp(1rem, 3vw, 2rem) clamp(0.85rem, 3vw, 2rem) clamp(2.4rem, 6vw, 3.5rem);
+        gap: clamp(1.2rem, 4vw, 2rem);
+      }
+
+      .mode-selector {
+        display: flex;
+        justify-content: center;
+        padding: 0.65rem 1rem;
+        border: 2px solid rgba(57, 255, 20, 0.35);
+        border-radius: 999px;
+        background: rgba(57, 255, 20, 0.08);
+        font-size: clamp(0.65rem, 0.45vw + 0.6rem, 0.9rem);
+      }
+
+      .mode-selector fieldset {
+        border: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: clamp(0.85rem, 3vw, 2rem);
+      }
+
+      .mode-selector legend {
+        margin: 0;
+        padding: 0;
+        font-size: clamp(0.6rem, 0.4vw + 0.55rem, 0.85rem);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+
+      .mode-selector label {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        cursor: pointer;
+      }
+
+      .mode-selector input[type="radio"] {
+        appearance: none;
+        width: 16px;
+        height: 16px;
+        border: 2px solid var(--primary);
+        border-radius: 50%;
+        position: relative;
+        display: grid;
+        place-items: center;
+        background: transparent;
+      }
+
+      .mode-selector input[type="radio"]::after {
+        content: "";
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--secondary);
+        opacity: 0;
+        transform: scale(0.4);
+        transition: opacity 0.2s ease, transform 0.2s ease;
+      }
+
+      .mode-selector input[type="radio"]:checked::after {
+        opacity: 1;
+        transform: scale(1);
+      }
+
+      .game-shell {
+        position: relative;
+        width: 100%;
+        aspect-ratio: 16 / 9;
+        max-width: 940px;
+        border: 2px solid rgba(57, 255, 20, 0.4);
+        border-radius: clamp(12px, 2vw, 20px);
+        background: radial-gradient(circle at center, rgba(57, 255, 20, 0.08), rgba(0, 0, 0, 0.95));
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      canvas {
+        width: 100%;
+        height: 100%;
+        image-rendering: pixelated;
+        display: block;
+      }
+
+      .overlay {
+        position: absolute;
+        inset: clamp(1.2rem, 3vw, 2rem);
+        background: var(--overlay-bg);
+        border: 2px solid rgba(57, 255, 20, 0.45);
+        border-radius: clamp(10px, 2vw, 16px);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: clamp(1.5rem, 4vw, 3rem);
+        font-size: clamp(0.7rem, 0.6vw + 0.65rem, 1rem);
+        letter-spacing: 0.08em;
+        line-height: 1.6;
+        color: var(--primary);
+        text-shadow: 0 0 12px rgba(53, 208, 166, 0.6);
+        opacity: 0;
+        pointer-events: none;
+        transform: scale(0.96);
+        transition: opacity 0.2s ease, transform 0.24s ease;
+      }
+
+      .overlay.visible {
+        opacity: 1;
+        pointer-events: auto;
+        cursor: pointer;
+        transform: scale(1);
+      }
+
+      .overlay span {
+        display: block;
+        margin-top: 0.8rem;
+        font-size: clamp(0.6rem, 0.4vw + 0.55rem, 0.85rem);
+        opacity: 0.75;
+      }
+
+      .touch-controls {
+        position: fixed;
+        right: clamp(0.9rem, 3vw, 1.8rem);
+        bottom: clamp(1.2rem, 5vw, 3rem);
+        display: none;
+        flex-direction: column;
+        gap: clamp(0.8rem, 2vw, 1.5rem);
+        pointer-events: none;
+        z-index: 10;
+      }
+
+      .control-group {
+        pointer-events: auto;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.65rem 0.7rem;
+        border: 2px solid rgba(57, 255, 20, 0.4);
+        border-radius: 12px;
+        background: rgba(0, 0, 0, 0.55);
+        backdrop-filter: blur(6px);
+      }
+
+      .control-group.hidden {
+        display: none;
+      }
+
+      .control-label {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        opacity: 0.75;
+      }
+
+      .touch-btn {
+        width: clamp(58px, 12vw, 76px);
+        height: clamp(58px, 12vw, 76px);
+        border-radius: 12px;
+        border: 2px solid rgba(57, 255, 20, 0.6);
+        background: rgba(57, 255, 20, 0.12);
+        color: var(--primary);
+        font-size: clamp(1.4rem, 6vw, 2rem);
+        display: grid;
+        place-items: center;
+        box-shadow: 0 0 16px rgba(57, 255, 20, 0.4);
+        user-select: none;
+        touch-action: none;
+      }
+
+      .touch-btn:active {
+        background: rgba(57, 255, 20, 0.26);
+      }
+
+      footer {
+        width: min(960px, 100%);
+        padding: clamp(0.8rem, 2vw, 1.2rem);
+        text-align: center;
+        font-size: clamp(0.55rem, 0.4vw + 0.5rem, 0.75rem);
+        opacity: 0.65;
+        letter-spacing: 0.05em;
+      }
+
+      @media (pointer: coarse), (max-width: 768px) {
+        .touch-controls {
+          display: flex;
+        }
+
+        header {
+          grid-template-columns: max-content 1fr;
+          grid-template-rows: auto auto;
+        }
+
+        header .scoreboard {
+          grid-column: 1 / -1;
+          justify-self: center;
+        }
+
+        .title {
+          justify-self: start;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <a class="back-button" href="./index.html" aria-label="Back to hub">← Back</a>
+      <h1 class="title">Pong</h1>
+      <div class="scoreboard" role="status" aria-live="polite">
+        <span>P1 <strong id="score-left">0</strong></span>
+        <span><span id="right-label">CPU</span> <strong id="score-right">0</strong></span>
+      </div>
+    </header>
+    <main>
+      <form class="mode-selector" id="mode-selector" aria-label="Game mode selector">
+        <fieldset>
+          <legend>Mode</legend>
+          <label>
+            <input type="radio" name="mode" value="solo" checked />
+            1 Player
+          </label>
+          <label>
+            <input type="radio" name="mode" value="duo" />
+            2 Players
+          </label>
+        </fieldset>
+      </form>
+      <div class="game-shell">
+        <canvas id="game-canvas" width="800" height="450" aria-label="Pong game canvas"></canvas>
+        <div id="overlay" class="overlay" role="status">
+          Press Space or Tap to Start
+          <span>W/S or ↑/↓ to move · R to reset scores</span>
+        </div>
+      </div>
+    </main>
+    <div class="touch-controls" id="touch-controls" aria-hidden="true">
+      <div class="control-group" data-player="left">
+        <span class="control-label">P1</span>
+        <button type="button" class="touch-btn" data-player="left" data-direction="-1" aria-label="Player 1 move up">▲</button>
+        <button type="button" class="touch-btn" data-player="left" data-direction="1" aria-label="Player 1 move down">▼</button>
+      </div>
+      <div class="control-group hidden" data-player="right">
+        <span class="control-label">P2</span>
+        <button type="button" class="touch-btn" data-player="right" data-direction="-1" aria-label="Player 2 move up">▲</button>
+        <button type="button" class="touch-btn" data-player="right" data-direction="1" aria-label="Player 2 move down">▼</button>
+      </div>
+    </div>
+    <footer>Space to start or pause · Tap overlay to resume · First to 10 wins.</footer>
+    <script src="./pong.js?v=1"></script>
+  </body>
+</html>

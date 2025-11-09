@@ -192,47 +192,63 @@
   }
 
   function handleCollisions() {
-    const ball = state.ball;
-    const half = config.ballSize / 2;
+  const ball = state.ball;
+  const half = config.ballSize / 2;
 
-    // Top & bottom walls
-    if (ball.y - half <= 0 && ball.vy < 0) {
-      ball.y = half;
-      ball.vy *= -1;
-    } else if (ball.y + half >= config.canvasHeight && ball.vy > 0) {
-      ball.y = config.canvasHeight - half;
-      ball.vy *= -1;
+  // Top & bottom walls
+  if (ball.y - half <= 0 && ball.vy < 0) {
+    ball.y = half;
+    ball.vy *= -1;
+  } else if (ball.y + half >= config.canvasHeight && ball.vy > 0) {
+    ball.y = config.canvasHeight - half;
+    ball.vy *= -1;
+  }
+
+  const paddles = [
+    { side: "left", paddle: state.paddles.left, normal: 1 },
+    { side: "right", paddle: state.paddles.right, normal: -1 },
+  ];
+
+  for (const { side, paddle, normal } of paddles) {
+    const withinX =
+      side === "left"
+        ? ball.x - half <= paddle.x + config.paddleWidth && ball.x + half >= paddle.x
+        : ball.x + half >= paddle.x && ball.x - half <= paddle.x + config.paddleWidth;
+
+    const withinY =
+      ball.y + half >= paddle.y &&
+      ball.y - half <= paddle.y + config.paddleHeight;
+
+    // Only bounce if ball is moving *towards* this paddle
+    if (withinX && withinY && ball.vx * normal < 0) {
+      const paddleCenter = paddle.y + config.paddleHeight / 2;
+      const relativeIntersect = ball.y - paddleCenter;
+      const normalized = relativeIntersect / (config.paddleHeight / 2);
+      const bounceAngle = normalized * config.maxBounceAngle;
+
+      const speed = Math.hypot(ball.vx, ball.vy) || config.baseBallSpeed;
+
+      // ✅ Use `normal` (not `-normal`) so it bounces back correctly
+      ball.vx = speed * Math.cos(bounceAngle) * normal;
+      ball.vy = speed * Math.sin(bounceAngle);
+
+      // Move ball just outside the paddle so it doesn't stick
+      ball.x = side === "left"
+        ? paddle.x + config.paddleWidth + half
+        : paddle.x - half;
+
+      // Slight speed-up after each hit
+      const factor = 1.015;
+      const newSpeed = Math.min(
+        Math.hypot(ball.vx, ball.vy) * factor,
+        config.baseBallSpeed * 1.45
+      );
+      const currentAngle = Math.atan2(ball.vy, ball.vx);
+      ball.vx = Math.cos(currentAngle) * newSpeed;
+      ball.vy = Math.sin(currentAngle) * newSpeed;
     }
-
-    const paddles = [
-      { side: "left", paddle: state.paddles.left, normal: 1 },
-      { side: "right", paddle: state.paddles.right, normal: -1 },
-    ];
-
-    for (const { side, paddle, normal } of paddles) {
-      const withinX =
-        side === "left"
-          ? ball.x - half <= paddle.x + config.paddleWidth && ball.x + half >= paddle.x
-          : ball.x + half >= paddle.x && ball.x - half <= paddle.x + config.paddleWidth;
-      const withinY = ball.y + half >= paddle.y && ball.y - half <= paddle.y + config.paddleHeight;
-
-      if (withinX && withinY && ball.vx * normal < 0) {
-        const paddleCenter = paddle.y + config.paddleHeight / 2;
-        const relativeIntersect = ball.y - paddleCenter;
-        const normalized = relativeIntersect / (config.paddleHeight / 2);
-        const bounceAngle = normalized * config.maxBounceAngle;
-        const speed = Math.hypot(ball.vx, ball.vy);
-        ball.vx = speed * Math.cos(bounceAngle) * -normal;
-        ball.vy = speed * Math.sin(bounceAngle);
-        ball.x = side === "left" ? paddle.x + config.paddleWidth + half : paddle.x - half;
-
-        // Nudge speed slightly to keep pace increasing
-        const factor = 1.015;
-        const newSpeed = Math.min(Math.hypot(ball.vx, ball.vy) * factor, config.baseBallSpeed * 1.45);
-        const currentAngle = Math.atan2(ball.vy, ball.vx);
-        ball.vx = Math.cos(currentAngle) * newSpeed;
-        ball.vy = Math.sin(currentAngle) * newSpeed;
-      }
+  }
+}
     }
   }
 

@@ -249,9 +249,6 @@
     }
   }
 }
-    }
-  }
-
   function awardPoint(side) {
     if (side === "left") {
       state.scores.left += 1;

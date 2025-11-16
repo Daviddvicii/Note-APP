@@ -1,161 +1,73 @@
 (() => {
   const canvas = document.getElementById("game-canvas");
+  if (!canvas) return;
+
+  const ctx = canvas.getContext("2d");
+
+  // Match your HTML IDs
   const overlay = document.getElementById("overlay");
   const scoreEl = document.getElementById("score");
   const livesEl = document.getElementById("lives");
   const levelEl = document.getElementById("level");
   const touchControls = document.getElementById("touch-controls");
   const touchButtons = touchControls?.querySelectorAll(".touch-btn");
-  const coarseMediaQuery = window.matchMedia ? window.matchMedia("(pointer: coarse)") : null;
-
-  const defaultHint = "←/→ or A/D to move · Space to launch/pause · R to restart";
-  const palette = ["#39ff14", "#35d0a6", "#1ad4ff", "#b943ff", "#ff6ad5", "#ffb347", "#ffaa00"];
-  const touchButtons = touchControls?.querySelectorAll(".touch-btn") || null;
-  const coarseMediaQuery =
-    typeof window !== "undefined" && "matchMedia" in window ? window.matchMedia("(pointer: coarse)") : null;
-
-  if (!canvas) {
-    return;
-  }
-
-  const ctx = canvas.getContext("2d");
-  const overlayHint = "←/→ or A/D to move · Space to launch/pause · R to restart";
 
   const config = {
-    canvasWidth: canvas.width,
-    canvasHeight: canvas.height,
-    paddleWidth: 110,
+    width: canvas.width,
+    height: canvas.height,
+    paddleWidth: 90,
     paddleHeight: 16,
     paddleSpeed: 420,
-    paddleMarginBottom: 40,
-    paddlePadding: 24,
-    ballSize: 10,
-    baseBallSpeed: 360,
-    ballSpeedIncrement: 1.018,
-    maxBallSpeed: 760,
-    maxBounceAngle: Math.PI / 2.35,
-    brick: {
-      cols: 10,
-      baseRows: 5,
-      maxRows: 8,
-      gap: 6,
-      marginX: 28,
-      topOffset: 70,
-      height: 22,
-    },
-  };
-
-  const paddleY = config.canvasHeight - config.paddleMarginBottom - config.paddleHeight;
-
-  const state = {
-    paddleX: (config.canvasWidth - config.paddleWidth) / 2,
-    paddleY,
-    ballX: config.canvasWidth / 2,
-    ballY: paddleY - config.ballSize,
-    ballVX: 0,
-    ballVY: 0,
-    bricks: [],
-    bricksAlive: 0,
-    score: 0,
+    ballRadius: 7,
+    baseBallSpeed: 320,
+    maxBallSpeed: 520,
+    brickRows: 5,
+    brickCols: 9,
+    brickGap: 4,
+    topOffset: 40,
+    sidePadding: 20,
     lives: 3,
-    level: 1,
-    ballSpeed: config.baseBallSpeed,
-  };
-
-  const keyState = { left: false, right: false };
-  let pointerDirection = 0;
-  let moveDirection = 0;
-  let phase = "idle"; // idle | running | paused | over | between-levels
-  let ballAttachedToPaddle = true;
-  let lastFrameTime = performance.now();
-
-  function updateHUD() {
-    minPaddleWidth: 80,
-    paddleHeight: 16,
-    paddleBottomMargin: 40,
-    paddleSpeed: 420,
-    ballSize: 10,
-    baseBallSpeed: 360,
-    maxBallSpeed: 720,
-    maxBounceAngle: Math.PI / 3,
-    brick: {
-      cols: 10,
-      baseRows: 5,
-      height: 24,
-      gap: 8,
-      offsetTop: 70,
-      offsetSide: 28,
-    },
   };
 
   const state = {
     paddleX: 0,
-    paddleWidth: config.paddleWidth,
-    paddleY: config.canvasHeight - config.paddleBottomMargin - config.paddleHeight,
     ballX: 0,
     ballY: 0,
     ballVX: 0,
     ballVY: 0,
-    ballAttachedToPaddle: true,
     bricks: [],
     score: 0,
-    lives: 3,
+    lives: config.lives,
     level: 1,
-    phase: "idle", // idle | running | paused | over | between-levels
+    phase: "idle", // idle | running | paused | over
+    moveDir: 0,     // keyboard: -1 left, 1 right
+    pointerDir: 0,  // touch buttons
   };
 
-  const inputState = {
-    keyLeft: false,
-    keyRight: false,
-    pointerDirection: 0,
-  };
-  const activePointerDirections = new Map();
+  let lastTime = performance.now();
 
-  let lastFrameTime = performance.now();
-
-  function paddleWidthForLevel(level) {
-    return Math.max(config.paddleWidth - (level - 1) * 4, config.minPaddleWidth);
-  }
-
-  function levelSpeedBoost(level) {
-    return 1 + Math.min(level - 1, 8) * 0.08;
-  }
-
-  function baseBallSpeedForLevel(level) {
-    return config.baseBallSpeed * levelSpeedBoost(level);
-  }
-
-  function maxBallSpeedForLevel(level) {
-    return config.maxBallSpeed * levelSpeedBoost(level);
-  }
+  // -------- HUD / overlay --------
 
   function updateHud() {
-    if (scoreEl) scoreEl.textContent = state.score.toString();
-    if (livesEl) livesEl.textContent = state.lives.toString();
-    if (levelEl) levelEl.textContent = state.level.toString();
+    if (scoreEl) scoreEl.textContent = state.score;
+    if (livesEl) livesEl.textContent = state.lives;
+    if (levelEl) levelEl.textContent = state.level;
   }
 
-  function showOverlay(message, hint = defaultHint) {
+  function showOverlay(msg, sub) {
     if (!overlay) return;
     overlay.replaceChildren();
-    const main = document.createElement("div");
-    main.textContent = message;
-    overlay.appendChild(main);
-    if (hint) {
+
+    const p = document.createElement("p");
+    p.textContent = msg;
+    overlay.appendChild(p);
+
+    if (sub) {
       const span = document.createElement("span");
-      span.textContent = hint;
+      span.textContent = sub;
       overlay.appendChild(span);
-  function showOverlay(message, hint = overlayHint) {
-    if (!overlay) return;
-    overlay.replaceChildren();
-    const mainLine = document.createElement("p");
-    mainLine.textContent = message;
-    overlay.appendChild(mainLine);
-    if (hint) {
-      const hintLine = document.createElement("span");
-      hintLine.textContent = hint;
-      overlay.appendChild(hintLine);
     }
+
     overlay.classList.add("visible");
     overlay.setAttribute("aria-hidden", "false");
   }
@@ -166,816 +78,346 @@
     overlay.setAttribute("aria-hidden", "true");
   }
 
-  function resetMoveInput() {
-    keyState.left = false;
-    keyState.right = false;
-    pointerDirection = 0;
-    recalcMoveDirection();
-  }
+  // -------- Level + bricks --------
 
-  function recalcMoveDirection() {
-    const keyDir = (keyState.left ? -1 : 0) + (keyState.right ? 1 : 0);
-    if (keyDir !== 0) {
-      moveDirection = keyDir < 0 ? -1 : 1;
-    } else {
-      moveDirection = pointerDirection;
-    }
-  }
-
-  function clampPaddle() {
-    const min = config.paddlePadding;
-    const max = config.canvasWidth - config.paddleWidth - config.paddlePadding;
-    if (state.paddleX < min) state.paddleX = min;
-    if (state.paddleX > max) state.paddleX = max;
-  }
-
-  function alignBallWithPaddle() {
-    state.ballX = state.paddleX + config.paddleWidth / 2;
-    state.ballY = state.paddleY - config.ballSize / 2 - 4;
-  }
-
-  function resetBallOnPaddle(centerPaddle = false) {
-    if (centerPaddle) {
-      state.paddleX = (config.canvasWidth - config.paddleWidth) / 2;
-    }
-    ballAttachedToPaddle = true;
-    state.ballVX = 0;
-    state.ballVY = 0;
-    alignBallWithPaddle();
-  }
-
-  function buildLevel(level) {
-    const rows = Math.min(config.brick.baseRows + (level - 1), config.brick.maxRows);
-    const totalGap = (config.brick.cols - 1) * config.brick.gap;
-    const brickWidth =
-      (config.canvasWidth - config.brick.marginX * 2 - totalGap) / config.brick.cols;
-    const bricks = [];
-
-    for (let row = 0; row < rows; row += 1) {
-      for (let col = 0; col < config.brick.cols; col += 1) {
-        const x = config.brick.marginX + col * (brickWidth + config.brick.gap);
-        const y = config.brick.topOffset + row * (config.brick.height + config.brick.gap);
-        bricks.push({
-  function resetBallOnPaddle() {
-    state.ballAttachedToPaddle = true;
-    state.ballVX = 0;
-    state.ballVY = 0;
-    state.ballX = state.paddleX + state.paddleWidth / 2;
-    state.ballY = state.paddleY - config.ballSize / 2 - 2;
-  }
-
-  function launchBall() {
-    if (!state.ballAttachedToPaddle) return;
-    state.ballAttachedToPaddle = false;
-    const speed = baseBallSpeedForLevel(state.level);
-    const horizontal = (Math.random() * 1.2 - 0.6);
-    const vx = horizontal * speed;
-    const vyMagnitude = Math.sqrt(Math.max(speed * speed - vx * vx, 25));
-    state.ballVX = vx;
-    state.ballVY = -Math.abs(vyMagnitude);
-  }
-
-  function buildLevel(level) {
-    const rows = config.brick.baseRows + Math.min(level - 1, 5);
-    const cols = config.brick.cols;
-    const gap = config.brick.gap;
-    const offsetTop = config.brick.offsetTop;
-    const offsetSide = config.brick.offsetSide;
-    const availableWidth = config.canvasWidth - offsetSide * 2 - gap * (cols - 1);
-    const brickWidth = availableWidth / cols;
-    const colors = ["#39ff14", "#35d0a6", "#32ffd5", "#39c5ff", "#ff6fed", "#ffaa39"];
-
+  function buildBricks() {
     state.bricks = [];
-    for (let row = 0; row < rows; row += 1) {
-      for (let col = 0; col < cols; col += 1) {
-        const x = offsetSide + col * (brickWidth + gap);
-        const y = offsetTop + row * (config.brick.height + gap);
+    const brickWidth =
+      (config.width - config.sidePadding * 2 - config.brickGap * (config.brickCols - 1)) /
+      config.brickCols;
+    const brickHeight = 18;
+
+    for (let row = 0; row < config.brickRows; row++) {
+      for (let col = 0; col < config.brickCols; col++) {
+        const x = config.sidePadding + col * (brickWidth + config.brickGap);
+        const y = config.topOffset + row * (brickHeight + config.brickGap);
         state.bricks.push({
           x,
           y,
           w: brickWidth,
-          h: config.brick.height,
+          h: brickHeight,
           alive: true,
-          value: 50 + row * 10 + level * 5,
-          color: palette[(row + level) % palette.length],
+          value: (config.brickRows - row) * 10, // higher rows = more points
         });
       }
     }
-
-    state.bricks = bricks;
-    state.bricksAlive = bricks.length;
-    state.ballSpeed = config.baseBallSpeed + (level - 1) * 18;
   }
 
-  function startNewGame() {
+  function resetPaddleAndBall() {
+    state.paddleX = (config.width - config.paddleWidth) / 2;
+    state.ballX = config.width / 2;
+    state.ballY = config.height - 60;
+
+    const angle = (Math.random() * Math.PI) / 3 + Math.PI / 6; // 30°–90°
+    const speed = config.baseBallSpeed;
+    const dir = Math.random() < 0.5 ? 1 : -1;
+
+    state.ballVX = Math.cos(angle) * speed * dir;
+    state.ballVY = -Math.abs(Math.sin(angle) * speed);
+  }
+
+  function newGame() {
     state.score = 0;
-    state.lives = 3;
+    state.lives = config.lives;
     state.level = 1;
-    buildLevel(state.level);
-    resetBallOnPaddle(true);
-    resetMoveInput();
-    updateHUD();
-    phase = "idle";
-    showOverlay("Press Space or Tap to Start", defaultHint);
-  }
-
-  function launchBall() {
-    if (!ballAttachedToPaddle) return;
-    ballAttachedToPaddle = false;
-    const angle = (-Math.PI / 4) + Math.random() * (Math.PI / 6);
-    const speed = state.ballSpeed;
-    state.ballVX = Math.sin(angle) * speed;
-    state.ballVY = -Math.cos(angle) * speed;
-  }
-
-  function beginLevel() {
-    if (phase === "over") {
-      startNewGame();
-      return;
-    }
-    if (phase === "running") return;
-    hideOverlay();
-    phase = "running";
-    lastFrameTime = performance.now();
-    launchBall();
-  }
-
-  function pauseGame(message = "Paused — Press Space or Tap to Resume") {
-    if (phase !== "running") return;
-    phase = "paused";
-    showOverlay(message, defaultHint);
-  }
-
-  function resumeGame() {
-    if (phase !== "paused") return;
-    hideOverlay();
-    phase = "running";
-    lastFrameTime = performance.now();
-  }
-
-  function loseLife() {
-    state.lives -= 1;
-    updateHUD();
-    if (state.lives <= 0) {
-      phase = "over";
-      resetBallOnPaddle(true);
-      resetMoveInput();
-      showOverlay("Game Over — Press Space to Restart", defaultHint);
-      return;
-    }
-    phase = "idle";
-    resetBallOnPaddle();
-    resetMoveInput();
-    showOverlay("Life lost — Press Space to continue", defaultHint);
-  }
-
-  function advanceLevel() {
-    state.level += 1;
-    buildLevel(state.level);
-    resetBallOnPaddle();
-    resetMoveInput();
-    updateHUD();
-    phase = "between-levels";
-    showOverlay(`Level ${state.level} — Press Space to Start`, defaultHint);
-  }
-
-  function handleSpacePress() {
-    if (phase === "running") {
-      pauseGame();
-    } else if (phase === "paused") {
-      resumeGame();
-    } else if (phase === "idle" || phase === "between-levels") {
-      beginLevel();
-    } else if (phase === "over") {
-      startNewGame();
-    }
-  }
-
-  function speedUpBall(factor = config.ballSpeedIncrement) {
-    const speed = Math.hypot(state.ballVX, state.ballVY);
-    if (speed === 0) return;
-    const newSpeed = Math.min(speed * factor, config.maxBallSpeed);
-    const angle = Math.atan2(state.ballVY, state.ballVX);
-    state.ballVX = Math.cos(angle) * newSpeed;
-    state.ballVY = Math.sin(angle) * newSpeed;
-  }
-
-  function handleWallCollisions() {
-    if (ballAttachedToPaddle) return;
-    const half = config.ballSize / 2;
-
-          value: 50 + (rows - row) * 5 + level * 10,
-          color: colors[row % colors.length],
-        });
-      }
-    }
-  }
-
-  function increaseBallSpeed(factor = 1.02) {
-    const currentSpeed = Math.hypot(state.ballVX, state.ballVY);
-    const desiredSpeed = Math.min(currentSpeed * factor, maxBallSpeedForLevel(state.level));
-    if (desiredSpeed <= 0) return;
-    const angle = Math.atan2(state.ballVY, state.ballVX);
-    state.ballVX = Math.cos(angle) * desiredSpeed;
-    state.ballVY = Math.sin(angle) * desiredSpeed;
-  }
-
-  function keepBallAttached() {
-    if (!state.ballAttachedToPaddle) return;
-    state.ballX = state.paddleX + state.paddleWidth / 2;
-    state.ballY = state.paddleY - config.ballSize / 2 - 2;
-  }
-
-  function movePaddle(direction, delta) {
-    if (!direction) return;
-    state.paddleX += direction * config.paddleSpeed * delta;
-    const maxX = config.canvasWidth - state.paddleWidth;
-    if (state.paddleX < 0) state.paddleX = 0;
-    if (state.paddleX > maxX) state.paddleX = maxX;
-  }
-
-  function handleWallCollisions() {
-    const half = config.ballSize / 2;
-    if (state.ballX - half <= 0 && state.ballVX < 0) {
-      state.ballX = half;
-      state.ballVX *= -1;
-    } else if (state.ballX + half >= config.canvasWidth && state.ballVX > 0) {
-      state.ballX = config.canvasWidth - half;
-      state.ballVX *= -1;
-    }
-
-    if (state.ballY - half <= 0 && state.ballVY < 0) {
-      state.ballY = half;
-      state.ballVY *= -1;
-    } else if (state.ballY - half > config.canvasHeight) {
-      loseLife();
-    }
-  }
-
-  function handlePaddleCollision() {
-    if (ballAttachedToPaddle || state.ballVY <= 0) return;
-    const half = config.ballSize / 2;
-    const paddleTop = state.paddleY;
-    const paddleBottom = paddleTop + config.paddleHeight;
-    const paddleLeft = state.paddleX;
-    const paddleRight = paddleLeft + config.paddleWidth;
-
-    const ballBottom = state.ballY + half;
-    const ballTop = state.ballY - half;
-    const ballLeft = state.ballX - half;
-    const ballRight = state.ballX + half;
-
-    const intersects =
-      ballBottom >= paddleTop &&
-      ballTop <= paddleBottom &&
-      ballRight >= paddleLeft &&
-      ballLeft <= paddleRight &&
-      state.ballVY > 0;
-
-    if (!intersects) return;
-
-    state.ballY = paddleTop - half;
-    const paddleCenter = state.paddleX + config.paddleWidth / 2;
-    const normalized = Math.max(-1, Math.min(1, (state.ballX - paddleCenter) / (config.paddleWidth / 2)));
-    const bounceAngle = normalized * config.maxBounceAngle;
-    const speed = Math.min(Math.hypot(state.ballVX, state.ballVY) * 1.02, config.maxBallSpeed);
-    state.ballVX = Math.sin(bounceAngle) * speed;
-    state.ballVY = -Math.abs(Math.cos(bounceAngle) * speed);
-  }
-
-  function handleBrickCollisions() {
-    if (ballAttachedToPaddle) return;
-    const half = config.ballSize / 2;
-    const ballBottom = state.ballY + half;
-    const paddleTop = state.paddleY;
-    if (state.ballVY >= 0 && ballBottom >= paddleTop) {
-      const withinX =
-        state.ballX + half >= state.paddleX && state.ballX - half <= state.paddleX + state.paddleWidth;
-      const withinY = state.ballY - half <= paddleTop + config.paddleHeight;
-      if (withinX && withinY) {
-        const paddleCenter = state.paddleX + state.paddleWidth / 2;
-        const distanceFromCenter = state.ballX - paddleCenter;
-        const normalized = Math.max(-1, Math.min(1, distanceFromCenter / (state.paddleWidth / 2)));
-        const bounceAngle = normalized * config.maxBounceAngle;
-        const speed = Math.min(
-          Math.hypot(state.ballVX, state.ballVY) * 1.02,
-          maxBallSpeedForLevel(state.level)
-        );
-        state.ballVX = speed * Math.sin(bounceAngle);
-        state.ballVY = -Math.abs(speed * Math.cos(bounceAngle));
-        state.ballY = paddleTop - half;
-      }
-    }
-  }
-
-  function handleBrickCollisions() {
-    const half = config.ballSize / 2;
-    const ballLeft = state.ballX - half;
-    const ballRight = state.ballX + half;
-    const ballTop = state.ballY - half;
-    const ballBottom = state.ballY + half;
-
-    for (const brick of state.bricks) {
-      if (!brick.alive) continue;
-      const overlaps =
-        ballRight > brick.x &&
-        ballLeft < brick.x + brick.w &&
-        ballBottom > brick.y &&
-        ballTop < brick.y + brick.h;
-      if (!overlaps) continue;
-
-      brick.alive = false;
-      state.bricksAlive -= 1;
-      state.score += brick.value;
-      updateHUD();
-      const intersects =
-        ballRight >= brick.x &&
-        ballLeft <= brick.x + brick.w &&
-        ballBottom >= brick.y &&
-        ballTop <= brick.y + brick.h;
-      if (!intersects) continue;
-
-      brick.alive = false;
-      state.score += brick.value;
-      updateHud();
-
-      const overlapLeft = ballRight - brick.x;
-      const overlapRight = brick.x + brick.w - ballLeft;
-      const overlapTop = ballBottom - brick.y;
-      const overlapBottom = brick.y + brick.h - ballTop;
-      const minHorizontal = Math.min(overlapLeft, overlapRight);
-      const minVertical = Math.min(overlapTop, overlapBottom);
-
-      if (minHorizontal < minVertical) {
-        state.ballVX *= -1;
-        if (overlapLeft < overlapRight) {
-          state.ballX = brick.x - half;
-        } else {
-          state.ballX = brick.x + brick.w + half;
-        }
-      } else {
-        state.ballVY *= -1;
-        if (overlapTop < overlapBottom) {
-          state.ballY = brick.y - half;
-        } else {
-          state.ballY = brick.y + brick.h + half;
-        }
-      }
-
-      speedUpBall();
-
-      if (state.bricksAlive <= 0) {
-        advanceLevel();
-      }
-      const minOverlap = Math.min(overlapLeft, overlapRight, overlapTop, overlapBottom);
-
-      if (minOverlap === overlapLeft) {
-        state.ballX = brick.x - half;
-        state.ballVX = -Math.abs(state.ballVX);
-      } else if (minOverlap === overlapRight) {
-        state.ballX = brick.x + brick.w + half;
-        state.ballVX = Math.abs(state.ballVX);
-      } else if (minOverlap === overlapTop) {
-        state.ballY = brick.y - half;
-        state.ballVY = -Math.abs(state.ballVY);
-      } else {
-        state.ballY = brick.y + brick.h + half;
-        state.ballVY = Math.abs(state.ballVY);
-      }
-
-      increaseBallSpeed(1.01);
-      checkLevelCleared();
-      break;
-    }
-  }
-
-  function updateGame(delta) {
-    if (phase !== "running") return;
-
-    if (moveDirection !== 0) {
-      state.paddleX += moveDirection * config.paddleSpeed * delta;
-      clampPaddle();
-    }
-
-    if (ballAttachedToPaddle) {
-      alignBallWithPaddle();
-      return;
-    }
-
-    state.ballX += state.ballVX * delta;
-    state.ballY += state.ballVY * delta;
-
-    handleWallCollisions();
-    if (phase !== "running") return; // loseLife might change phase
-
-    handlePaddleCollision();
-    handleBrickCollisions();
-  }
-
-  function renderBackground() {
-    const gradient = ctx.createLinearGradient(0, 0, 0, config.canvasHeight);
-    gradient.addColorStop(0, "#050b05");
-    gradient.addColorStop(1, "#000000");
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, config.canvasWidth, config.canvasHeight);
-
-    ctx.save();
-    ctx.strokeStyle = "rgba(57, 255, 20, 0.08)";
-    ctx.lineWidth = 1;
-    for (let i = 60; i < config.canvasHeight; i += 60) {
-      ctx.beginPath();
-      ctx.moveTo(0, i);
-      ctx.lineTo(config.canvasWidth, i);
-      ctx.stroke();
-    }
-    ctx.restore();
-  }
-
-  function renderBricks() {
-    ctx.save();
-    for (const brick of state.bricks) {
-      if (!brick.alive) continue;
-      ctx.fillStyle = brick.color;
-      ctx.shadowColor = brick.color;
-      ctx.shadowBlur = 16;
-      ctx.fillRect(brick.x, brick.y, brick.w, brick.h);
-    }
-    ctx.restore();
-  }
-
-  function renderPaddleAndBall() {
-    ctx.save();
-    ctx.fillStyle = "#39ff14";
-    ctx.shadowColor = "#39ff14";
-    ctx.shadowBlur = 18;
-    ctx.fillRect(state.paddleX, state.paddleY, config.paddleWidth, config.paddleHeight);
-
-    ctx.beginPath();
-    ctx.arc(state.ballX, state.ballY, config.ballSize / 2, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
-  }
-
-  function render() {
-    ctx.clearRect(0, 0, config.canvasWidth, config.canvasHeight);
-    renderBackground();
-    renderBricks();
-    renderPaddleAndBall();
-  }
-
-  function loop(now) {
-    const delta = Math.min((now - lastFrameTime) / 1000, 0.035);
-    lastFrameTime = now;
-    updateGame(delta);
-    render();
-    requestAnimationFrame(loop);
-  }
-
-  function handleKeyDown(event) {
-    if (event.repeat) return;
-    switch (event.code) {
-      case "ArrowLeft":
-      case "KeyA":
-        event.preventDefault();
-        keyState.left = true;
-        recalcMoveDirection();
-        break;
-      case "ArrowRight":
-      case "KeyD":
-        event.preventDefault();
-        keyState.right = true;
-        recalcMoveDirection();
-        break;
-      case "Space":
-        event.preventDefault();
-        handleSpacePress();
-        break;
-      case "KeyR":
-        event.preventDefault();
-  function checkLevelCleared() {
-    if (state.bricks.every((brick) => !brick.alive)) {
-      state.level += 1;
-      state.paddleWidth = paddleWidthForLevel(state.level);
-      state.paddleX = (config.canvasWidth - state.paddleWidth) / 2;
-      buildLevel(state.level);
-      resetBallOnPaddle();
-      state.phase = "between-levels";
-      updateHud();
-      showOverlay(`Level ${state.level} — Press Space to Start`);
-    }
-  }
-
-  function handleLifeLost() {
-    state.lives -= 1;
+    config.brickRows = 5;
+    buildBricks();
+    resetPaddleAndBall();
     updateHud();
-    if (state.lives <= 0) {
-      state.phase = "over";
-      showOverlay("Game Over — Press Space to Restart");
-    } else {
-      state.phase = "idle";
-      resetBallOnPaddle();
-      showOverlay("Life lost — Press Space to continue");
-    }
-  }
-
-  function startNewGame() {
-    state.score = 0;
-    state.lives = 3;
-    state.level = 1;
     state.phase = "idle";
-    state.paddleWidth = paddleWidthForLevel(state.level);
-    state.paddleX = (config.canvasWidth - state.paddleWidth) / 2;
-    buildLevel(state.level);
-    resetBallOnPaddle();
+    showOverlay(
+      "Press Space or Tap to Start",
+      "←/→ or A/D to move · Space to start/pause · R to restart"
+    );
+  }
+
+  function nextLevel() {
+    state.level += 1;
+    config.brickRows = Math.min(config.brickRows + 1, 8);
+    buildBricks();
+    resetPaddleAndBall();
     updateHud();
-    showOverlay("Press Space or Tap to Start");
+    state.phase = "idle";
+    showOverlay(`Level ${state.level}`, "Press Space or Tap to begin");
   }
 
-  function beginLevel() {
-    hideOverlay();
-    state.phase = "running";
-    lastFrameTime = performance.now();
-    if (state.ballAttachedToPaddle) {
-      launchBall();
-    }
+  // -------- Input --------
+
+  function effectiveDirection() {
+    // Touch has priority over keyboard
+    if (state.pointerDir !== 0) return state.pointerDir;
+    return state.moveDir;
   }
 
-  function pauseGame(message = "Paused — Press Space to Resume") {
-    if (state.phase !== "running") return;
-    state.phase = "paused";
-    showOverlay(message);
-  }
-
-  function resumeGame() {
-    if (state.phase !== "paused") return;
-    hideOverlay();
-    state.phase = "running";
-    lastFrameTime = performance.now();
-  }
-
-  function handlePrimaryAction() {
-    switch (state.phase) {
-      case "running":
-        pauseGame();
-        break;
-      case "paused":
-        resumeGame();
-        break;
-      case "idle":
-      case "between-levels":
-        beginLevel();
-        break;
-      case "over":
-        startNewGame();
-        break;
-      default:
-        break;
-    }
-  }
-
-  function handleKeyUp(event) {
-    switch (event.code) {
-      case "ArrowLeft":
-      case "KeyA":
-        keyState.left = false;
-        recalcMoveDirection();
-        break;
-      case "ArrowRight":
-      case "KeyD":
-        keyState.right = false;
-        recalcMoveDirection();
-        break;
-      default:
-        break;
-    }
-  }
-
-  function bindTouchControls() {
-    if (!touchButtons) return;
-    touchButtons.forEach((button) => {
-      const direction = Number(button.dataset.direction) || 0;
-      button.addEventListener("pointerdown", (event) => {
-        event.preventDefault();
-        button.setPointerCapture(event.pointerId);
-        pointerDirection = direction;
-        recalcMoveDirection();
-      });
-
-      const clearPointer = () => {
-        if (pointerDirection === direction) {
-          pointerDirection = 0;
-          recalcMoveDirection();
-        }
-      };
-
-      button.addEventListener("pointerup", (event) => {
-        button.releasePointerCapture(event.pointerId);
-        clearPointer();
-      });
-
-      ["pointercancel", "pointerleave"].forEach((type) => {
-        button.addEventListener(type, clearPointer);
-  function keyboardDirection() {
-    if (inputState.keyLeft && !inputState.keyRight) return -1;
-    if (inputState.keyRight && !inputState.keyLeft) return 1;
-    return 0;
-  }
-
-  function currentDirection() {
-    if (inputState.pointerDirection !== 0) {
-      return inputState.pointerDirection;
-    }
-    return keyboardDirection();
-  }
-
-  function handleKeyDown(event) {
-    const { code } = event;
+  function handleKeyDown(e) {
+    const { code } = e;
 
     if (code === "Space") {
-      event.preventDefault();
-      handlePrimaryAction();
-      return;
+      e.preventDefault();
+      if (state.phase === "idle" || state.phase === "over") {
+        hideOverlay();
+        state.phase = "running";
+        return;
+      }
+      if (state.phase === "paused") {
+        hideOverlay();
+        state.phase = "running";
+        return;
+      }
+      if (state.phase === "running") {
+        state.phase = "paused";
+        showOverlay("Paused", "Press Space or Tap to resume");
+        return;
+      }
     }
 
     if (code === "KeyR") {
-      event.preventDefault();
-      startNewGame();
+      e.preventDefault();
+      newGame();
       return;
     }
 
     if (code === "ArrowLeft" || code === "KeyA") {
-      event.preventDefault();
-      inputState.keyLeft = true;
+      state.moveDir = -1;
     } else if (code === "ArrowRight" || code === "KeyD") {
-      event.preventDefault();
-      inputState.keyRight = true;
+      state.moveDir = 1;
     }
   }
 
-  function handleKeyUp(event) {
-    const { code } = event;
-    if (code === "ArrowLeft" || code === "KeyA") {
-      inputState.keyLeft = false;
-    } else if (code === "ArrowRight" || code === "KeyD") {
-      inputState.keyRight = false;
+  function handleKeyUp(e) {
+    const { code } = e;
+    if ((code === "ArrowLeft" || code === "KeyA") && state.moveDir === -1) {
+      state.moveDir = 0;
+    }
+    if ((code === "ArrowRight" || code === "KeyD") && state.moveDir === 1) {
+      state.moveDir = 0;
     }
   }
 
-  function refreshPointerDirection() {
-    if (!activePointerDirections.size) {
-      inputState.pointerDirection = 0;
-      return;
-    }
-    let lastDirection = 0;
-    activePointerDirections.forEach((dir) => {
-      lastDirection = dir;
-    });
-    inputState.pointerDirection = lastDirection;
-  }
+  function bindTouch() {
+    if (!touchButtons) return;
 
-  function bindTouchControls() {
-    if (!touchButtons || !touchButtons.length) return;
-    touchButtons.forEach((button) => {
-      const direction = Math.sign(Number(button.dataset.direction || 0));
-      if (!direction) return;
+    touchButtons.forEach((btn) => {
+      const dir = Number(btn.dataset.direction);
+      if (!dir) return;
 
-      button.addEventListener("pointerdown", (event) => {
-        event.preventDefault();
-        button.setPointerCapture(event.pointerId);
-        activePointerDirections.set(event.pointerId, direction);
-        refreshPointerDirection();
+      btn.addEventListener("pointerdown", (ev) => {
+        ev.preventDefault();
+        btn.setPointerCapture(ev.pointerId);
+        state.pointerDir = dir;
       });
 
-      button.addEventListener("pointerup", (event) => {
-        button.releasePointerCapture(event.pointerId);
-        activePointerDirections.delete(event.pointerId);
-        refreshPointerDirection();
-      });
+      const stop = (ev) => {
+        try {
+          btn.releasePointerCapture(ev.pointerId);
+        } catch {}
+        if (state.pointerDir === dir) state.pointerDir = 0;
+      };
 
-      ["pointerleave", "pointercancel"].forEach((type) => {
-        button.addEventListener(type, (event) => {
-          if (event.pointerId != null) {
-            activePointerDirections.delete(event.pointerId);
-          }
-          refreshPointerDirection();
-        });
-      });
+      ["pointerup", "pointercancel", "pointerleave"].forEach((type) =>
+        btn.addEventListener(type, stop)
+      );
     });
   }
 
-  function syncTouchVisibility() {
-    if (!touchControls) return;
-    const isTouchPreferred = coarseMediaQuery ? coarseMediaQuery.matches : false;
-    touchControls.setAttribute("aria-hidden", isTouchPreferred ? "false" : "true");
-  }
+  // -------- Game update --------
 
-  function handleVisibilityChange() {
-    if (document.hidden && phase === "running") {
-      pauseGame("Paused (tab inactive) — Press Space or Tap to Resume");
+  function update(dt) {
+    if (state.phase !== "running") return;
+
+    // Paddle movement
+    const dir = effectiveDirection();
+    if (dir !== 0) {
+      state.paddleX += dir * config.paddleSpeed * dt;
+      if (state.paddleX < 0) state.paddleX = 0;
+      if (state.paddleX + config.paddleWidth > config.width) {
+        state.paddleX = config.width - config.paddleWidth;
+      }
     }
-  }
 
-  overlay?.addEventListener("click", () => {
-    if (phase === "paused") {
-      resumeGame();
-    } else {
-      beginLevel();
+    // Ball movement
+    state.ballX += state.ballVX * dt;
+    state.ballY += state.ballVY * dt;
+
+    const r = config.ballRadius;
+
+    // Walls
+    if (state.ballX - r <= 0 && state.ballVX < 0) {
+      state.ballX = r;
+      state.ballVX *= -1;
     }
-  });
-
-    const coarse = coarseMediaQuery ? coarseMediaQuery.matches : window.matchMedia("(pointer: coarse)").matches;
-    touchControls.setAttribute("aria-hidden", coarse ? "false" : "true");
-  }
-
-  function handleVisibilityChange() {
-    if (document.hidden && state.phase === "running") {
-      pauseGame("Paused — Tab inactive. Press Space to Resume");
+    if (state.ballX + r >= config.width && state.ballVX > 0) {
+      state.ballX = config.width - r;
+      state.ballVX *= -1;
     }
-  }
-
-  function update(delta) {
-    const direction = currentDirection();
-    if (direction) {
-      movePaddle(direction, delta);
+    if (state.ballY - r <= 0 && state.ballVY < 0) {
+      state.ballY = r;
+      state.ballVY *= -1;
     }
-    keepBallAttached();
 
-    if (state.phase !== "running") {
+    // Paddle collision
+    const paddleY = config.height - 40;
+    if (
+      state.ballY + r >= paddleY &&
+      state.ballY + r <= paddleY + config.paddleHeight &&
+      state.ballX >= state.paddleX &&
+      state.ballX <= state.paddleX + config.paddleWidth &&
+      state.ballVY > 0
+    ) {
+      state.ballY = paddleY - r;
+
+      // Where did we hit the paddle? -1 (left) .. 1 (right)
+      const hitPos =
+        (state.ballX - (state.paddleX + config.paddleWidth / 2)) /
+        (config.paddleWidth / 2);
+
+      const angle = (hitPos * Math.PI) / 3; // ±60°
+      const speed = Math.min(
+        Math.hypot(state.ballVX, state.ballVY) * 1.04,
+        config.maxBallSpeed
+      );
+
+      state.ballVX = speed * Math.sin(angle);
+      state.ballVY = -Math.abs(speed * Math.cos(angle));
+    }
+
+    // Brick collisions
+    let bricksLeft = 0;
+    for (const brick of state.bricks) {
+      if (!brick.alive) continue;
+      bricksLeft++;
+
+      if (
+        state.ballX + r >= brick.x &&
+        state.ballX - r <= brick.x + brick.w &&
+        state.ballY + r >= brick.y &&
+        state.ballY - r <= brick.y + brick.h
+      ) {
+        brick.alive = false;
+        state.score += brick.value;
+        updateHud();
+
+        // Decide which side we hit for bounce
+        const overlapLeft = state.ballX + r - brick.x;
+        const overlapRight = brick.x + brick.w - (state.ballX - r);
+        const overlapTop = state.ballY + r - brick.y;
+        const overlapBottom = brick.y + brick.h - (state.ballY - r);
+        const minOverlap = Math.min(
+          overlapLeft,
+          overlapRight,
+          overlapTop,
+          overlapBottom
+        );
+
+        if (minOverlap === overlapLeft || minOverlap === overlapRight) {
+          state.ballVX *= -1;
+        } else {
+          state.ballVY *= -1;
+        }
+        break;
+      }
+    }
+
+    // Level clear
+    if (bricksLeft === 0) {
+      nextLevel();
       return;
     }
 
-    state.ballX += state.ballVX * delta;
-    state.ballY += state.ballVY * delta;
+    // Ball lost
+    if (state.ballY - r > config.height + 10) {
+      state.lives -= 1;
+      updateHud();
 
-    handleWallCollisions();
-    handlePaddleCollision();
-    handleBrickCollisions();
-
-    if (state.ballY - config.ballSize / 2 > config.canvasHeight) {
-      handleLifeLost();
+      if (state.lives <= 0) {
+        state.phase = "over";
+        showOverlay("Game Over", "Press Space or R to restart");
+      } else {
+        resetPaddleAndBall();
+        state.phase = "idle";
+        showOverlay("Life Lost", "Press Space or Tap to continue");
+      }
     }
   }
+
+  // -------- Render --------
 
   function render() {
-    ctx.clearRect(0, 0, config.canvasWidth, config.canvasHeight);
-    ctx.fillStyle = "#020202";
-    ctx.fillRect(0, 0, config.canvasWidth, config.canvasHeight);
+    ctx.clearRect(0, 0, config.width, config.height);
 
-    state.bricks.forEach((brick) => {
-      if (!brick.alive) return;
-      ctx.save();
-      ctx.fillStyle = brick.color;
-      ctx.shadowColor = brick.color;
-      ctx.shadowBlur = 12;
-      ctx.fillRect(brick.x, brick.y, brick.w, brick.h);
-      ctx.restore();
-    });
+    // Base background
+    ctx.fillStyle = "#000000";
+    ctx.fillRect(0, 0, config.width, config.height);
+
+    // Radial glow
+    const g = ctx.createRadialGradient(
+      config.width / 2,
+      config.height / 2,
+      0,
+      config.width / 2,
+      config.height / 2,
+      config.width / 1.2
+    );
+    g.addColorStop(0, "rgba(57,255,20,0.08)");
+    g.addColorStop(1, "rgba(0,0,0,0.98)");
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, config.width, config.height);
 
     ctx.save();
     ctx.fillStyle = "#39ff14";
     ctx.shadowColor = "#39ff14";
     ctx.shadowBlur = 18;
-    ctx.fillRect(state.paddleX, state.paddleY, state.paddleWidth, config.paddleHeight);
-    ctx.restore();
 
-    ctx.save();
-    ctx.fillStyle = "#f2fff5";
-    ctx.shadowColor = "#39ff14";
-    ctx.shadowBlur = 15;
+    // Paddle
+    const paddleY = config.height - 40;
+    ctx.fillRect(
+      state.paddleX,
+      paddleY,
+      config.paddleWidth,
+      config.paddleHeight
+    );
+
+    // Ball
     ctx.beginPath();
-    ctx.arc(state.ballX, state.ballY, config.ballSize / 2, 0, Math.PI * 2);
+    ctx.arc(state.ballX, state.ballY, config.ballRadius, 0, Math.PI * 2);
     ctx.fill();
+
+    // Bricks
+    for (const brick of state.bricks) {
+      if (!brick.alive) continue;
+      ctx.fillRect(brick.x, brick.y, brick.w, brick.h);
+    }
+
     ctx.restore();
   }
 
-  function loop(now) {
-    const delta = Math.min((now - lastFrameTime) / 1000, 0.04);
-    lastFrameTime = now;
-    update(delta);
+  // -------- Loop --------
+
+  function loop(ts) {
+    const dt = Math.min((ts - lastTime) / 1000, 0.03);
+    lastTime = ts;
+    update(dt);
     render();
     requestAnimationFrame(loop);
   }
 
-  overlay?.addEventListener("click", handlePrimaryAction);
+  // -------- Init --------
+
   window.addEventListener("keydown", handleKeyDown);
   window.addEventListener("keyup", handleKeyUp);
-  document.addEventListener("visibilitychange", handleVisibilityChange);
 
-  bindTouchControls();
-  syncTouchVisibility();
-  coarseMediaQuery?.addEventListener?.("change", syncTouchVisibility);
-
-  if (coarseMediaQuery) {
-    const handler = () => syncTouchVisibility();
-    if (typeof coarseMediaQuery.addEventListener === "function") {
-      coarseMediaQuery.addEventListener("change", handler);
-    } else if (typeof coarseMediaQuery.addListener === "function") {
-      coarseMediaQuery.addListener(handler);
-    }
+  if (overlay) {
+    overlay.addEventListener("click", () => {
+      if (state.phase === "idle" || state.phase === "paused") {
+        hideOverlay();
+        state.phase = "running";
+      } else if (state.phase === "over") {
+        newGame();
+      }
+    });
   }
 
-  bindTouchControls();
-  syncTouchVisibility();
-  startNewGame();
+  bindTouch();
+  newGame();
   requestAnimationFrame(loop);
 })();

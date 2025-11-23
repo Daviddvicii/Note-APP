@@ -1,8 +1,8 @@
 (() => {
   const canvas = document.getElementById("game-canvas");
   if (!canvas) return;
-
   const ctx = canvas.getContext("2d");
+
   const overlay = document.getElementById("overlay");
   const overlayTitle = document.getElementById("overlay-title");
   const overlayHint = document.getElementById("overlay-hint");
@@ -11,70 +11,72 @@
   const touchControls = document.getElementById("touch-controls");
   const touchButtons = touchControls?.querySelectorAll(".touch-btn") ?? [];
 
+  // ---------- CONFIG ----------
   const config = {
-    roadWidth: 260,
-    laneCount: 3,
-    carWidth: 40,
-    carHeight: 70,
-    enemyWidth: 40,
-    enemyHeight: 70,
-    baseSpeed: 140,
-    maxSpeed: 280,
+    baseSpeed: 120,
+    maxSpeed: 260,
     accel: 80,
-    friction: 100,
+    friction: 120,
+
+    horizonY: canvas.height * 0.33,
+    bottomY: canvas.height + 60,
+    roadHalfTop: canvas.width * 0.08,
+    roadHalfBottom: canvas.width * 0.45,
+
+    laneOffsets: [-0.6, 0, 0.6],
     enemySpawnBase: 1.2,
-    enemySpawnMin: 0.4,
+    enemySpawnMin: 0.45,
+    carWidthBase: 36,
+    carHeightBase: 60,
+    enemyWidthBase: 34,
+    enemyHeightBase: 56
   };
 
+  // ---------- STATE ----------
   const state = {
     phase: "idle", // idle | running | paused | over
     score: 0,
-    speed: 0,
-    carX: 0,
-    carY: 0,
-    enemies: [],
+    speed: config.baseSpeed,
+    playerOffset: 0, // -1..1 left/right in road
+    enemies: [], // {offset, depth}
     roadOffset: 0,
-    lastTime: performance.now(),
     spawnTimer: 0,
+    lastTime: performance.now()
   };
 
   const input = {
     left: false,
     right: false,
-    up: false,
+    up: false
   };
 
-  let hudCache = { score: "", speed: "" };
+  const hudCache = {
+    score: "",
+    speed: ""
+  };
 
   init();
 
+  // ---------- INIT ----------
   function init() {
-    initPositions();
+    resetRun();
     bindEvents();
     showOverlay("Press Space or Tap to Start");
     render();
     requestAnimationFrame(loop);
   }
 
-  function initPositions() {
-    state.speed = config.baseSpeed;
+  function resetRun() {
     state.score = 0;
+    state.speed = config.baseSpeed;
+    state.playerOffset = 0;
     state.enemies = [];
     state.roadOffset = 0;
     state.spawnTimer = 0;
-
-    const centerX = canvas.width / 2;
-    state.carX = centerX;
-    state.carY = canvas.height - 90;
     updateHud(true);
   }
 
-  function resetGame() {
-    state.phase = "idle";
-    initPositions();
-    showOverlay("Press Space or Tap to Start");
-  }
-
+  // ---------- MAIN LOOP ----------
   function loop(now) {
     const dt = Math.min((now - state.lastTime) / 1000, 0.05);
     state.lastTime = now;
@@ -90,13 +92,14 @@
 
   function update(dt) {
     handleControls(dt);
-    moveRoad(dt);
+    updateRoad(dt);
     updateEnemies(dt);
     spawnEnemies(dt);
     checkCollisions();
-    state.score += state.speed * dt * 0.1;
+    state.score += state.speed * dt * 0.15;
   }
 
+  // ---------- GAME LOGIC ----------
   function handleControls(dt) {
     // speed
     if (input.up) {
@@ -111,82 +114,58 @@
       );
     }
 
-    const laneWidth = config.roadWidth / config.laneCount;
-    const centerX = canvas.width / 2;
-    const maxOffset = (config.roadWidth / 2) - laneWidth * 0.6;
-    const lateralSpeed = 220;
-
-    if (input.left) {
-      state.carX -= lateralSpeed * dt;
-    }
-    if (input.right) {
-      state.carX += lateralSpeed * dt;
-    }
-
-    const minX = centerX - maxOffset;
-    const maxX = centerX + maxOffset;
-    state.carX = clamp(state.carX, minX, maxX);
+    // horizontal movement
+    const moveSpeed = 1.6; // how fast offset changes
+    if (input.left) state.playerOffset -= moveSpeed * dt;
+    if (input.right) state.playerOffset += moveSpeed * dt;
+    state.playerOffset = clamp(state.playerOffset, -1, 1);
   }
 
-  function moveRoad(dt) {
-    state.roadOffset += state.speed * dt * 0.5;
-    if (state.roadOffset > 40) {
-      state.roadOffset -= 40;
-    }
+  function updateRoad(dt) {
+    state.roadOffset += state.speed * dt * 0.0025;
+    if (state.roadOffset > 1) state.roadOffset -= 1;
   }
 
   function updateEnemies(dt) {
     const speedFactor = state.speed / config.baseSpeed;
     state.enemies.forEach((e) => {
-      e.y += e.speed * speedFactor * dt;
+      e.depth += dt * 0.6 * speedFactor; // move towards camera
     });
-    state.enemies = state.enemies.filter(
-      (e) => e.y - config.enemyHeight < canvas.height
-    );
+    state.enemies = state.enemies.filter((e) => e.depth < 1.3);
   }
 
   function spawnEnemies(dt) {
     state.spawnTimer -= dt;
     if (state.spawnTimer > 0) return;
 
-    const laneWidth = config.roadWidth / config.laneCount;
-    const centerX = canvas.width / 2;
-    const left = centerX - config.roadWidth / 2;
-
-    const lane = Math.floor(Math.random() * config.laneCount);
-    const x = left + laneWidth * (lane + 0.5);
-    const y = -config.enemyHeight;
-
+    const lane =
+      config.laneOffsets[Math.floor(Math.random() * config.laneOffsets.length)];
     state.enemies.push({
-      x,
-      y,
-      width: config.enemyWidth,
-      height: config.enemyHeight,
-      speed: config.baseSpeed * 1.1,
+      offset: lane,
+      depth: 0.1 + Math.random() * 0.2
     });
 
     const speedRatio =
       (state.speed - config.baseSpeed) /
       (config.maxSpeed - config.baseSpeed);
-    const spawnInterval =
-      config.enemySpawnBase -
-      (config.enemySpawnBase - config.enemySpawnMin) * clamp(speedRatio, 0, 1);
-
-    state.spawnTimer = spawnInterval;
+    const base = config.enemySpawnBase;
+    const min = config.enemySpawnMin;
+    const interval = base - (base - min) * clamp(speedRatio, 0, 1);
+    state.spawnTimer = interval;
   }
 
   function checkCollisions() {
-    const carRect = {
-      x: state.carX - config.carWidth / 2,
-      y: state.carY - config.carHeight / 2,
-      width: config.carWidth,
-      height: config.carHeight,
-    };
+    // player considered at depth 1
+    const playerDepth = 1;
+    const hitDepth = 0.82;
 
     for (const e of state.enemies) {
-      if (rectOverlap(carRect, e)) {
-        gameOver();
-        return;
+      if (e.depth > hitDepth && e.depth < 1.15) {
+        const dx = Math.abs(e.offset - state.playerOffset);
+        if (dx < 0.3) {
+          gameOver();
+          return;
+        }
       }
     }
   }
@@ -196,111 +175,202 @@
     showOverlay(`Crashed! Score: ${Math.floor(state.score)}`);
   }
 
+  // ---------- PROJECTION / DRAWING HELPERS ----------
+  function project(depth, offset) {
+    // depth: 0 (horizon) .. 1 (bottom)
+    const y = lerp(config.horizonY, config.bottomY, depth);
+    const halfWidth = lerp(config.roadHalfTop, config.roadHalfBottom, depth);
+    const centerX = canvas.width / 2 + offset * halfWidth;
+    return { x: centerX, y, halfWidth };
+  }
+
+  // ---------- RENDER ----------
   function render() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // background
-    ctx.fillStyle = "#020707";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
+    drawSkyAndCity();
     drawRoad();
     drawEnemies();
-    drawCar();
+    drawPlayer();
+  }
+
+  function drawSkyAndCity() {
+    const h = canvas.height;
+    const w = canvas.width;
+
+    // sky
+    const skyGrad = ctx.createLinearGradient(0, 0, 0, config.horizonY);
+    skyGrad.addColorStop(0, "#03080f");
+    skyGrad.addColorStop(1, "#02040a");
+    ctx.fillStyle = skyGrad;
+    ctx.fillRect(0, 0, w, config.horizonY);
+
+    // ground
+    const groundGrad = ctx.createLinearGradient(
+      0,
+      config.horizonY,
+      0,
+      h
+    );
+    groundGrad.addColorStop(0, "#021408");
+    groundGrad.addColorStop(1, "#000000");
+    ctx.fillStyle = groundGrad;
+    ctx.fillRect(0, config.horizonY, w, h - config.horizonY);
+
+    // neon buildings
+    ctx.save();
+    ctx.translate(0, config.horizonY - 30);
+    ctx.fillStyle = "#031820";
+    for (let i = 0; i < 14; i++) {
+      const bw = 30 + Math.random() * 40;
+      const bh = 20 + Math.random() * 40;
+      const x = (i / 14) * w + (Math.random() - 0.5) * 20;
+      ctx.fillRect(x, -bh, bw, bh);
+
+      // windows
+      ctx.fillStyle = "rgba(57,255,180,0.35)";
+      for (let y = -bh + 4; y < -4; y += 8) {
+        for (let xw = x + 4; xw < x + bw - 4; xw += 8) {
+          if (Math.random() < 0.5) {
+            ctx.fillRect(xw, y, 3, 3);
+          }
+        }
+      }
+      ctx.fillStyle = "#031820";
+    }
+    ctx.restore();
   }
 
   function drawRoad() {
-    const centerX = canvas.width / 2;
-    const roadWidth = config.roadWidth;
-    const left = centerX - roadWidth / 2;
+    const segments = 22;
+    const stripeSpacing = 0.08;
+    ctx.save();
 
-    // grass
-    ctx.fillStyle = "#021706";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    // road body
+    for (let i = 0; i < segments; i++) {
+      const z1 = i / segments;
+      const z2 = (i + 1) / segments;
 
-    // road
-    ctx.fillStyle = "#041313";
-    ctx.fillRect(left, 0, roadWidth, canvas.height);
+      const p1 = project(z1, 0);
+      const p2 = project(z2, 0);
 
-    // lane lines
-    const laneWidth = roadWidth / config.laneCount;
-    ctx.strokeStyle = "rgba(200, 255, 200, 0.7)";
-    ctx.lineWidth = 3;
-    ctx.setLineDash([18, 14]);
-    ctx.lineDashOffset = -state.roadOffset;
+      ctx.beginPath();
+      // trapezoid for road from z1 to z2
+      ctx.moveTo(p1.x - p1.halfWidth, p1.y);
+      ctx.lineTo(p1.x + p1.halfWidth, p1.y);
+      ctx.lineTo(p2.x + p2.halfWidth, p2.y);
+      ctx.lineTo(p2.x - p2.halfWidth, p2.y);
+      ctx.closePath();
 
-    ctx.beginPath();
-    for (let i = 1; i < config.laneCount; i++) {
-      const x = left + laneWidth * i;
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, canvas.height);
+      const shade = 0.03 + (i % 2) * 0.03;
+      ctx.fillStyle = `rgba(0, 255, 80, ${0.14 + shade})`;
+      ctx.fill();
     }
+
+    // side “neon” rails
+    for (let side of [-1, 1]) {
+      ctx.beginPath();
+      for (let i = 0; i <= segments; i++) {
+        const z = i / segments;
+        const p = project(z, 0);
+        const x = p.x + side * p.halfWidth;
+        const y = p.y;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.strokeStyle = "rgba(57,255,120,0.9)";
+      ctx.lineWidth = 3;
+      ctx.shadowColor = "#39ff88";
+      ctx.shadowBlur = 12;
+      ctx.stroke();
+    }
+
+    // center lane stripes (animated)
+    ctx.setLineDash([14, 20]);
+    ctx.lineDashOffset = -state.roadOffset * 220;
+    ctx.beginPath();
+    for (let i = 0; i <= segments; i++) {
+      const z = i / segments;
+      const p = project(z, 0);
+      ctx.lineTo(p.x, p.y);
+    }
+    ctx.strokeStyle = "rgba(220,255,220,0.9)";
+    ctx.lineWidth = 3;
+    ctx.shadowColor = "#bfffdd";
+    ctx.shadowBlur = 12;
     ctx.stroke();
     ctx.setLineDash([]);
+
+    ctx.restore();
   }
 
-  function drawCar() {
-    const w = config.carWidth;
-    const h = config.carHeight;
-    const x = state.carX;
-    const y = state.carY;
+  function drawPlayer() {
+    const depth = 1;
+    const proj = project(depth, state.playerOffset);
+    const scale = depthScale(depth);
+
+    const w = config.carWidthBase * scale;
+    const h = config.carHeightBase * scale;
+    const x = proj.x;
+    const y = proj.y - h * 0.9; // slightly up from very bottom
 
     ctx.save();
     ctx.translate(x, y);
 
-    // glow
     ctx.shadowColor = "#39ff14";
-    ctx.shadowBlur = 18;
+    ctx.shadowBlur = 20;
 
     // body
     ctx.fillStyle = "#39ff14";
     ctx.fillRect(-w / 2, -h / 2, w, h);
 
-    // windshield
     ctx.shadowBlur = 0;
-    ctx.fillStyle = "#052610";
-    ctx.fillRect(-w / 2 + 6, -h / 2 + 10, w - 12, 18);
 
-    // headlights
-    ctx.fillStyle = "#f7ffcc";
-    ctx.fillRect(-w / 2 + 4, h / 2 - 10, 8, 6);
-    ctx.fillRect(w / 2 - 12, h / 2 - 10, 8, 6);
+    // cockpit
+    ctx.fillStyle = "#032010";
+    ctx.fillRect(-w / 2 + 5, -h / 2 + 10, w - 10, h * 0.25);
+
+    // rear engine glow
+    ctx.fillStyle = "#ffdf6b";
+    ctx.fillRect(-w / 2 + 6, h / 2 - 10, w - 12, 6);
 
     ctx.restore();
   }
 
   function drawEnemies() {
-    ctx.save();
-    ctx.shadowColor = "#ff477e";
-    ctx.shadowBlur = 16;
-    ctx.fillStyle = "#ff477e";
+    state.enemies.forEach((e) => {
+      const proj = project(e.depth, e.offset);
+      const scale = depthScale(e.depth);
 
-    for (const e of state.enemies) {
-      ctx.fillRect(
-        e.x - e.width / 2,
-        e.y - e.height / 2,
-        e.width,
-        e.height
-      );
+      const w = config.enemyWidthBase * scale;
+      const h = config.enemyHeightBase * scale;
+      const x = proj.x;
+      const y = proj.y - h * 0.9;
 
-      // simple "windows"
-      ctx.shadowBlur = 0;
-      ctx.fillStyle = "#330015";
-      ctx.fillRect(
-        e.x - e.width / 2 + 6,
-        e.y - e.height / 2 + 10,
-        e.width - 12,
-        18
-      );
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.shadowColor = "#ff477e";
+      ctx.shadowBlur = 18;
+
       ctx.fillStyle = "#ff477e";
-      ctx.shadowBlur = 16;
-    }
+      ctx.fillRect(-w / 2, -h / 2, w, h);
 
-    ctx.restore();
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = "#3a0212";
+      ctx.fillRect(-w / 2 + 4, -h / 2 + 8, w - 8, h * 0.25);
+
+      ctx.restore();
+    });
   }
 
+  function depthScale(depth) {
+    // closer (depth -> 1) => larger
+    return lerp(0.22, 1.1, clamp(depth, 0, 1));
+  }
+
+  // ---------- HUD ----------
   function updateHud(force = false) {
     if (!scoreEl || !speedEl) return;
-
     const scoreText = Math.floor(state.score).toString();
     const speedText = `${Math.round(state.speed)} km/h`;
 
@@ -314,9 +384,11 @@
     }
   }
 
+  // ---------- OVERLAY / PHASES ----------
   function showOverlay(message) {
     if (!overlay) return;
     if (overlayTitle) overlayTitle.textContent = message;
+
     if (overlayHint) {
       if (state.phase === "over") {
         overlayHint.textContent = "Press Space or Tap to restart";
@@ -325,6 +397,7 @@
           "←/→ or A/D to steer · ↑/W to speed up · P pause · R restart";
       }
     }
+
     overlay.classList.add("visible");
     overlay.setAttribute("aria-hidden", "false");
   }
@@ -338,7 +411,7 @@
   function startRun() {
     if (state.phase === "running") return;
     if (state.phase === "over") {
-      initPositions();
+      resetRun();
     }
     state.phase = "running";
     state.lastTime = performance.now();
@@ -358,8 +431,7 @@
     hideOverlay();
   }
 
-  // input
-
+  // ---------- INPUT ----------
   document.addEventListener("keydown", (e) => {
     const code = e.code;
     switch (code) {
@@ -380,12 +452,10 @@
         break;
       case "Space":
         e.preventDefault();
-        if (state.phase === "idle") {
-          startRun();
-        } else if (state.phase === "paused") {
-          resumeGame();
-        } else if (state.phase === "over") {
-          resetGame();
+        if (state.phase === "idle") startRun();
+        else if (state.phase === "paused") resumeGame();
+        else if (state.phase === "over") {
+          resetRun();
           startRun();
         }
         break;
@@ -396,7 +466,9 @@
         break;
       case "KeyR":
         e.preventDefault();
-        resetGame();
+        state.phase = "idle";
+        resetRun();
+        showOverlay("Press Space or Tap to Start");
         break;
       default:
         break;
@@ -428,13 +500,13 @@
       if (state.phase === "idle") startRun();
       else if (state.phase === "paused") resumeGame();
       else if (state.phase === "over") {
-        resetGame();
+        resetRun();
         startRun();
       }
     });
   }
 
-  // Touch controls
+  // ---------- TOUCH ----------
   setupTouchControls();
 
   function setupTouchControls() {
@@ -464,7 +536,7 @@
           if (state.phase === "idle") startRun();
           else if (state.phase === "paused") resumeGame();
           else if (state.phase === "over") {
-            resetGame();
+            resetRun();
             startRun();
           }
         }
@@ -489,18 +561,12 @@
     });
   }
 
-  // helpers
-
-  function rectOverlap(a, b) {
-    return !(
-      a.x + a.width < b.x - b.width / 2 ||
-      a.x > b.x + b.width / 2 ||
-      a.y + a.height < b.y - b.height / 2 ||
-      a.y > b.y + b.height / 2
-    );
-  }
-
+  // ---------- UTILS ----------
   function clamp(v, min, max) {
     return Math.min(max, Math.max(min, v));
+  }
+
+  function lerp(a, b, t) {
+    return a + (b - a) * t;
   }
 })();

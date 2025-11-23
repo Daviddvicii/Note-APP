@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+    <meta name="theme-color" content="#000000" />
+    <title>Neon City Driver</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" />
+    <style>
+      :root {
+        --bg: #010302;
+        --primary: #39ff14;
+        --secondary: #35d0a6;
+        --overlay-bg: rgba(0, 0, 0, 0.78);
+        --header-bg: rgba(0, 0, 0, 0.62);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: var(--bg);
+        color: var(--primary);
+        font-family: "Press Start 2P", system-ui, -apple-system, "Segoe UI", sans-serif;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+
+      header {
+        position: sticky;
+        top: 0;
+        width: min(960px, 100%);
+        display: grid;
+        grid-template-columns: max-content 1fr max-content;
+        align-items: center;
+        padding: clamp(0.6rem, 1vw + 0.3rem, 1rem) clamp(0.9rem, 2vw, 1.6rem);
+        gap: 1rem;
+        background: var(--header-bg);
+        backdrop-filter: blur(6px);
+        z-index: 5;
+      }
+
+      .back-button {
+        padding: 0.45rem 0.9rem;
+        border: 2px solid var(--primary);
+        border-radius: 999px;
+        background: rgba(57, 255, 20, 0.1);
+        font-size: clamp(0.65rem, 0.4vw + 0.65rem, 0.85rem);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+      }
+
+      .back-button:hover,
+      .back-button:focus-visible {
+        background: var(--primary);
+        color: #00100a;
+        border-color: var(--secondary);
+      }
+
+      .title {
+        justify-self: center;
+        font-size: clamp(1rem, 2vw + 0.6rem, 1.6rem);
+        letter-spacing: 0.1em;
+        text-shadow: 0 0 12px rgba(57, 255, 20, 0.7);
+      }
+
+      .scoreboard {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        gap: clamp(0.45rem, 1.5vw, 1.1rem);
+        font-size: clamp(0.6rem, 0.9vw + 0.46rem, 0.9rem);
+        letter-spacing: 0.08em;
+      }
+
+      .scoreboard span {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+      }
+
+      .scoreboard strong {
+        color: var(--secondary);
+        font-weight: normal;
+      }
+
+      main {
+        flex: 1;
+        width: min(960px, 100%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: clamp(1rem, 3vw, 2rem) clamp(0.85rem, 3vw, 2rem) clamp(2.4rem, 6vw, 3.5rem);
+        gap: clamp(1rem, 3vw, 1.5rem);
+      }
+
+      .info-pill {
+        margin: 0;
+        padding: 0.65rem 1.4rem;
+        border: 2px solid rgba(57, 255, 20, 0.35);
+        border-radius: 999px;
+        background: rgba(57, 255, 20, 0.08);
+        font-size: clamp(0.58rem, 0.45vw + 0.55rem, 0.85rem);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        display: inline-flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.6rem;
+      }
+
+      .info-pill span {
+        color: var(--secondary);
+      }
+
+      .game-shell {
+        position: relative;
+        width: 100%;
+        max-width: 940px;
+        aspect-ratio: 16 / 9;
+        border: 2px solid rgba(57, 255, 20, 0.4);
+        border-radius: clamp(12px, 2vw, 20px);
+        background: radial-gradient(circle at center, rgba(57, 255, 20, 0.07), rgba(0, 0, 0, 0.96));
+        box-shadow: 0 0 25px rgba(57, 255, 20, 0.2), inset 0 0 35px rgba(57, 255, 20, 0.08);
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .game-shell::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background: repeating-linear-gradient(
+          to bottom,
+          rgba(0, 0, 0, 0) 0,
+          rgba(0, 0, 0, 0) 2px,
+          rgba(0, 0, 0, 0.18) 3px
+        );
+        mix-blend-mode: multiply;
+        opacity: 0.45;
+      }
+
+      canvas {
+        width: min(90%, 640px);
+        height: auto;
+        aspect-ratio: 16 / 9;
+        image-rendering: pixelated;
+        border: 2px solid rgba(57, 255, 20, 0.35);
+        border-radius: clamp(6px, 1.5vw, 12px);
+        background: #030b06;
+        box-shadow: inset 0 0 12px rgba(57, 255, 20, 0.2);
+      }
+
+      .overlay {
+        position: absolute;
+        inset: clamp(1.2rem, 3vw, 2rem);
+        background: var(--overlay-bg);
+        border: 2px solid rgba(57, 255, 20, 0.45);
+        border-radius: clamp(10px, 2vw, 16px);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: clamp(1.4rem, 4vw, 3rem);
+        font-size: clamp(0.7rem, 0.6vw + 0.65rem, 1rem);
+        letter-spacing: 0.08em;
+        line-height: 1.6;
+        color: var(--primary);
+        text-shadow: 0 0 12px rgba(53, 208, 166, 0.6);
+        opacity: 0;
+        pointer-events: none;
+        transform: scale(0.96);
+        transition: opacity 0.2s ease, transform 0.24s ease;
+      }
+
+      .overlay.visible {
+        opacity: 1;
+        pointer-events: auto;
+        cursor: pointer;
+        transform: scale(1);
+      }
+
+      .overlay p {
+        margin: 0 0 0.7rem 0;
+      }
+
+      .overlay span {
+        display: block;
+        font-size: clamp(0.58rem, 0.4vw + 0.5rem, 0.85rem);
+        opacity: 0.85;
+      }
+
+      .touch-controls {
+        position: fixed;
+        left: 50%;
+        bottom: clamp(0.9rem, 4vw, 2rem);
+        transform: translateX(-50%);
+        display: none;
+        gap: clamp(0.9rem, 3vw, 1.6rem);
+        pointer-events: none;
+        z-index: 10;
+      }
+
+      .touch-controls .control-group {
+        pointer-events: auto;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.55rem 0.75rem;
+        border: 2px solid rgba(57, 255, 20, 0.4);
+        border-radius: 14px;
+        background: rgba(0, 0, 0, 0.55);
+        backdrop-filter: blur(6px);
+      }
+
+      .control-label {
+        font-size: 0.62rem;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        opacity: 0.75;
+      }
+
+      .touch-row {
+        display: flex;
+        gap: 0.5rem;
+      }
+
+      .touch-btn {
+        width: clamp(52px, 12vw, 72px);
+        height: clamp(52px, 12vw, 72px);
+        border-radius: 12px;
+        border: 2px solid rgba(57, 255, 20, 0.6);
+        background: rgba(57, 255, 20, 0.12);
+        color: var(--primary);
+        font-size: clamp(1.1rem, 6vw, 1.8rem);
+        display: grid;
+        place-items: center;
+        box-shadow: 0 0 16px rgba(57, 255, 20, 0.3);
+        user-select: none;
+        touch-action: none;
+      }
+
+      .touch-btn:active {
+        background: rgba(57, 255, 20, 0.26);
+      }
+
+      footer {
+        width: min(960px, 100%);
+        padding: clamp(0.8rem, 2vw, 1.2rem);
+        text-align: center;
+        font-size: clamp(0.55rem, 0.4vw + 0.5rem, 0.75rem);
+        opacity: 0.65;
+        letter-spacing: 0.05em;
+      }
+
+      @media (pointer: coarse), (max-width: 768px) {
+        .touch-controls {
+          display: flex;
+        }
+
+        header {
+          grid-template-columns: max-content 1fr;
+          grid-template-rows: auto auto;
+        }
+
+        header .scoreboard {
+          grid-column: 1 / -1;
+          justify-self: center;
+        }
+
+        .title {
+          justify-self: start;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <a class="back-button" href="./index.html" aria-label="Back to hub">← Back</a>
+      <h1 class="title">Neon City Driver</h1>
+      <div class="scoreboard" role="status" aria-live="polite">
+        <span>Score <strong id="score">0</strong></span>
+        <span>Mission <strong id="mission">Drive to the glowing checkpoint</strong></span>
+        <span>Speed <strong id="speed">0 km/h</strong></span>
+      </div>
+    </header>
+    <main>
+      <p class="info-pill" role="status" aria-live="polite">
+        Free-roam neon streets · Objective <span>Reach the checkpoints</span>
+      </p>
+      <div class="game-shell">
+        <canvas id="game-canvas" width="400" height="225" aria-label="Neon City Driver game canvas"></canvas>
+        <div id="overlay" class="overlay visible" role="status" aria-live="polite" aria-hidden="false">
+          <p id="overlay-title">Press Space or Tap to Start</p>
+          <span>Arrow keys or WASD to drive · Space handbrake · P pause · R restart</span>
+        </div>
+      </div>
+    </main>
+    <div class="touch-controls" id="touch-controls" aria-hidden="true">
+      <div class="control-group">
+        <span class="control-label">Steer</span>
+        <div class="touch-row">
+          <button type="button" class="touch-btn" data-action="steer-left" aria-label="Steer left">◀</button>
+          <button type="button" class="touch-btn" data-action="steer-right" aria-label="Steer right">▶</button>
+        </div>
+      </div>
+      <div class="control-group">
+        <span class="control-label">Throttle</span>
+        <div class="touch-row">
+          <button type="button" class="touch-btn" data-action="accelerate" aria-label="Accelerate">⤴</button>
+          <button type="button" class="touch-btn" data-action="brake" aria-label="Brake">⤵</button>
+        </div>
+      </div>
+    </div>
+    <footer>Arrow keys / WASD to drive · Space handbrake · P pause · R restart · Tap overlay to resume.</footer>
+    <script src="./city.js?v=1"></script>
+  </body>
+</html>

@@ -118,11 +118,11 @@
         color: var(--secondary);
       }
 
+      /* Make shell narrower & follow canvas (no forced 16:9) */
       .game-shell {
         position: relative;
-        width: 100%;
-        aspect-ratio: 16 / 9;
-        max-width: 940px;
+        width: min(420px, 100%);
+        max-width: 420px;
         border: 2px solid rgba(57, 255, 20, 0.4);
         border-radius: clamp(12px, 2vw, 20px);
         background: radial-gradient(circle at center, rgba(57, 255, 20, 0.08), rgba(0, 0, 0, 0.95));
@@ -131,6 +131,8 @@
         display: flex;
         align-items: center;
         justify-content: center;
+        margin-inline: auto;
+        padding: clamp(0.6rem, 1.5vw, 1rem);
       }
 
       .game-shell::after {
@@ -148,9 +150,10 @@
         opacity: 0.45;
       }
 
+      /* Tall well, slightly smaller */
       canvas {
-        width: min(420px, 90%);
-        max-width: 420px;
+        width: 100%;
+        max-width: 360px;
         aspect-ratio: 1 / 2;
         height: auto;
         image-rendering: pixelated;
@@ -197,13 +200,15 @@
         opacity: 0.8;
       }
 
+      /* Center touch controls at bottom, a bit smaller */
       .touch-controls {
         position: fixed;
-        right: clamp(0.9rem, 4vw, 2rem);
+        left: 50%;
         bottom: clamp(1.2rem, 5vw, 3rem);
+        transform: translateX(-50%);
         display: none;
         flex-direction: column;
-        gap: clamp(0.8rem, 2.5vw, 1.6rem);
+        gap: clamp(0.8rem, 2.5vw, 1.4rem);
         pointer-events: none;
         z-index: 10;
       }
@@ -230,17 +235,17 @@
 
       .touch-row {
         display: flex;
-        gap: 0.65rem;
+        gap: 0.6rem;
       }
 
       .touch-btn {
-        width: clamp(58px, 13vw, 80px);
-        height: clamp(58px, 13vw, 80px);
+        width: clamp(52px, 11vw, 70px);
+        height: clamp(52px, 11vw, 70px);
         border-radius: 14px;
         border: 2px solid rgba(57, 255, 20, 0.6);
         background: rgba(57, 255, 20, 0.12);
         color: var(--primary);
-        font-size: clamp(1.2rem, 6vw, 2rem);
+        font-size: clamp(1.1rem, 5.5vw, 1.8rem);
         display: grid;
         place-items: center;
         box-shadow: 0 0 16px rgba(57, 255, 20, 0.35);

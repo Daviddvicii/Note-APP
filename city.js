@@ -18,19 +18,26 @@
     roadBottom: canvas.height,
     laneCount: 3,
     laneWidth: canvas.width * 0.22, // road narrower than screen
+
     playerWidth: 34,
     playerHeight: 52,
-    baseSpeedPx: 90, // px / s at slow speed
-    maxSpeedPx: 220, // px / s at max speed
-    speedToKmh: 1.6, // px/s -> km/h (220 → ~350 km/h)
-    accelPx: 160, // how fast speed changes
+
+    // SPEED MODEL (px / s)
+    baseSpeedPx: 100,    // slow cruising speed
+    maxSpeedPx: 450,     // max speed (px per second)
+    speedToKmh: 1.0,     // 450 px/s → 450 km/h in HUD
+
+    accelPx: 180,        // how fast speed changes
+
     obstacleMinGap: 120,
     obstacleMaxGap: 220,
+
     obstacleWidth: 34,
     obstacleHeight: 52
   };
 
-  // lane centers
+  // ROAD GEOMETRY -------------------------------------------------
+
   const roadWidth = config.laneWidth * config.laneCount;
   const roadCenterX = canvas.width / 2;
   const roadLeft = roadCenterX - roadWidth / 2;
@@ -42,7 +49,8 @@
     laneCenters.push(cx);
   }
 
-  // different vehicle types for traffic
+  // TRAFFIC VEHICLES ----------------------------------------------
+
   const VEHICLES = [
     {
       name: "car",
@@ -52,29 +60,38 @@
     },
     {
       name: "truck",
-      w: config.obstacleWidth + 10,
-      h: config.obstacleHeight + 20,
+      w: config.obstacleWidth + 12,
+      h: config.obstacleHeight + 26,
       color: "#ffd54f"
     },
     {
       name: "bike",
-      w: config.obstacleWidth - 10,
-      h: config.obstacleHeight - 16,
+      w: config.obstacleWidth - 12,
+      h: config.obstacleHeight - 18,
       color: "#80deea"
+    },
+    {
+      name: "taxi",
+      w: config.obstacleWidth + 4,
+      h: config.obstacleHeight,
+      color: "#ffeb3b"
     }
   ];
 
   // --- STATE -----------------------------------------------------
 
   const state = {
-    phase: "idle", // idle | running | paused | crashed
+    phase: "idle",            // idle | running | paused | crashed
     lastTime: performance.now(),
+
     score: 0,
     distance: 0,
-    speed: 0,
+    speed: 0,                 // px/s
     scrollOffset: 0,
-    playerLane: 1, // 0 left, 1 middle, 2 right
+
+    playerLane: 1,            // 0 left, 1 middle, 2 right
     playerY: canvas.height - 80,
+
     obstacles: []
   };
 
@@ -97,12 +114,14 @@
 
   function spawnObstacle() {
     const lane = Math.floor(Math.random() * config.laneCount);
+    const v = VEHICLES[Math.floor(Math.random() * VEHICLES.length)];
+
     const y =
-      -config.obstacleHeight -
+      -v.h -
       Math.random() *
         (config.obstacleMaxGap - config.obstacleMinGap) -
       config.obstacleMinGap;
-    const v = VEHICLES[Math.floor(Math.random() * VEHICLES.length)];
+
     state.obstacles.push({
       lane,
       y,
@@ -127,10 +146,11 @@
 
   function updateHud(force = false) {
     if (!scoreEl || !speedEl) return;
+
     const scoreText = Math.floor(state.score).toString();
     const speedText = `${Math.round(
       state.speed * config.speedToKmh
-    )} km/h`; // up to ~350
+    )} km/h`; // goes up to 450
 
     if (force || hudCache.score !== scoreText) {
       hudCache.score = scoreText;
@@ -327,7 +347,7 @@
   // --- UPDATE & RENDER -------------------------------------------
 
   function update(dt) {
-    // lane stepping (one lane per press)
+    // lane stepping (one lane per tap/press)
     if (input.left && !input.right) {
       if (state.playerLane > 0) state.playerLane -= 1;
       input.left = false;
@@ -336,10 +356,11 @@
       input.right = false;
     }
 
-    // smooth speed up / down, up to ≈350 km/h
+    // smooth speed up / down
     const target = input.speed
       ? config.maxSpeedPx
       : config.baseSpeedPx;
+
     if (state.speed < target) {
       state.speed = Math.min(
         target,
@@ -352,21 +373,24 @@
       );
     }
 
+    // distance + score
     state.distance += state.speed * dt;
     state.score = state.distance / 8;
-    state.scrollOffset += state.speed * dt;
 
-    // move obstacles
+    // world scroll: SCALE with speed for real speed feel
+    state.scrollOffset += state.speed * dt * 2.2;
+
+    // move obstacles (faster with higher speed)
     for (const ob of state.obstacles) {
-      ob.y += state.speed * dt * 0.9;
+      ob.y += state.speed * dt * 2.0;
     }
 
-    // remove off-screen
+    // clean up off-screen obstacles
     state.obstacles = state.obstacles.filter(
-      (ob) => ob.y < canvas.height + 70
+      (ob) => ob.y < canvas.height + 80
     );
 
-    // spawn new ones
+    // spawn new traffic
     if (
       state.obstacles.length === 0 ||
       state.obstacles[state.obstacles.length - 1].y >
@@ -375,7 +399,7 @@
       spawnObstacle();
     }
 
-    // collision
+    // collision detection
     const playerX = laneToX(state.playerLane);
     const playerRect = {
       x: playerX,
@@ -406,8 +430,9 @@
 
   function drawBuildings() {
     const bandH = 70;
-    const offset = (state.scrollOffset * 0.4) % bandH;
-    let y = -bandH + offset; // moves downward with speed
+    // Increase factor so buildings scroll faster with speed
+    const offset = (state.scrollOffset * 0.9) % bandH;
+    let y = -bandH + offset;
 
     while (y < canvas.height + bandH) {
       // left building block
@@ -415,9 +440,14 @@
       ctx.fillRect(0, y + 6, roadLeft - 8, bandH - 10);
 
       // right building block
-      ctx.fillRect(roadRight + 8, y + 6, canvas.width - roadRight - 8, bandH - 10);
+      ctx.fillRect(
+        roadRight + 8,
+        y + 6,
+        canvas.width - roadRight - 8,
+        bandH - 10
+      );
 
-      // simple neon windows
+      // neon windows
       ctx.fillStyle = "rgba(57,255,20,0.4)";
       const windowW = 6;
       const windowH = 8;
@@ -426,6 +456,7 @@
         ctx.fillRect(wx, y + 10, windowW, windowH);
         ctx.fillRect(wx + 4, y + 24, windowW, windowH);
       }
+
       for (let wx = roadRight + 10; wx < canvas.width - 10; wx += 16) {
         ctx.fillRect(wx, y + 12, windowW, windowH);
         ctx.fillRect(wx + 5, y + 28, windowW, windowH);
@@ -452,16 +483,16 @@
       config.roadBottom - config.roadTop
     );
 
-    // lane lines (moving BACKWARD / down screen)
+    // lane lines (moving DOWN with speed)
     ctx.strokeStyle = "rgba(57,255,20,0.4)";
     ctx.lineWidth = 2;
     const dashLength = 18;
     const gap = 14;
     const period = dashLength + gap;
-    const offset = (state.scrollOffset * 0.8) % period;
+    const offset = (state.scrollOffset * 1.6) % period; // stronger movement
     for (let i = 1; i < config.laneCount; i++) {
       const x = roadLeft + config.laneWidth * i;
-      let y = -dashLength + offset; // as offset increases, pattern moves DOWN
+      let y = -dashLength + offset;
       while (y < canvas.height) {
         ctx.beginPath();
         ctx.moveTo(x, y);

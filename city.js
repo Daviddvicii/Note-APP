@@ -11,31 +11,60 @@
   const touchButtons =
     touchControls?.querySelectorAll(".touch-btn") ?? [];
 
-  // --- Game config ---
+  // --- CONFIG ----------------------------------------------------
+
   const config = {
     roadTop: 0,
     roadBottom: canvas.height,
     laneCount: 3,
     laneWidth: canvas.width * 0.22, // road narrower than screen
-    roadCenterX: canvas.width / 2,
     playerWidth: 34,
     playerHeight: 52,
-    baseSpeed: 140, // px / s
-    boostSpeed: 220,
+    baseSpeedPx: 90, // px / s at slow speed
+    maxSpeedPx: 220, // px / s at max speed
+    speedToKmh: 1.6, // px/s -> km/h (220 → ~350 km/h)
+    accelPx: 160, // how fast speed changes
     obstacleMinGap: 120,
     obstacleMaxGap: 220,
     obstacleWidth: 34,
     obstacleHeight: 52
   };
 
-  // Precompute lane X positions (center of each lane)
+  // lane centers
   const roadWidth = config.laneWidth * config.laneCount;
-  const roadLeft = config.roadCenterX - roadWidth / 2;
+  const roadCenterX = canvas.width / 2;
+  const roadLeft = roadCenterX - roadWidth / 2;
+  const roadRight = roadLeft + roadWidth;
+
   const laneCenters = [];
   for (let i = 0; i < config.laneCount; i++) {
     const cx = roadLeft + config.laneWidth * (i + 0.5);
     laneCenters.push(cx);
   }
+
+  // different vehicle types for traffic
+  const VEHICLES = [
+    {
+      name: "car",
+      w: config.obstacleWidth,
+      h: config.obstacleHeight,
+      color: "#ff2a7f"
+    },
+    {
+      name: "truck",
+      w: config.obstacleWidth + 10,
+      h: config.obstacleHeight + 20,
+      color: "#ffd54f"
+    },
+    {
+      name: "bike",
+      w: config.obstacleWidth - 10,
+      h: config.obstacleHeight - 16,
+      color: "#80deea"
+    }
+  ];
+
+  // --- STATE -----------------------------------------------------
 
   const state = {
     phase: "idle", // idle | running | paused | crashed
@@ -44,7 +73,7 @@
     distance: 0,
     speed: 0,
     scrollOffset: 0,
-    playerLane: 1, // 0 left, 1 mid, 2 right
+    playerLane: 1, // 0 left, 1 middle, 2 right
     playerY: canvas.height - 80,
     obstacles: []
   };
@@ -55,30 +84,12 @@
     speed: false
   };
 
-  const hudCache = { score: "", speed: "" };
+  const hudCache = {
+    score: "",
+    speed: ""
+  };
 
-  // --- Helpers ---
-
-  function resetGame() {
-    state.phase = "idle";
-    state.score = 0;
-    state.distance = 0;
-    state.scrollOffset = 0;
-    state.speed = 0;
-    state.playerLane = 1;
-    state.playerY = canvas.height - 80;
-    state.obstacles = [];
-    spawnObstacle();
-    updateHud(true);
-    showOverlay(
-      "Press Space or Tap to Start",
-      "←/→ steer · ↑/W speed up · P pause · R restart"
-    );
-  }
-
-  function currentSpeed() {
-    return input.speed ? config.boostSpeed : config.baseSpeed;
-  }
+  // --- HELPERS ---------------------------------------------------
 
   function laneToX(laneIndex) {
     return laneCenters[laneIndex] - config.playerWidth / 2;
@@ -91,13 +102,19 @@
       Math.random() *
         (config.obstacleMaxGap - config.obstacleMinGap) -
       config.obstacleMinGap;
-    state.obstacles.push({ lane, y });
+    const v = VEHICLES[Math.floor(Math.random() * VEHICLES.length)];
+    state.obstacles.push({
+      lane,
+      y,
+      w: v.w,
+      h: v.h,
+      color: v.color
+    });
   }
 
   function showOverlay(title, hint) {
     if (!overlay) return;
-    overlay.innerHTML =
-      `${title}<span>${hint}</span>`;
+    overlay.innerHTML = `${title}<span>${hint}</span>`;
     overlay.classList.add("visible");
     overlay.setAttribute("aria-hidden", "false");
   }
@@ -111,7 +128,9 @@
   function updateHud(force = false) {
     if (!scoreEl || !speedEl) return;
     const scoreText = Math.floor(state.score).toString();
-    const speedText = `${Math.round(state.speed / 2)} km/h`;
+    const speedText = `${Math.round(
+      state.speed * config.speedToKmh
+    )} km/h`; // up to ~350
 
     if (force || hudCache.score !== scoreText) {
       hudCache.score = scoreText;
@@ -123,7 +142,24 @@
     }
   }
 
-  // --- Input handling ---
+  function resetGame() {
+    state.phase = "idle";
+    state.score = 0;
+    state.distance = 0;
+    state.scrollOffset = 0;
+    state.speed = config.baseSpeedPx;
+    state.playerLane = 1;
+    state.playerY = canvas.height - 80;
+    state.obstacles = [];
+    spawnObstacle();
+    updateHud(true);
+    showOverlay(
+      "Press Space or Tap to Start",
+      "←/→ steer · ↑/W speed up · P pause · R restart"
+    );
+  }
+
+  // --- INPUT -----------------------------------------------------
 
   function handleKeyDown(e) {
     switch (e.code) {
@@ -185,12 +221,10 @@
     const press = (action, value) => {
       switch (action) {
         case "left":
-          if (value) input.left = true;
-          else input.left = false;
+          input.left = value;
           break;
         case "right":
-          if (value) input.right = true;
-          else input.right = false;
+          input.right = value;
           break;
         case "speed":
           input.speed = value;
@@ -215,6 +249,7 @@
         btn.setPointerCapture?.(ev.pointerId);
         press(action, true);
       };
+
       const up = (ev) => {
         ev.preventDefault();
         btn.releasePointerCapture?.(ev.pointerId);
@@ -227,7 +262,6 @@
       btn.addEventListener("pointercancel", up);
     });
 
-    // Touch controls visible on coarse pointers (mobile)
     const mq = window.matchMedia
       ? window.matchMedia("(pointer: coarse)")
       : null;
@@ -266,7 +300,7 @@
     setupTouchControls();
   }
 
-  // --- Phase control ---
+  // --- PHASE CONTROL ---------------------------------------------
 
   function startRun() {
     hideOverlay();
@@ -290,35 +324,49 @@
     showOverlay("Crashed!", "Press Space or R to try again");
   }
 
-  // --- Update & render ---
+  // --- UPDATE & RENDER -------------------------------------------
 
   function update(dt) {
-    // Handle lane changes (press = instant lane snap)
+    // lane stepping (one lane per press)
     if (input.left && !input.right) {
-      if (state.playerLane > 0) {
-        state.playerLane -= 1;
-      }
-      input.left = false; // avoid double-step
+      if (state.playerLane > 0) state.playerLane -= 1;
+      input.left = false;
     } else if (input.right && !input.left) {
-      if (state.playerLane < config.laneCount - 1) {
-        state.playerLane += 1;
-      }
+      if (state.playerLane < config.laneCount - 1) state.playerLane += 1;
       input.right = false;
     }
 
-    state.speed = currentSpeed();
-    state.distance += state.speed * dt;
-    state.score = state.distance / 10;
-    state.scrollOffset += state.speed * dt;
-
-    // Move obstacles
-    const speed = state.speed;
-    for (const ob of state.obstacles) {
-      ob.y += speed * dt * 0.9;
+    // smooth speed up / down, up to ≈350 km/h
+    const target = input.speed
+      ? config.maxSpeedPx
+      : config.baseSpeedPx;
+    if (state.speed < target) {
+      state.speed = Math.min(
+        target,
+        state.speed + config.accelPx * dt
+      );
+    } else if (state.speed > target) {
+      state.speed = Math.max(
+        target,
+        state.speed - config.accelPx * dt
+      );
     }
 
-    // Remove off-screen obstacles & spawn new ones
-    state.obstacles = state.obstacles.filter((ob) => ob.y < canvas.height + 60);
+    state.distance += state.speed * dt;
+    state.score = state.distance / 8;
+    state.scrollOffset += state.speed * dt;
+
+    // move obstacles
+    for (const ob of state.obstacles) {
+      ob.y += state.speed * dt * 0.9;
+    }
+
+    // remove off-screen
+    state.obstacles = state.obstacles.filter(
+      (ob) => ob.y < canvas.height + 70
+    );
+
+    // spawn new ones
     if (
       state.obstacles.length === 0 ||
       state.obstacles[state.obstacles.length - 1].y >
@@ -327,7 +375,7 @@
       spawnObstacle();
     }
 
-    // Collision check
+    // collision
     const playerX = laneToX(state.playerLane);
     const playerRect = {
       x: playerX,
@@ -337,14 +385,10 @@
     };
 
     for (const ob of state.obstacles) {
-      const ox = laneCenters[ob.lane] - config.obstacleWidth / 2;
+      const laneCenter = laneCenters[ob.lane];
+      const ox = laneCenter - ob.w / 2;
       const oy = ob.y;
-      const rect = {
-        x: ox,
-        y: oy,
-        w: config.obstacleWidth,
-        h: config.obstacleHeight
-      };
+      const rect = { x: ox, y: oy, w: ob.w, h: ob.h };
 
       if (
         rect.x < playerRect.x + playerRect.w &&
@@ -360,15 +404,46 @@
     updateHud();
   }
 
+  function drawBuildings() {
+    const bandH = 70;
+    const offset = (state.scrollOffset * 0.4) % bandH;
+    let y = -bandH + offset; // moves downward with speed
+
+    while (y < canvas.height + bandH) {
+      // left building block
+      ctx.fillStyle = "#020f09";
+      ctx.fillRect(0, y + 6, roadLeft - 8, bandH - 10);
+
+      // right building block
+      ctx.fillRect(roadRight + 8, y + 6, canvas.width - roadRight - 8, bandH - 10);
+
+      // simple neon windows
+      ctx.fillStyle = "rgba(57,255,20,0.4)";
+      const windowW = 6;
+      const windowH = 8;
+
+      for (let wx = 6; wx < roadLeft - 12; wx += 14) {
+        ctx.fillRect(wx, y + 10, windowW, windowH);
+        ctx.fillRect(wx + 4, y + 24, windowW, windowH);
+      }
+      for (let wx = roadRight + 10; wx < canvas.width - 10; wx += 16) {
+        ctx.fillRect(wx, y + 12, windowW, windowH);
+        ctx.fillRect(wx + 5, y + 28, windowW, windowH);
+      }
+
+      y += bandH;
+    }
+  }
+
   function drawRoad() {
-    ctx.fillStyle = "#011309";
+    // base background
+    ctx.fillStyle = "#000000";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Grass
-    ctx.fillStyle = "#010903";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    // city buildings on both sides
+    drawBuildings();
 
-    // Asphalt
+    // asphalt
     ctx.fillStyle = "#031a0d";
     ctx.fillRect(
       roadLeft,
@@ -377,32 +452,36 @@
       config.roadBottom - config.roadTop
     );
 
-    // Lane lines
+    // lane lines (moving BACKWARD / down screen)
     ctx.strokeStyle = "rgba(57,255,20,0.4)";
     ctx.lineWidth = 2;
     const dashLength = 18;
     const gap = 14;
+    const period = dashLength + gap;
+    const offset = (state.scrollOffset * 0.8) % period;
     for (let i = 1; i < config.laneCount; i++) {
       const x = roadLeft + config.laneWidth * i;
-      let y = -((state.scrollOffset * 0.8) % (dashLength + gap));
+      let y = -dashLength + offset; // as offset increases, pattern moves DOWN
       while (y < canvas.height) {
         ctx.beginPath();
         ctx.moveTo(x, y);
         ctx.lineTo(x, y + dashLength);
         ctx.stroke();
-        y += dashLength + gap;
+        y += period;
       }
     }
   }
 
   function drawObstacles() {
     for (const ob of state.obstacles) {
-      const x = laneCenters[ob.lane] - config.obstacleWidth / 2;
+      const laneCenter = laneCenters[ob.lane];
+      const x = laneCenter - ob.w / 2;
       const y = ob.y;
-      ctx.fillStyle = "#ff2a7f";
-      ctx.shadowColor = "#ff2a7f";
+
+      ctx.fillStyle = ob.color;
+      ctx.shadowColor = ob.color;
       ctx.shadowBlur = 10;
-      ctx.fillRect(x, y, config.obstacleWidth, config.obstacleHeight);
+      ctx.fillRect(x, y, ob.w, ob.h);
       ctx.shadowBlur = 0;
     }
   }
@@ -417,7 +496,7 @@
     ctx.fillRect(x, y, config.playerWidth, config.playerHeight);
     ctx.shadowBlur = 0;
 
-    // simple "windshield"
+    // windshield
     ctx.fillStyle = "#011a15";
     ctx.fillRect(
       x + 5,
@@ -446,7 +525,8 @@
     requestAnimationFrame(loop);
   }
 
-  // --- init ---
+  // --- INIT ------------------------------------------------------
+
   resetGame();
   bindEvents();
   requestAnimationFrame(loop);

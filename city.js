@@ -17,17 +17,17 @@
     roadTop: 0,
     roadBottom: canvas.height,
     laneCount: 3,
-    laneWidth: canvas.width * 0.22, // road narrower than screen
+    laneWidth: canvas.width * 0.22,
 
     playerWidth: 34,
     playerHeight: 52,
 
-    // SPEED MODEL (px / s)
-    baseSpeedPx: 110,   // slow cruising
-    maxSpeedPx: 450,    // max speed
-    speedToKmh: 1.0,    // 450 px/s -> 450 km/h
+    // SPEED (px / s)
+    baseSpeedPx: 110,
+    maxSpeedPx: 450,
+    speedToKmh: 1.0,
 
-    accelPx: 200,       // acceleration
+    accelPx: 200,
 
     obstacleMinGap: 120,
     obstacleMaxGap: 220,
@@ -89,8 +89,8 @@
     speed: 0,                 // px/s
     scrollOffset: 0,
 
-    playerLane: 1,            // 0 left, 1 middle, 2 right
-    playerY: canvas.height - 70, // a bit lower for more road view
+    playerLane: 1,
+    playerY: canvas.height - 70,
 
     obstacles: []
   };
@@ -150,7 +150,7 @@
     const scoreText = Math.floor(state.score).toString();
     const speedText = `${Math.round(
       state.speed * config.speedToKmh
-    )} km/h`; // goes up to 450
+    )} km/h`;
 
     if (force || hudCache.score !== scoreText) {
       hudCache.score = scoreText;
@@ -179,6 +179,14 @@
     );
   }
 
+  // quick reset + run after crash
+  function restartRun() {
+    resetGame();        // puts us in idle + start overlay
+    hideOverlay();      // hide overlay immediately
+    state.phase = "running";
+    state.lastTime = performance.now();
+  }
+
   // --- INPUT -----------------------------------------------------
 
   function handleKeyDown(e) {
@@ -200,8 +208,10 @@
         break;
       case "Space":
         e.preventDefault();
-        if (state.phase === "idle" || state.phase === "crashed") {
+        if (state.phase === "idle") {
           startRun();
+        } else if (state.phase === "crashed") {
+          restartRun();   // <-- restart from crash
         } else if (state.phase === "paused") {
           resumeRun();
         }
@@ -213,7 +223,7 @@
         break;
       case "KeyR":
         e.preventDefault();
-        resetGame();
+        resetGame();     // normal reset to idle
         break;
     }
   }
@@ -252,8 +262,10 @@
       }
 
       if (value) {
-        if (state.phase === "idle" || state.phase === "crashed") {
+        if (state.phase === "idle") {
           startRun();
+        } else if (state.phase === "crashed") {
+          restartRun();
         } else if (state.phase === "paused") {
           resumeRun();
         }
@@ -302,8 +314,10 @@
     document.addEventListener("keyup", handleKeyUp);
 
     overlay?.addEventListener("click", () => {
-      if (state.phase === "idle" || state.phase === "crashed") {
+      if (state.phase === "idle") {
         startRun();
+      } else if (state.phase === "crashed") {
+        restartRun();   // tap overlay after crash
       } else if (state.phase === "paused") {
         resumeRun();
       }
@@ -347,7 +361,7 @@
   // --- UPDATE & RENDER -------------------------------------------
 
   function update(dt) {
-    // lane stepping (one lane per tap/press)
+    // lane stepping
     if (input.left && !input.right) {
       if (state.playerLane > 0) state.playerLane -= 1;
       input.left = false;
@@ -356,7 +370,7 @@
       input.right = false;
     }
 
-    // smooth speed up / down
+    // speed
     const target = input.speed
       ? config.maxSpeedPx
       : config.baseSpeedPx;
@@ -373,39 +387,35 @@
       );
     }
 
-    // distance + score
     state.distance += state.speed * dt;
-    state.score = state.distance / 6; // faster score gain
+    state.score = state.distance / 6;
 
-    // world scroll: HEAVILY scaled by speed for strong motion
-    // higher factor = more visual speed
+    // world scroll amplified
     state.scrollOffset += state.speed * dt * 4.0;
 
-    // move obstacles – scaled up too
+    // obstacles scroll
     for (const ob of state.obstacles) {
       ob.y += state.speed * dt * 3.2;
     }
 
-    // clean up off-screen obstacles
     state.obstacles = state.obstacles.filter(
       (ob) => ob.y < canvas.height + 100
     );
 
-    // spawn new traffic depending on speed (denser when faster)
     const lastY =
       state.obstacles.length > 0
         ? state.obstacles[state.obstacles.length - 1].y
         : canvas.height;
 
     const gapBase = config.obstacleMinGap;
-    const speedFactor = 1 + state.speed / config.maxSpeedPx; // 1 ~ 2
-    const dynamicGap = gapBase / speedFactor; // smaller gap at high speed
+    const speedFactor = 1 + state.speed / config.maxSpeedPx;
+    const dynamicGap = gapBase / speedFactor;
 
     if (state.obstacles.length === 0 || lastY > dynamicGap) {
       spawnObstacle();
     }
 
-    // collision detection
+    // collision
     const playerX = laneToX(state.playerLane);
     const playerRect = {
       x: playerX,
@@ -435,16 +445,13 @@
   }
 
   function drawBuildings() {
-    const bandH = 60; // shorter bands = more parallax
-    const offset = (state.scrollOffset * 1.4) % bandH; // strong speed tie
+    const bandH = 60;
+    const offset = (state.scrollOffset * 1.4) % bandH;
     let y = -bandH + offset;
 
     while (y < canvas.height + bandH) {
-      // left block
       ctx.fillStyle = "#020f09";
       ctx.fillRect(0, y + 4, roadLeft - 6, bandH - 8);
-
-      // right block
       ctx.fillRect(
         roadRight + 6,
         y + 4,
@@ -452,7 +459,6 @@
         bandH - 8
       );
 
-      // neon windows
       ctx.fillStyle = "rgba(57,255,20,0.45)";
       const windowW = 6;
       const windowH = 8;
@@ -473,14 +479,11 @@
   }
 
   function drawRoad() {
-    // base background
     ctx.fillStyle = "#000000";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // city buildings on both sides
     drawBuildings();
 
-    // asphalt
     ctx.fillStyle = "#031a0d";
     ctx.fillRect(
       roadLeft,
@@ -489,13 +492,13 @@
       config.roadBottom - config.roadTop
     );
 
-    // lane lines (moving DOWN with strong factor)
+    // lane lines
     ctx.strokeStyle = "rgba(57,255,20,0.6)";
     ctx.lineWidth = 2;
     const dashLength = 18;
     const gap = 14;
     const period = dashLength + gap;
-    const offset = (state.scrollOffset * 2.2) % period; // more aggressive move
+    const offset = (state.scrollOffset * 2.2) % period;
     for (let i = 1; i < config.laneCount; i++) {
       const x = roadLeft + config.laneWidth * i;
       let y = -dashLength + offset;
@@ -508,7 +511,7 @@
       }
     }
 
-    // subtle road texture stripes (help speed feel)
+    // texture stripes
     ctx.strokeStyle = "rgba(0,0,0,0.4)";
     ctx.lineWidth = 1;
     const stripeGap = 18;
@@ -547,7 +550,6 @@
     ctx.fillRect(x, y, config.playerWidth, config.playerHeight);
     ctx.shadowBlur = 0;
 
-    // windshield
     ctx.fillStyle = "#011a15";
     ctx.fillRect(
       x + 5,

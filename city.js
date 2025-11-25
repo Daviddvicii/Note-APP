@@ -1,175 +1,453 @@
-(function () {
-  const canvas = document.getElementById("game");
+(() => {
+  const canvas = document.getElementById("game-canvas");
+  if (!canvas) return;
+
   const ctx = canvas.getContext("2d");
+
   const overlay = document.getElementById("overlay");
   const scoreEl = document.getElementById("score");
   const speedEl = document.getElementById("speed");
+  const touchControls = document.getElementById("touch-controls");
+  const touchButtons =
+    touchControls?.querySelectorAll(".touch-btn") ?? [];
 
-  // Resize canvas to match device width (portrait)
-  function resize() {
-    const maxW = Math.min(window.innerWidth * 0.95, 420);
-    const h = maxW * (16 / 9); // tall vertical
-    canvas.width = maxW;
-    canvas.height = h;
-  }
-  resize();
-  window.addEventListener("resize", resize);
-
-  // Game state
-  let running = false;
-  let speed = 0;
-  let score = 0;
-
-  const car = {
-    x: 160,
-    y: 500,
-    w: 40,
-    h: 60,
+  // --- Game config ---
+  const config = {
+    roadTop: 0,
+    roadBottom: canvas.height,
+    laneCount: 3,
+    laneWidth: canvas.width * 0.22, // road narrower than screen
+    roadCenterX: canvas.width / 2,
+    playerWidth: 34,
+    playerHeight: 52,
+    baseSpeed: 140, // px / s
+    boostSpeed: 220,
+    obstacleMinGap: 120,
+    obstacleMaxGap: 220,
+    obstacleWidth: 34,
+    obstacleHeight: 52
   };
 
-  const lanes = [80, 160, 240];
-  let laneIndex = 1;
-
-  const traffic = [];
-
-  function spawnCar() {
-    traffic.push({
-      x: lanes[Math.floor(Math.random() * 3)],
-      y: -80,
-      w: 40,
-      h: 60,
-    });
+  // Precompute lane X positions (center of each lane)
+  const roadWidth = config.laneWidth * config.laneCount;
+  const roadLeft = config.roadCenterX - roadWidth / 2;
+  const laneCenters = [];
+  for (let i = 0; i < config.laneCount; i++) {
+    const cx = roadLeft + config.laneWidth * (i + 0.5);
+    laneCenters.push(cx);
   }
 
-  setInterval(() => {
-    if (running) spawnCar();
-  }, 1200);
+  const state = {
+    phase: "idle", // idle | running | paused | crashed
+    lastTime: performance.now(),
+    score: 0,
+    distance: 0,
+    speed: 0,
+    scrollOffset: 0,
+    playerLane: 1, // 0 left, 1 mid, 2 right
+    playerY: canvas.height - 80,
+    obstacles: []
+  };
 
-  // Draw loop
-  function draw() {
-    ctx.fillStyle = "#001403";
+  const input = {
+    left: false,
+    right: false,
+    speed: false
+  };
+
+  const hudCache = { score: "", speed: "" };
+
+  // --- Helpers ---
+
+  function resetGame() {
+    state.phase = "idle";
+    state.score = 0;
+    state.distance = 0;
+    state.scrollOffset = 0;
+    state.speed = 0;
+    state.playerLane = 1;
+    state.playerY = canvas.height - 80;
+    state.obstacles = [];
+    spawnObstacle();
+    updateHud(true);
+    showOverlay(
+      "Press Space or Tap to Start",
+      "←/→ steer · ↑/W speed up · P pause · R restart"
+    );
+  }
+
+  function currentSpeed() {
+    return input.speed ? config.boostSpeed : config.baseSpeed;
+  }
+
+  function laneToX(laneIndex) {
+    return laneCenters[laneIndex] - config.playerWidth / 2;
+  }
+
+  function spawnObstacle() {
+    const lane = Math.floor(Math.random() * config.laneCount);
+    const y =
+      -config.obstacleHeight -
+      Math.random() *
+        (config.obstacleMaxGap - config.obstacleMinGap) -
+      config.obstacleMinGap;
+    state.obstacles.push({ lane, y });
+  }
+
+  function showOverlay(title, hint) {
+    if (!overlay) return;
+    overlay.innerHTML =
+      `${title}<span>${hint}</span>`;
+    overlay.classList.add("visible");
+    overlay.setAttribute("aria-hidden", "false");
+  }
+
+  function hideOverlay() {
+    if (!overlay) return;
+    overlay.classList.remove("visible");
+    overlay.setAttribute("aria-hidden", "true");
+  }
+
+  function updateHud(force = false) {
+    if (!scoreEl || !speedEl) return;
+    const scoreText = Math.floor(state.score).toString();
+    const speedText = `${Math.round(state.speed / 2)} km/h`;
+
+    if (force || hudCache.score !== scoreText) {
+      hudCache.score = scoreText;
+      scoreEl.textContent = scoreText;
+    }
+    if (force || hudCache.speed !== speedText) {
+      hudCache.speed = speedText;
+      speedEl.textContent = speedText;
+    }
+  }
+
+  // --- Input handling ---
+
+  function handleKeyDown(e) {
+    switch (e.code) {
+      case "ArrowLeft":
+      case "KeyA":
+        input.left = true;
+        e.preventDefault();
+        break;
+      case "ArrowRight":
+      case "KeyD":
+        input.right = true;
+        e.preventDefault();
+        break;
+      case "ArrowUp":
+      case "KeyW":
+        input.speed = true;
+        e.preventDefault();
+        break;
+      case "Space":
+        e.preventDefault();
+        if (state.phase === "idle" || state.phase === "crashed") {
+          startRun();
+        } else if (state.phase === "paused") {
+          resumeRun();
+        }
+        break;
+      case "KeyP":
+        e.preventDefault();
+        if (state.phase === "running") pauseGame();
+        else if (state.phase === "paused") resumeRun();
+        break;
+      case "KeyR":
+        e.preventDefault();
+        resetGame();
+        break;
+    }
+  }
+
+  function handleKeyUp(e) {
+    switch (e.code) {
+      case "ArrowLeft":
+      case "KeyA":
+        input.left = false;
+        break;
+      case "ArrowRight":
+      case "KeyD":
+        input.right = false;
+        break;
+      case "ArrowUp":
+      case "KeyW":
+        input.speed = false;
+        break;
+    }
+  }
+
+  function setupTouchControls() {
+    if (!touchControls) return;
+
+    const press = (action, value) => {
+      switch (action) {
+        case "left":
+          if (value) input.left = true;
+          else input.left = false;
+          break;
+        case "right":
+          if (value) input.right = true;
+          else input.right = false;
+          break;
+        case "speed":
+          input.speed = value;
+          break;
+      }
+
+      if (value) {
+        if (state.phase === "idle" || state.phase === "crashed") {
+          startRun();
+        } else if (state.phase === "paused") {
+          resumeRun();
+        }
+      }
+    };
+
+    touchButtons.forEach((btn) => {
+      const action = btn.getAttribute("data-action");
+      if (!action) return;
+
+      const down = (ev) => {
+        ev.preventDefault();
+        btn.setPointerCapture?.(ev.pointerId);
+        press(action, true);
+      };
+      const up = (ev) => {
+        ev.preventDefault();
+        btn.releasePointerCapture?.(ev.pointerId);
+        press(action, false);
+      };
+
+      btn.addEventListener("pointerdown", down);
+      btn.addEventListener("pointerup", up);
+      btn.addEventListener("pointerleave", up);
+      btn.addEventListener("pointercancel", up);
+    });
+
+    // Touch controls visible on coarse pointers (mobile)
+    const mq = window.matchMedia
+      ? window.matchMedia("(pointer: coarse)")
+      : null;
+    const updateHidden = () => {
+      const isCoarse = mq ? mq.matches : false;
+      touchControls.setAttribute(
+        "aria-hidden",
+        isCoarse ? "false" : "true"
+      );
+    };
+    updateHidden();
+    if (mq?.addEventListener) mq.addEventListener("change", updateHidden);
+    else if (mq?.addListener) mq.addListener(updateHidden);
+  }
+
+  function bindEvents() {
+    document.addEventListener("keydown", handleKeyDown);
+    document.addEventListener("keyup", handleKeyUp);
+
+    overlay?.addEventListener("click", () => {
+      if (state.phase === "idle" || state.phase === "crashed") {
+        startRun();
+      } else if (state.phase === "paused") {
+        resumeRun();
+      }
+    });
+
+    window.addEventListener("blur", () => {
+      if (state.phase === "running") pauseGame();
+    });
+
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden && state.phase === "running") pauseGame();
+    });
+
+    setupTouchControls();
+  }
+
+  // --- Phase control ---
+
+  function startRun() {
+    hideOverlay();
+    state.phase = "running";
+    state.lastTime = performance.now();
+  }
+
+  function pauseGame() {
+    state.phase = "paused";
+    showOverlay("Paused", "Press Space or Tap to resume");
+  }
+
+  function resumeRun() {
+    hideOverlay();
+    state.phase = "running";
+    state.lastTime = performance.now();
+  }
+
+  function crash() {
+    state.phase = "crashed";
+    showOverlay("Crashed!", "Press Space or R to try again");
+  }
+
+  // --- Update & render ---
+
+  function update(dt) {
+    // Handle lane changes (press = instant lane snap)
+    if (input.left && !input.right) {
+      if (state.playerLane > 0) {
+        state.playerLane -= 1;
+      }
+      input.left = false; // avoid double-step
+    } else if (input.right && !input.left) {
+      if (state.playerLane < config.laneCount - 1) {
+        state.playerLane += 1;
+      }
+      input.right = false;
+    }
+
+    state.speed = currentSpeed();
+    state.distance += state.speed * dt;
+    state.score = state.distance / 10;
+    state.scrollOffset += state.speed * dt;
+
+    // Move obstacles
+    const speed = state.speed;
+    for (const ob of state.obstacles) {
+      ob.y += speed * dt * 0.9;
+    }
+
+    // Remove off-screen obstacles & spawn new ones
+    state.obstacles = state.obstacles.filter((ob) => ob.y < canvas.height + 60);
+    if (
+      state.obstacles.length === 0 ||
+      state.obstacles[state.obstacles.length - 1].y >
+        config.obstacleMinGap
+    ) {
+      spawnObstacle();
+    }
+
+    // Collision check
+    const playerX = laneToX(state.playerLane);
+    const playerRect = {
+      x: playerX,
+      y: state.playerY,
+      w: config.playerWidth,
+      h: config.playerHeight
+    };
+
+    for (const ob of state.obstacles) {
+      const ox = laneCenters[ob.lane] - config.obstacleWidth / 2;
+      const oy = ob.y;
+      const rect = {
+        x: ox,
+        y: oy,
+        w: config.obstacleWidth,
+        h: config.obstacleHeight
+      };
+
+      if (
+        rect.x < playerRect.x + playerRect.w &&
+        rect.x + rect.w > playerRect.x &&
+        rect.y < playerRect.y + playerRect.h &&
+        rect.y + rect.h > playerRect.y
+      ) {
+        crash();
+        break;
+      }
+    }
+
+    updateHud();
+  }
+
+  function drawRoad() {
+    ctx.fillStyle = "#011309";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Road lines
-    ctx.strokeStyle = "rgba(0,255,102,0.3)";
-    ctx.setLineDash([20, 20]);
-    ctx.lineWidth = 4;
+    // Grass
+    ctx.fillStyle = "#010903";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    ctx.beginPath();
-    ctx.moveTo(canvas.width / 3, 0);
-    ctx.lineTo(canvas.width / 3, canvas.height);
-    ctx.stroke();
+    // Asphalt
+    ctx.fillStyle = "#031a0d";
+    ctx.fillRect(
+      roadLeft,
+      config.roadTop,
+      roadWidth,
+      config.roadBottom - config.roadTop
+    );
 
-    ctx.beginPath();
-    ctx.moveTo((canvas.width / 3) * 2, 0);
-    ctx.lineTo((canvas.width / 3) * 2, canvas.height);
-    ctx.stroke();
-
-    // Player car
-    ctx.fillStyle = "#00ffaa";
-    ctx.fillRect(car.x - car.w / 2, car.y - car.h / 2, car.w, car.h);
-
-    // Traffic
-    ctx.fillStyle = "#ff0055";
-    for (let t of traffic) {
-      ctx.fillRect(t.x - t.w / 2, t.y - t.h / 2, t.w, t.h);
+    // Lane lines
+    ctx.strokeStyle = "rgba(57,255,20,0.4)";
+    ctx.lineWidth = 2;
+    const dashLength = 18;
+    const gap = 14;
+    for (let i = 1; i < config.laneCount; i++) {
+      const x = roadLeft + config.laneWidth * i;
+      let y = -((state.scrollOffset * 0.8) % (dashLength + gap));
+      while (y < canvas.height) {
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(x, y + dashLength);
+        ctx.stroke();
+        y += dashLength + gap;
+      }
     }
   }
 
-  // Update loop
-  function update(dt) {
-    if (!running) return;
-
-    speed += dt * 18;
-    if (speed > 180) speed = 180;
-
-    // Move traffic
-    for (let t of traffic) {
-      t.y += dt * speed * 1.6;
-
-      // Collision
-      if (
-        Math.abs(t.x - car.x) < 40 &&
-        Math.abs(t.y - car.y) < 60
-      ) {
-        running = false;
-        overlay.classList.remove("hidden");
-        overlay.querySelector("#overlay-title").textContent = "Crashed!";
-      }
+  function drawObstacles() {
+    for (const ob of state.obstacles) {
+      const x = laneCenters[ob.lane] - config.obstacleWidth / 2;
+      const y = ob.y;
+      ctx.fillStyle = "#ff2a7f";
+      ctx.shadowColor = "#ff2a7f";
+      ctx.shadowBlur = 10;
+      ctx.fillRect(x, y, config.obstacleWidth, config.obstacleHeight);
+      ctx.shadowBlur = 0;
     }
-
-    // Remove old cars
-    for (let i = traffic.length - 1; i >= 0; i--) {
-      if (traffic[i].y > canvas.height + 100) {
-        traffic.splice(i, 1);
-        score += 10;
-      }
-    }
-
-    scoreEl.textContent = score;
-    speedEl.textContent = Math.floor(speed);
   }
 
-  let last = performance.now();
+  function drawPlayer() {
+    const x = laneToX(state.playerLane);
+    const y = state.playerY;
+
+    ctx.fillStyle = "#00ffb0";
+    ctx.shadowColor = "#00ffb0";
+    ctx.shadowBlur = 12;
+    ctx.fillRect(x, y, config.playerWidth, config.playerHeight);
+    ctx.shadowBlur = 0;
+
+    // simple "windshield"
+    ctx.fillStyle = "#011a15";
+    ctx.fillRect(
+      x + 5,
+      y + 6,
+      config.playerWidth - 10,
+      config.playerHeight / 2 - 4
+    );
+  }
+
+  function render() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawRoad();
+    drawObstacles();
+    drawPlayer();
+  }
+
   function loop(now) {
-    const dt = (now - last) / 1000;
-    last = now;
+    const dt = Math.min((now - state.lastTime) / 1000, 0.05);
+    state.lastTime = now;
 
-    update(dt);
-    draw();
+    if (state.phase === "running") {
+      update(dt);
+    }
 
+    render();
     requestAnimationFrame(loop);
   }
+
+  // --- init ---
+  resetGame();
+  bindEvents();
   requestAnimationFrame(loop);
-
-  // Start game
-  function startGame() {
-    running = true;
-    overlay.classList.add("hidden");
-    speed = 60;
-    score = 0;
-    traffic.length = 0;
-  }
-
-  overlay.addEventListener("click", startGame);
-
-  // Keyboard controls
-  document.addEventListener("keydown", (e) => {
-    if (!running) startGame();
-
-    if (e.key === "ArrowLeft" || e.key === "a") {
-      laneIndex = Math.max(0, laneIndex - 1);
-      car.x = lanes[laneIndex];
-    }
-
-    if (e.key === "ArrowRight" || e.key === "d") {
-      laneIndex = Math.min(2, laneIndex + 1);
-      car.x = lanes[laneIndex];
-    }
-
-    if (e.key === "ArrowUp" || e.key === "w") {
-      speed += 4;
-    }
-  });
-
-  // Touch controls
-  document.querySelectorAll("button").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      if (!running) startGame();
-      const act = btn.dataset.act;
-
-      if (act === "left") {
-        laneIndex = Math.max(0, laneIndex - 1);
-        car.x = lanes[laneIndex];
-      }
-      if (act === "right") {
-        laneIndex = Math.min(2, laneIndex + 1);
-        car.x = lanes[laneIndex];
-      }
-      if (act === "up") {
-        speed += 6;
-      }
-    });
-  });
-
 })();

@@ -2,19 +2,27 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, user-scalable=no"
+    />
     <meta name="theme-color" content="#0b1426" />
     <title>Retro Arcade</title>
 
     <style>
-      :root { --green:#00ff66; --green2:#00ffaa; }
+      :root {
+        --green: #00ff66;
+        --green2: #00ffaa;
+      }
 
-      html, body {
+      html,
+      body {
         height: 100%;
         margin: 0;
         background: #000;
         color: var(--green);
-        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas,
+          "Liberation Mono", monospace;
       }
 
       .menu {
@@ -36,7 +44,7 @@
 
       .menu-subtitle {
         margin: 0 0 24px;
-        opacity: .8;
+        opacity: 0.8;
       }
 
       .menu-items {
@@ -55,25 +63,25 @@
         color: var(--green);
         text-decoration: none;
         font-size: 18px;
-        box-shadow: 0 0 8px rgba(0,255,102,.3);
+        box-shadow: 0 0 8px rgba(0, 255, 102, 0.3);
         transition:
-          transform .06s ease,
-          box-shadow .06s ease,
-          color .06s ease,
-          border-color .06s ease;
+          transform 0.06s ease,
+          box-shadow 0.06s ease,
+          color 0.06s ease,
+          border-color 0.06s ease;
       }
 
       .retro-btn:hover {
         transform: translateY(-1px);
         color: var(--green2);
         border-color: var(--green2);
-        box-shadow: 0 0 12px rgba(0,255,170,.5);
+        box-shadow: 0 0 12px rgba(0, 255, 170, 0.5);
       }
 
       .menu-hint {
         margin-top: 20px;
         font-size: 12px;
-        opacity: .7;
+        opacity: 0.7;
       }
     </style>
   </head>
@@ -92,11 +100,14 @@
         <a class="retro-btn" href="./breakout.html">🧱 Play Breakout</a>
         <a class="retro-btn" href="./tetris.html">🧊 Play Tetris</a>
         <a class="retro-btn" href="./city.html">🚗 Play Neon City Driver</a>
+        <!-- NEW: Neon Fruit game -->
+        <a class="retro-btn" href="./fruit.html">🍉 Play Neon Fruit Ninja</a>
       </nav>
 
       <p class="menu-hint">
-        Flappy: Tap / Space · Invaders: ← → + Space · Pac-Man: Arrows · Snake: Arrows / D-pad ·
-        Pong: W/S or ↑/↓ · Breakout: ←/→ or A/D · Tetris: Arrows / ↑ rotate · Driver: WASD / Arrows
+        Flappy: Tap / Space · Invaders: ← → + Space · Pac-Man: Arrows · Snake:
+        Arrows / D-pad · Pong: W/S or ↑/↓ · Breakout: ←/→ or A/D · Tetris:
+        Arrows / ↑ rotate · Driver: WASD / Arrows · Fruit: drag / swipe to slice
       </p>
     </div>
   </body>

@@ -76,7 +76,7 @@
 
       header {
         width: min(1040px, 96vw);
-        margin-top: 28px;
+        margin-top: 48px; /* moved lower */
         padding: 0.75rem 1.25rem;
         border: 1px solid rgba(192, 255, 244, 0.25);
         border-radius: 16px;
@@ -87,7 +87,7 @@
         justify-content: space-between;
         align-items: center;
         gap: 1.5rem;
-        flex-wrap: nowrap; /* keep stats on one line */
+        flex-wrap: nowrap;
         text-transform: uppercase;
         letter-spacing: 0.18em;
         font-size: 0.75rem;
@@ -117,15 +117,15 @@
         align-items: center;
         justify-content: center;
         width: 100%;
-        padding: 0.5rem 1rem 1.5rem;
+        padding: 0.5rem 1rem 1.2rem;
       }
 
-      /* Play zone with fixed aspect ratio (prevents stretched fruit) */
+      /* Play zone – slightly bigger now */
       #arena-wrapper {
         position: relative;
         width: min(1100px, 100vw);
-        aspect-ratio: 16 / 10;                 /* keeps 16:10 ratio */
-        max-height: calc(100vh - 180px);       /* don't go under header/footer */
+        aspect-ratio: 16 / 10;
+        max-height: calc(100vh - 150px); /* was 180px */
         border-radius: 24px;
         overflow: hidden;
         box-shadow: 0 20px 60px rgba(0, 0, 0, 0.65);
@@ -208,7 +208,7 @@
       }
 
       footer {
-        margin-bottom: 10px;
+        margin-bottom: 8px;
         text-align: center;
         font-size: 0.9rem;
         letter-spacing: 0.02em;
@@ -219,6 +219,7 @@
         header {
           font-size: 0.7rem;
           gap: 0.8rem;
+          margin-top: 52px; /* keep it nicely below URL bar */
         }
 
         .stat strong {
@@ -227,7 +228,7 @@
 
         #arena-wrapper {
           width: 100vw;
-          max-height: calc(100vh - 190px);
+          max-height: calc(100vh - 160px); /* slightly taller */
           border-radius: 18px;
         }
       }

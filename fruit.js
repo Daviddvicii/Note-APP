@@ -42,43 +42,23 @@ const state = {
   fruitLaunchCount: 0
 };
 
-updateHud();
+// ---------------- HUD ----------------
 
-startBtn.addEventListener("click", startGame);
-overlay.addEventListener("click", (event) => {
-  if (event.target === overlay) {
-    startGame();
+function updateHud() {
+  scoreEl.textContent = state.score.toString().padStart(2, "0");
+  bestEl.textContent = Math.max(state.best, state.score).toString().padStart(2, "0");
+  livesEl.textContent = "❤".repeat(state.lives).padEnd(3, "–");
+}
+
+function persistBest() {
+  if (state.score > state.best) {
+    state.best = state.score;
+    localStorage.setItem(STORAGE_KEY, state.best);
   }
-});
+  updateHud();
+}
 
-window.addEventListener("keydown", (event) => {
-  if (event.code === "Space" && overlay.classList.contains("visible")) {
-    event.preventDefault();
-    startGame();
-  }
-});
-
-canvas.addEventListener("pointerdown", (event) => {
-  state.pointerDown = true;
-  canvas.setPointerCapture(event.pointerId);
-  state.slashTrail.length = 0;
-  addSlashPoint(event);
-});
-
-canvas.addEventListener("pointermove", (event) => {
-  if (!state.pointerDown) return;
-  addSlashPoint(event);
-});
-
-const releasePointer = () => {
-  state.pointerDown = false;
-  state.slashTrail.length = 0;
-};
-
-canvas.addEventListener("pointerup", releasePointer);
-canvas.addEventListener("pointercancel", releasePointer);
-canvas.addEventListener("pointerleave", releasePointer);
-window.addEventListener("blur", releasePointer);
+// ---------------- GAME FLOW ----------------
 
 function startGame() {
   state.running = true;
@@ -91,7 +71,9 @@ function startGame() {
   state.particles.length = 0;
   state.slashTrail.length = 0;
   state.fruitLaunchCount = 0;
+  state.pointerDown = false;
   state.lastTime = performance.now();
+
   overlay.classList.remove("visible");
   overlayTitle.textContent = "Retro Neon Fruit Ninja";
   overlayMessage.textContent = "Slice everything but the bombs. Mega fruit arrives every 6th launch.";
@@ -101,25 +83,14 @@ function startGame() {
 
 function endGame(message) {
   state.running = false;
+  state.pointerDown = false;
+  state.slashTrail.length = 0;
   persistBest();
+
   overlay.classList.add("visible");
   overlayTitle.textContent = "Game Over";
   overlayMessage.innerHTML = `${message}<br/>Final score: <strong>${state.score}</strong>`;
   startBtn.textContent = "Play Again";
-}
-
-function persistBest() {
-  if (state.score > state.best) {
-    state.best = state.score;
-    localStorage.setItem(STORAGE_KEY, state.best);
-  }
-  updateHud();
-}
-
-function updateHud() {
-  scoreEl.textContent = state.score.toString().padStart(2, "0");
-  bestEl.textContent = Math.max(state.best, state.score).toString().padStart(2, "0");
-  livesEl.textContent = "❤".repeat(state.lives).padEnd(3, "–");
 }
 
 function loseLife() {
@@ -129,6 +100,8 @@ function loseLife() {
     endGame("Too many fruit splattered!");
   }
 }
+
+// ---------------- SPAWNING ----------------
 
 function spawnWave() {
   const fruitThisWave = 1 + (Math.random() < 0.55 ? 1 : 0);
@@ -181,6 +154,8 @@ function spawnBomb() {
   state.bombs.push(bomb);
 }
 
+// ---------------- INPUT / SLASH ----------------
+
 function addSlashPoint(event) {
   const rect = canvas.getBoundingClientRect();
   const scaleX = canvas.width / rect.width;
@@ -203,6 +178,7 @@ function addSlashPoint(event) {
 }
 
 function testSegment(a, b) {
+  // fruits
   for (let i = state.fruits.length - 1; i >= 0; i--) {
     const fruit = state.fruits[i];
     if (segmentHitsCircle(a, b, fruit.x, fruit.y, fruit.radius + 6)) {
@@ -219,6 +195,7 @@ function testSegment(a, b) {
     }
   }
 
+  // bombs
   for (let i = state.bombs.length - 1; i >= 0; i--) {
     const bomb = state.bombs[i];
     if (segmentHitsCircle(a, b, bomb.x, bomb.y, bomb.radius + 4)) {
@@ -235,6 +212,8 @@ function triggerBomb(bomb) {
   updateHud();
   endGame("Boom! Bombs end the run instantly.");
 }
+
+// ---------------- EFFECTS ----------------
 
 function spawnJuice(fruit) {
   const pieces = fruit.isBig ? 20 : 12;
@@ -262,6 +241,8 @@ function spawnExplosion(bomb) {
     });
   }
 }
+
+// ---------------- UPDATE & DRAW ----------------
 
 function update(dt) {
   state.spawnTimer += dt;
@@ -356,7 +337,14 @@ function drawFruits() {
     ctx.save();
     ctx.translate(fruit.x, fruit.y);
     ctx.rotate(fruit.rotation);
-    const grad = ctx.createRadialGradient(0, 0, fruit.radius * 0.15, 0, 0, fruit.radius);
+    const grad = ctx.createRadialGradient(
+      0,
+      0,
+      fruit.radius * 0.15,
+      0,
+      0,
+      fruit.radius
+    );
     grad.addColorStop(0, fruit.type.colors[0]);
     grad.addColorStop(1, fruit.type.colors[1]);
     ctx.fillStyle = grad;
@@ -373,9 +361,16 @@ function drawFruits() {
       ctx.rotate(-fruit.rotation);
       ctx.lineWidth = 5;
       ctx.strokeStyle = "rgba(255,255,255,0.6)";
-      const progress = (BIG_FRUIT_HITS - fruit.slicesNeeded) / BIG_FRUIT_HITS;
+      const progress =
+        (BIG_FRUIT_HITS - fruit.slicesNeeded) / BIG_FRUIT_HITS;
       ctx.beginPath();
-      ctx.arc(0, 0, fruit.radius + 6, -Math.PI / 2, -Math.PI / 2 + progress * Math.PI * 2);
+      ctx.arc(
+        0,
+        0,
+        fruit.radius + 6,
+        -Math.PI / 2,
+        -Math.PI / 2 + progress * Math.PI * 2
+      );
       ctx.stroke();
     }
     ctx.restore();
@@ -440,6 +435,8 @@ function drawTrail() {
   ctx.restore();
 }
 
+// ---------------- LOOP & HELPERS ----------------
+
 function loop(timestamp) {
   if (!state.lastTime) state.lastTime = timestamp;
   const dt = Math.min(0.04, (timestamp - state.lastTime) / 1000);
@@ -485,4 +482,50 @@ function hexToRgba(hex, alpha) {
   return `rgba(${r}, ${g}, ${b}, ${alpha.toFixed(3)})`;
 }
 
+// ---------------- EVENT LISTENERS ----------------
+
+updateHud();
+
+startBtn.addEventListener("click", () => {
+  startGame();
+});
+
+// click ANYWHERE on overlay to (re)start
+overlay.addEventListener("click", () => {
+  if (!state.running) {
+    startGame();
+  }
+});
+
+window.addEventListener("keydown", (event) => {
+  if (event.code === "Space" && !state.running) {
+    event.preventDefault();
+    startGame();
+  }
+});
+
+canvas.addEventListener("pointerdown", (event) => {
+  if (!state.running) return;
+  state.pointerDown = true;
+  canvas.setPointerCapture(event.pointerId);
+  state.slashTrail.length = 0;
+  addSlashPoint(event);
+});
+
+canvas.addEventListener("pointermove", (event) => {
+  if (!state.pointerDown || !state.running) return;
+  addSlashPoint(event);
+});
+
+const releasePointer = () => {
+  state.pointerDown = false;
+  state.slashTrail.length = 0;
+};
+
+canvas.addEventListener("pointerup", releasePointer);
+canvas.addEventListener("pointercancel", releasePointer);
+canvas.addEventListener("pointerleave", releasePointer);
+window.addEventListener("blur", releasePointer);
+
+// kick off render loop
 requestAnimationFrame(loop);

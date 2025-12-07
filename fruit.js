@@ -12,7 +12,7 @@ const startBtn = document.getElementById("start-btn");
 
 const STORAGE_KEY = "retro-neon-fruit-best";
 const BIG_FRUIT_HITS = 3;
-const GRAVITY = 900; // softer → higher / longer arcs
+const GRAVITY = 900; // same as before – good feel
 const TRAIL_FADE_MS = 280;
 const MAX_TRAIL_POINTS = 18;
 const BOMB_CHANCE = 0.22;
@@ -94,6 +94,7 @@ function endGame(message) {
   if (startBtn) startBtn.textContent = "Play Again";
 }
 
+// lives are now only used by bombs; keep helper in case we want it later
 function loseLife() {
   state.lives = Math.max(0, state.lives - 1);
   updateHud();
@@ -126,7 +127,7 @@ function spawnFruit() {
   const y = canvas.height + radius + 40;
   const vx = rand(-240, 240);
 
-  // MUCH higher toss for tall 1280px canvas
+  // tall canvas, high toss
   const vy = -(rand(1350, 1700) + (isBig ? 220 : 0));
 
   const fruit = {
@@ -146,12 +147,12 @@ function spawnFruit() {
 }
 
 function spawnBomb() {
-  const radius = 32; // a bit bigger too
+  const radius = 32;
   const bomb = {
     x: rand(radius + 40, canvas.width - radius - 40),
     y: canvas.height + radius + 30,
     vx: rand(-200, 200),
-    vy: -rand(1150, 1500), // still high but a bit lower than fruit
+    vy: -rand(1150, 1500),
     radius,
     rotation: rand(0, Math.PI * 2),
     spin: rand(-3, 3),
@@ -267,15 +268,33 @@ function update(dt) {
     entity.rotation += entity.spin * dt;
   });
 
-  for (let i = state.fruits.length - 1; i >= 0; i--) {
-    const fruit = state.fruits[i];
-    if (fruit.y - fruit.radius > canvas.height + 120) {
-      state.fruits.splice(i, 1);
-      loseLife();
-      if (!state.running) return;
-    }
-  }
+  // NEW: keep fruit inside the play box & bounce
+  state.fruits.forEach((fruit) => {
+    const r = fruit.radius;
 
+    // horizontal walls
+    if (fruit.x - r < 0) {
+      fruit.x = r;
+      fruit.vx = Math.abs(fruit.vx) * 0.85; // bounce with damping
+    } else if (fruit.x + r > canvas.width) {
+      fruit.x = canvas.width - r;
+      fruit.vx = -Math.abs(fruit.vx) * 0.85;
+    }
+
+    // vertical walls (top & bottom)
+    if (fruit.y - r < 0) {
+      fruit.y = r;
+      fruit.vy = Math.abs(fruit.vy) * 0.75; // bounce down
+    } else if (fruit.y + r > canvas.height) {
+      fruit.y = canvas.height - r;
+      fruit.vy = -Math.abs(fruit.vy) * 0.75; // bounce up
+    }
+
+    // a tiny bit of friction so they don't slide forever
+    fruit.vx *= 0.995;
+  });
+
+  // bombs can still fall out of the arena and disappear
   for (let i = state.bombs.length - 1; i >= 0; i--) {
     const bomb = state.bombs[i];
     if (bomb.y - bomb.radius > canvas.height + 120) {
@@ -283,6 +302,7 @@ function update(dt) {
     }
   }
 
+  // particles
   for (let i = state.particles.length - 1; i >= 0; i--) {
     const p = state.particles[i];
     p.life -= dt;

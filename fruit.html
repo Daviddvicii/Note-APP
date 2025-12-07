@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+    <meta name="theme-color" content="#060312" />
+    <title>Retro Neon Fruit Ninja</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./styles.css" />
+    <style>
+      body {
+        background: radial-gradient(1200px 600px at 50% -10%, #260041 0%, #03030b 60%, #010102 100%);
+        color: #d9fff9;
+      }
+
+      #game {
+        background: transparent;
+      }
+
+      #hud {
+        position: fixed;
+        top: 12px;
+        right: 12px;
+        display: flex;
+        gap: 18px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        text-align: right;
+        font-family: 'Press Start 2P', monospace;
+        text-transform: uppercase;
+        font-size: 11px;
+        letter-spacing: 1px;
+        color: #9bf6ff;
+        text-shadow: 0 0 8px rgba(0, 255, 213, 0.6);
+        z-index: 5;
+      }
+
+      .hud-block {
+        background: rgba(4, 7, 22, 0.7);
+        border: 1px solid rgba(0, 255, 213, 0.3);
+        border-radius: 8px;
+        padding: 8px 10px 6px;
+        min-width: 120px;
+      }
+
+      .hud-label {
+        display: block;
+        opacity: 0.75;
+        margin-bottom: 4px;
+      }
+
+      .hud-value {
+        font-size: 18px;
+        color: #ffffff;
+        text-shadow: 0 0 12px rgba(0, 255, 213, 0.9);
+      }
+
+      #hint {
+        position: fixed;
+        bottom: 18px;
+        left: 50%;
+        transform: translateX(-50%);
+        padding: 10px 18px;
+        background: rgba(3, 7, 18, 0.8);
+        border: 1px solid rgba(0, 255, 234, 0.4);
+        border-radius: 999px;
+        font-size: 12px;
+        letter-spacing: 0.8px;
+        color: #c4fffa;
+        text-shadow: 0 0 8px rgba(0, 255, 170, 0.6);
+        transition: opacity 0.4s ease;
+        pointer-events: none;
+        z-index: 4;
+      }
+
+      #hint.hidden {
+        opacity: 0;
+      }
+
+      #overlay {
+        position: fixed;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        background: rgba(1, 2, 8, 0.85);
+        backdrop-filter: blur(8px);
+        color: #d7f8ff;
+        text-align: center;
+        z-index: 10;
+        transition: opacity 0.3s ease;
+      }
+
+      #overlay[hidden] {
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .overlay-card {
+        padding: 28px 32px;
+        background: rgba(7, 15, 32, 0.9);
+        border: 2px solid rgba(127, 255, 212, 0.5);
+        border-radius: 16px;
+        box-shadow: 0 0 40px rgba(0, 255, 191, 0.2);
+        max-width: 360px;
+      }
+
+      .overlay-title {
+        margin: 0 0 12px;
+        font-size: 22px;
+        letter-spacing: 2px;
+        color: #8efcff;
+      }
+
+      .overlay-message {
+        margin: 0 0 22px;
+        font-size: 14px;
+        line-height: 1.4;
+        opacity: 0.85;
+      }
+
+      #restart-btn {
+        font-family: 'Press Start 2P', monospace;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        padding: 12px 18px;
+        border-radius: 999px;
+        border: 2px solid #7fffd4;
+        background: linear-gradient(120deg, #00f5ff, #ff00f7);
+        color: #001013;
+        cursor: pointer;
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+      }
+
+      #restart-btn:active {
+        transform: translateY(2px);
+      }
+
+      @media (max-width: 640px) {
+        #hud {
+          left: 12px;
+          right: 12px;
+          text-align: left;
+          justify-content: space-between;
+        }
+
+        .hud-block {
+          flex: 1;
+          min-width: auto;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <a class="back-link" href="./index.html" aria-label="Back to game selection">← Back</a>
+
+    <canvas id="game" role="img" aria-label="Slice neon fruit without hitting bombs!"></canvas>
+
+    <div id="hud" aria-live="polite">
+      <div class="hud-block">
+        <span class="hud-label">Score</span>
+        <span class="hud-value" id="score-value">0</span>
+      </div>
+      <div class="hud-block">
+        <span class="hud-label">Lives</span>
+        <span class="hud-value" id="lives-value">3</span>
+      </div>
+      <div class="hud-block">
+        <span class="hud-label">Mega Fruit</span>
+        <span class="hud-value" id="mega-value">6</span>
+      </div>
+    </div>
+
+    <div id="hint">Swipe / drag anywhere to slice the neon fruit</div>
+
+    <div id="overlay" hidden role="alertdialog" aria-modal="true" aria-labelledby="overlay-title" aria-describedby="overlay-message">
+      <div class="overlay-card">
+        <p class="overlay-title" id="overlay-title">Game Over</p>
+        <p class="overlay-message" id="overlay-message">You hit a bomb!</p>
+        <button id="restart-btn" type="button">Play Again</button>
+      </div>
+    </div>
+
+    <noscript>This game requires JavaScript.</noscript>
+    <script src="./fruit.js" defer></script>
+  </body>
+</html>

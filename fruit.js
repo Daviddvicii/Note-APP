@@ -12,7 +12,7 @@ const startBtn = document.getElementById("start-btn");
 
 const STORAGE_KEY = "retro-neon-fruit-best";
 const BIG_FRUIT_HITS = 3;
-const GRAVITY = 1600; // slower than 2200
+const GRAVITY = 1100; // even slower
 const TRAIL_FADE_MS = 280;
 const MAX_TRAIL_POINTS = 18;
 const BOMB_CHANCE = 0.22;
@@ -65,7 +65,7 @@ function startGame() {
   state.score = 0;
   state.lives = 3;
   state.spawnTimer = 0;
-  state.spawnDelay = rand(0.7, 1.15);
+  state.spawnDelay = rand(0.8, 1.35); // a bit fewer waves
   state.fruits.length = 0;
   state.bombs.length = 0;
   state.particles.length = 0;
@@ -118,11 +118,14 @@ function spawnFruit() {
   state.fruitLaunchCount += 1;
   const isBig = state.fruitLaunchCount % 6 === 0;
   const type = FRUIT_TYPES[Math.floor(Math.random() * FRUIT_TYPES.length)];
-  const radius = isBig ? rand(40, 54) : rand(20, 32);
+  const radius = isBig ? rand(40, 54) : rand(22, 32); // small tweak
   const x = rand(radius + 40, canvas.width - radius - 40);
   const y = canvas.height + radius + 30;
   const vx = rand(-220, 220);
-  const vy = -(rand(650, 900) + (isBig ? 80 : 0)); // slower
+
+  // slower launch speeds
+  const vy = -(rand(540, 780) + (isBig ? 60 : 0));
+
   const fruit = {
     type,
     x,
@@ -145,7 +148,7 @@ function spawnBomb() {
     x: rand(radius + 40, canvas.width - radius - 40),
     y: canvas.height + radius + 25,
     vx: rand(-180, 180),
-    vy: -rand(750, 1000), // slower
+    vy: -rand(640, 880), // slower bombs too
     radius,
     rotation: rand(0, Math.PI * 2),
     spin: rand(-3, 3),
@@ -250,7 +253,7 @@ function update(dt) {
   if (state.spawnTimer >= state.spawnDelay) {
     spawnWave();
     state.spawnTimer = 0;
-    state.spawnDelay = rand(0.65, 1.15);
+    state.spawnDelay = rand(0.8, 1.35);
   }
 
   const entities = state.fruits.concat(state.bombs);
@@ -383,7 +386,6 @@ function drawBombs() {
     ctx.translate(bomb.x, bomb.y);
     ctx.rotate(bomb.rotation);
 
-    // dark bomb body
     const bodyRadius = bomb.radius;
     const grad = ctx.createRadialGradient(0, 0, 4, 0, 0, bodyRadius);
     grad.addColorStop(0, "#33384a");

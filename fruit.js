@@ -12,7 +12,7 @@ const startBtn = document.getElementById("start-btn");
 
 const STORAGE_KEY = "retro-neon-fruit-best";
 const BIG_FRUIT_HITS = 3;
-const GRAVITY = 2200; // px / s^2
+const GRAVITY = 1600; // slower than 2200
 const TRAIL_FADE_MS = 280;
 const MAX_TRAIL_POINTS = 18;
 const BOMB_CHANCE = 0.22;
@@ -42,7 +42,7 @@ const state = {
   fruitLaunchCount: 0
 };
 
-// ---------------- HUD ----------------
+// ---------- HUD ----------
 
 function updateHud() {
   scoreEl.textContent = state.score.toString().padStart(2, "0");
@@ -58,7 +58,7 @@ function persistBest() {
   updateHud();
 }
 
-// ---------------- GAME FLOW ----------------
+// ---------- GAME FLOW ----------
 
 function startGame() {
   state.running = true;
@@ -76,8 +76,9 @@ function startGame() {
 
   overlay.classList.remove("visible");
   overlayTitle.textContent = "Retro Neon Fruit Ninja";
-  overlayMessage.textContent = "Slice everything but the bombs. Mega fruit arrives every 6th launch.";
-  startBtn.textContent = "Keep Slicing";
+  overlayMessage.textContent =
+    "Slice everything but the bombs. Mega fruit arrives every 6th launch.";
+  if (startBtn) startBtn.textContent = "Keep Slicing";
   updateHud();
 }
 
@@ -90,7 +91,7 @@ function endGame(message) {
   overlay.classList.add("visible");
   overlayTitle.textContent = "Game Over";
   overlayMessage.innerHTML = `${message}<br/>Final score: <strong>${state.score}</strong>`;
-  startBtn.textContent = "Play Again";
+  if (startBtn) startBtn.textContent = "Play Again";
 }
 
 function loseLife() {
@@ -101,7 +102,7 @@ function loseLife() {
   }
 }
 
-// ---------------- SPAWNING ----------------
+// ---------- SPAWNING ----------
 
 function spawnWave() {
   const fruitThisWave = 1 + (Math.random() < 0.55 ? 1 : 0);
@@ -121,7 +122,7 @@ function spawnFruit() {
   const x = rand(radius + 40, canvas.width - radius - 40);
   const y = canvas.height + radius + 30;
   const vx = rand(-220, 220);
-  const vy = -(rand(820, 1180) + (isBig ? 120 : 0));
+  const vy = -(rand(650, 900) + (isBig ? 80 : 0)); // slower
   const fruit = {
     type,
     x,
@@ -144,7 +145,7 @@ function spawnBomb() {
     x: rand(radius + 40, canvas.width - radius - 40),
     y: canvas.height + radius + 25,
     vx: rand(-180, 180),
-    vy: -rand(900, 1250),
+    vy: -rand(750, 1000), // slower
     radius,
     rotation: rand(0, Math.PI * 2),
     spin: rand(-3, 3),
@@ -154,7 +155,7 @@ function spawnBomb() {
   state.bombs.push(bomb);
 }
 
-// ---------------- INPUT / SLASH ----------------
+// ---------- INPUT / SLASH ----------
 
 function addSlashPoint(event) {
   const rect = canvas.getBoundingClientRect();
@@ -213,7 +214,7 @@ function triggerBomb(bomb) {
   endGame("Boom! Bombs end the run instantly.");
 }
 
-// ---------------- EFFECTS ----------------
+// ---------- EFFECTS ----------
 
 function spawnJuice(fruit) {
   const pieces = fruit.isBig ? 20 : 12;
@@ -242,7 +243,7 @@ function spawnExplosion(bomb) {
   }
 }
 
-// ---------------- UPDATE & DRAW ----------------
+// ---------- UPDATE & DRAW ----------
 
 function update(dt) {
   state.spawnTimer += dt;
@@ -316,7 +317,6 @@ function drawBackground() {
 
   ctx.strokeStyle = "rgba(64, 255, 178, 0.09)";
   ctx.lineWidth = 1;
-  ctx.setLineDash([]);
 
   for (let y = 0; y <= canvas.height; y += 48) {
     ctx.beginPath();
@@ -382,19 +382,42 @@ function drawBombs() {
     ctx.save();
     ctx.translate(bomb.x, bomb.y);
     ctx.rotate(bomb.rotation);
-    const grad = ctx.createRadialGradient(0, 0, 6, 0, 0, bomb.radius);
-    grad.addColorStop(0, "#ffffff");
-    grad.addColorStop(0.4, "#585dff");
-    grad.addColorStop(1, "#050713");
+
+    // dark bomb body
+    const bodyRadius = bomb.radius;
+    const grad = ctx.createRadialGradient(0, 0, 4, 0, 0, bodyRadius);
+    grad.addColorStop(0, "#33384a");
+    grad.addColorStop(0.6, "#111425");
+    grad.addColorStop(1, "#050611");
     ctx.fillStyle = grad;
-    ctx.shadowColor = "#ff4f6a";
-    ctx.shadowBlur = 24;
+
+    ctx.shadowColor = "#ff3040";
+    ctx.shadowBlur = 28;
+
     ctx.beginPath();
-    ctx.arc(0, 0, bomb.radius, 0, Math.PI * 2);
+    ctx.arc(0, 0, bodyRadius, 0, Math.PI * 2);
     ctx.fill();
-    ctx.strokeStyle = "#ff4f6a";
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = "#ff3040";
     ctx.stroke();
+
+    // fuse
+    ctx.shadowBlur = 0;
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = "#c0c4d8";
+    ctx.beginPath();
+    ctx.moveTo(0, -bodyRadius + 4);
+    ctx.lineTo(0, -bodyRadius - 14);
+    ctx.stroke();
+
+    // spark
+    ctx.fillStyle = "#ffea5a";
+    ctx.shadowColor = "#ffea5a";
+    ctx.shadowBlur = 16;
+    ctx.beginPath();
+    ctx.arc(0, -bodyRadius - 18, 5, 0, Math.PI * 2);
+    ctx.fill();
+
     ctx.restore();
   });
 }
@@ -413,9 +436,7 @@ function drawParticles() {
 }
 
 function drawTrail() {
-  if (state.slashTrail.length < 2) {
-    return;
-  }
+  if (state.slashTrail.length < 2) return;
   ctx.save();
   ctx.lineCap = "round";
   ctx.lineJoin = "round";
@@ -435,7 +456,7 @@ function drawTrail() {
   ctx.restore();
 }
 
-// ---------------- LOOP & HELPERS ----------------
+// ---------- LOOP & HELPERS ----------
 
 function loop(timestamp) {
   if (!state.lastTime) state.lastTime = timestamp;
@@ -482,20 +503,29 @@ function hexToRgba(hex, alpha) {
   return `rgba(${r}, ${g}, ${b}, ${alpha.toFixed(3)})`;
 }
 
-// ---------------- EVENT LISTENERS ----------------
+// ---------- EVENTS ----------
 
 updateHud();
 
-startBtn.addEventListener("click", () => {
-  startGame();
+if (startBtn) {
+  startBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    startGame();
+  });
+}
+
+overlay.addEventListener("click", () => {
+  if (!state.running) startGame();
 });
 
-// click ANYWHERE on overlay to (re)start
-overlay.addEventListener("click", () => {
-  if (!state.running) {
-    startGame();
-  }
-});
+const arenaWrapper = document.getElementById("arena-wrapper");
+if (arenaWrapper) {
+  arenaWrapper.addEventListener("click", () => {
+    if (!state.running && overlay.classList.contains("visible")) {
+      startGame();
+    }
+  });
+}
 
 window.addEventListener("keydown", (event) => {
   if (event.code === "Space" && !state.running) {
@@ -527,5 +557,4 @@ canvas.addEventListener("pointercancel", releasePointer);
 canvas.addEventListener("pointerleave", releasePointer);
 window.addEventListener("blur", releasePointer);
 
-// kick off render loop
 requestAnimationFrame(loop);

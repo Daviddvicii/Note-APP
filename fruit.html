@@ -48,7 +48,6 @@
         flex-direction: column;
         align-items: center;
         justify-content: flex-start;
-        min-height: 100vh;
         overflow: hidden;
       }
 
@@ -112,14 +111,14 @@
         align-items: center;
         justify-content: center;
         width: 100%;
-        padding: 1.5rem 1rem 3rem;
+        padding: 0.5rem 1rem 1.5rem;
       }
 
+      /* BIGGER play zone */
       #arena-wrapper {
         position: relative;
-        width: min(1100px, 100%);
-        aspect-ratio: 16 / 10;
-        max-height: calc(100vh - 180px);
+        width: min(1040px, 100vw);
+        height: min(650px, calc(100vh - 170px)); /* take most of the screen */
         border-radius: 28px;
         overflow: hidden;
         box-shadow: 0 20px 60px rgba(0, 0, 0, 0.65);
@@ -148,6 +147,7 @@
         transition: opacity 0.3s ease;
         text-align: center;
         padding: 2rem;
+        z-index: 5; /* make sure it's on top */
       }
 
       #overlay.visible {
@@ -201,7 +201,7 @@
       }
 
       footer {
-        margin-bottom: 26px;
+        margin-bottom: 10px;
         text-align: center;
         font-size: 0.9rem;
         letter-spacing: 0.02em;
@@ -215,6 +215,8 @@
         }
 
         #arena-wrapper {
+          width: 100vw;
+          height: calc(100vh - 190px); /* taller on phones */
           border-radius: 18px;
         }
       }
@@ -234,17 +236,17 @@
           <div class="overlay-card">
             <p id="overlay-title">Retro Neon Fruit Ninja</p>
             <p id="overlay-message">
-              Hold and swipe across the arena to slice neon fruit. Every sixth fruit is a mega fruit that
-              needs multiple cuts. Avoid bombs at all costs!
+              Hold and swipe across the arena to slice neon fruit. Every sixth fruit is a
+              mega fruit that needs multiple cuts. Avoid bombs at all costs!
             </p>
             <button id="start-btn" type="button">Tap to Play</button>
           </div>
         </div>
       </div>
     </main>
-    <footer>Hold + swipe anywhere inside the arena. Slice fruit, dodge bombs, keep the lives glowing.</footer>
+    <footer>Hold + swipe inside the arena. Slice fruit, dodge bombs, keep the lives glowing.</footer>
 
-    <!-- IMPORTANT: normal script, not module -->
+    <!-- normal script, not module -->
     <script src="./fruit.js"></script>
   </body>
 </html>

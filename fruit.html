@@ -76,7 +76,7 @@
 
       header {
         width: min(1040px, 96vw);
-        margin-top: 48px; /* moved lower */
+        margin-top: 72px; /* score bar lower */
         padding: 0.75rem 1.25rem;
         border: 1px solid rgba(192, 255, 244, 0.25);
         border-radius: 16px;
@@ -117,15 +117,15 @@
         align-items: center;
         justify-content: center;
         width: 100%;
-        padding: 0.5rem 1rem 1.2rem;
+        padding: 0.5rem 1rem 1.1rem;
       }
 
-      /* Play zone – slightly bigger now */
+      /* Bigger play zone */
       #arena-wrapper {
         position: relative;
         width: min(1100px, 100vw);
-        aspect-ratio: 16 / 10;
-        max-height: calc(100vh - 150px); /* was 180px */
+        aspect-ratio: 16 / 10;               /* keeps shapes perfectly round */
+        max-height: calc(100vh - 130px);     /* was 150 → taller */
         border-radius: 24px;
         overflow: hidden;
         box-shadow: 0 20px 60px rgba(0, 0, 0, 0.65);
@@ -208,7 +208,7 @@
       }
 
       footer {
-        margin-bottom: 8px;
+        margin-bottom: 6px;
         text-align: center;
         font-size: 0.9rem;
         letter-spacing: 0.02em;
@@ -219,7 +219,7 @@
         header {
           font-size: 0.7rem;
           gap: 0.8rem;
-          margin-top: 52px; /* keep it nicely below URL bar */
+          margin-top: 76px; /* also lower on mobile */
         }
 
         .stat strong {
@@ -228,7 +228,7 @@
 
         #arena-wrapper {
           width: 100vw;
-          max-height: calc(100vh - 160px); /* slightly taller */
+          max-height: calc(100vh - 145px);  /* taller on phone too */
           border-radius: 18px;
         }
       }

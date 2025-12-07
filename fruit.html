@@ -86,22 +86,28 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        gap: 1rem;
-        flex-wrap: wrap;
+        gap: 1.5rem;
+        flex-wrap: nowrap; /* keep stats on one line */
+        text-transform: uppercase;
+        letter-spacing: 0.18em;
+        font-size: 0.75rem;
       }
 
       .stat {
         display: flex;
-        flex-direction: column;
-        font-size: 0.85rem;
-        text-transform: uppercase;
-        letter-spacing: 0.2em;
-        color: rgba(200, 255, 241, 0.75);
+        align-items: baseline;
+        gap: 0.35rem;
+        color: rgba(200, 255, 241, 0.8);
+        white-space: nowrap;
+      }
+
+      .stat-label {
+        opacity: 0.85;
       }
 
       .stat strong {
-        font-size: clamp(1.4rem, 2vw, 2rem);
-        letter-spacing: 0.08em;
+        font-size: 1.2rem;
+        letter-spacing: 0.12em;
         color: var(--accent);
       }
 
@@ -114,12 +120,13 @@
         padding: 0.5rem 1rem 1.5rem;
       }
 
-      /* BIGGER play zone */
+      /* Play zone with fixed aspect ratio (prevents stretched fruit) */
       #arena-wrapper {
         position: relative;
-        width: 100vw;
-        height: calc(100vh - 180px); /* almost full height under header */
-        border-radius: 28px;
+        width: min(1100px, 100vw);
+        aspect-ratio: 16 / 10;                 /* keeps 16:10 ratio */
+        max-height: calc(100vh - 180px);       /* don't go under header/footer */
+        border-radius: 24px;
         overflow: hidden;
         box-shadow: 0 20px 60px rgba(0, 0, 0, 0.65);
         border: 1px solid rgba(255, 255, 255, 0.1);
@@ -210,13 +217,17 @@
 
       @media (max-width: 720px) {
         header {
-          flex-direction: column;
-          text-align: center;
+          font-size: 0.7rem;
+          gap: 0.8rem;
+        }
+
+        .stat strong {
+          font-size: 1.05rem;
         }
 
         #arena-wrapper {
           width: 100vw;
-          height: calc(100vh - 190px);
+          max-height: calc(100vh - 190px);
           border-radius: 18px;
         }
       }
@@ -225,9 +236,18 @@
   <body>
     <a class="back-link" href="./index.html" aria-label="Return to menu">← Menu</a>
     <header>
-      <div class="stat">Score<strong id="score-value">0</strong></div>
-      <div class="stat">Best<strong id="best-value">0</strong></div>
-      <div class="stat">Lives<strong id="lives-value">3</strong></div>
+      <div class="stat">
+        <span class="stat-label">SCORE</span>
+        <strong id="score-value">0</strong>
+      </div>
+      <div class="stat">
+        <span class="stat-label">BEST</span>
+        <strong id="best-value">0</strong>
+      </div>
+      <div class="stat">
+        <span class="stat-label">LIVES</span>
+        <strong id="lives-value">❤❤❤</strong>
+      </div>
     </header>
     <main>
       <div id="arena-wrapper">

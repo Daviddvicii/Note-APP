@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Retro Neon Fruit Ninja</title>
+    <style>
+      :root {
+        --bg-dark: #03030f;
+        --bg-mid: #0a1231;
+        --bg-light: #16245a;
+        --accent: #40ffb2;
+        --accent-2: #ff5fd2;
+        --accent-3: #57b7ff;
+        --hud: #c8fff1;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: "Space Grotesk", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        background: radial-gradient(circle at 20% -20%, rgba(255, 95, 210, 0.35), transparent 45%),
+          radial-gradient(circle at 80% 0%, rgba(87, 183, 255, 0.4), transparent 48%),
+          radial-gradient(circle at 50% 120%, rgba(64, 255, 178, 0.4), transparent 55%),
+          linear-gradient(140deg, var(--bg-dark), var(--bg-mid) 50%, var(--bg-light));
+        color: var(--hud);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start;
+        min-height: 100vh;
+        overflow: hidden;
+      }
+
+      a.back-link {
+        position: fixed;
+        top: 14px;
+        left: 14px;
+        z-index: 20;
+        padding: 0.5rem 0.9rem;
+        border: 2px solid var(--accent);
+        border-radius: 999px;
+        text-decoration: none;
+        color: var(--accent);
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        background: rgba(0, 0, 0, 0.35);
+        box-shadow: 0 0 12px rgba(64, 255, 178, 0.4);
+        transition: transform 0.18s ease, box-shadow 0.18s ease;
+      }
+
+      a.back-link:focus-visible,
+      a.back-link:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 0 18px rgba(64, 255, 178, 0.8);
+      }
+
+      header {
+        width: min(1040px, 96vw);
+        margin-top: 28px;
+        padding: 0.75rem 1.25rem;
+        border: 1px solid rgba(192, 255, 244, 0.25);
+        border-radius: 16px;
+        backdrop-filter: blur(12px);
+        background: rgba(1, 7, 28, 0.55);
+        box-shadow: 0 20px 45px rgba(0, 0, 0, 0.45);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+        flex-wrap: wrap;
+      }
+
+      .stat {
+        display: flex;
+        flex-direction: column;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.2em;
+        color: rgba(200, 255, 241, 0.75);
+      }
+
+      .stat strong {
+        font-size: clamp(1.4rem, 2vw, 2rem);
+        letter-spacing: 0.08em;
+        color: var(--accent);
+      }
+
+      main {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        padding: 1.5rem 1rem 3rem;
+      }
+
+      #arena-wrapper {
+        position: relative;
+        width: min(1100px, 100%);
+        aspect-ratio: 16 / 10;
+        max-height: calc(100vh - 180px);
+        border-radius: 28px;
+        overflow: hidden;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.65);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+      }
+
+      canvas {
+        width: 100%;
+        height: 100%;
+        display: block;
+        cursor: crosshair;
+        background: transparent;
+        touch-action: none;
+      }
+
+      #overlay {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        background: rgba(2, 4, 18, 0.84);
+        color: var(--hud);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease;
+        text-align: center;
+        padding: 2rem;
+      }
+
+      #overlay.visible {
+        opacity: 1;
+        pointer-events: all;
+      }
+
+      .overlay-card {
+        max-width: 480px;
+        background: rgba(3, 7, 30, 0.8);
+        border-radius: 18px;
+        padding: 1.75rem;
+        border: 2px solid rgba(64, 255, 178, 0.35);
+        box-shadow: 0 0 20px rgba(64, 255, 178, 0.3);
+      }
+
+      #overlay-title {
+        margin: 0 0 0.75rem;
+        font-size: clamp(1.6rem, 2.5vw, 2.4rem);
+        letter-spacing: 0.1em;
+        color: var(--accent);
+        text-transform: uppercase;
+      }
+
+      #overlay-message {
+        margin: 0 auto 1.5rem;
+        line-height: 1.6;
+        color: rgba(200, 255, 241, 0.85);
+      }
+
+      #start-btn {
+        appearance: none;
+        border: none;
+        border-radius: 999px;
+        padding: 0.8rem 2.25rem;
+        font-size: 1rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        cursor: pointer;
+        background: linear-gradient(120deg, var(--accent), var(--accent-2));
+        color: #02030d;
+        box-shadow: 0 10px 30px rgba(64, 255, 178, 0.35);
+        transition: transform 0.18s ease, box-shadow 0.18s ease;
+      }
+
+      #start-btn:hover,
+      #start-btn:focus-visible {
+        transform: translateY(-2px);
+        box-shadow: 0 14px 36px rgba(64, 255, 178, 0.55);
+      }
+
+      footer {
+        margin-bottom: 26px;
+        text-align: center;
+        font-size: 0.9rem;
+        letter-spacing: 0.02em;
+        opacity: 0.85;
+      }
+
+      @media (max-width: 720px) {
+        header {
+          flex-direction: column;
+          text-align: center;
+        }
+
+        #arena-wrapper {
+          border-radius: 18px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <a class="back-link" href="./index.html" aria-label="Return to menu">← Menu</a>
+    <header>
+      <div class="stat">Score<strong id="score-value">0</strong></div>
+      <div class="stat">Best<strong id="best-value">0</strong></div>
+      <div class="stat">Lives<strong id="lives-value">3</strong></div>
+    </header>
+    <main>
+      <div id="arena-wrapper">
+        <canvas id="arena" width="960" height="600"></canvas>
+        <div id="overlay" class="visible" role="dialog" aria-modal="true">
+          <div class="overlay-card">
+            <p id="overlay-title">Retro Neon Fruit Ninja</p>
+            <p id="overlay-message">
+              Hold and swipe across the arena to slice neon fruit. Every sixth fruit is a mega fruit that
+              needs multiple cuts. Avoid bombs at all costs!
+            </p>
+            <button id="start-btn" type="button">Tap to Play</button>
+          </div>
+        </div>
+      </div>
+    </main>
+    <footer>Hold + swipe anywhere inside the arena. Slice fruit, dodge bombs, keep the lives glowing.</footer>
+    <script type="module" src="./fruit.js"></script>
+  </body>
+</html>

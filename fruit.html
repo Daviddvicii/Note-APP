@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Retro Neon Fruit Ninja</title>
+    <style>
+      :root {
+        --bg: radial-gradient(circle at 20% 20%, #1c0048 0%, #050014 55%, #010006 100%);
+        --grid: rgba(120, 75, 255, 0.2);
+        --accent: #66ffe3;
+        --accent-2: #ff61c7;
+        --danger: #ff3465;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: var(--bg);
+        color: var(--accent);
+        font-family: "Space Grotesk", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont,
+          "Helvetica Neue", sans-serif;
+        overflow: hidden;
+      }
+
+      canvas {
+        width: 100vw;
+        height: 100vh;
+        display: block;
+        cursor: crosshair;
+        touch-action: none;
+        user-select: none;
+      }
+
+      .back-link {
+        position: fixed;
+        top: 18px;
+        left: 18px;
+        padding: 8px 14px;
+        border-radius: 999px;
+        border: 2px solid var(--accent);
+        color: var(--accent);
+        text-decoration: none;
+        backdrop-filter: blur(12px);
+        background: rgba(0, 0, 0, 0.45);
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        transition: transform 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+        z-index: 10;
+      }
+
+      .back-link:hover {
+        transform: translateY(-1px);
+        border-color: var(--accent-2);
+        color: var(--accent-2);
+      }
+
+      .hud {
+        position: fixed;
+        top: 18px;
+        right: 18px;
+        display: flex;
+        gap: 18px;
+        padding: 10px 16px;
+        background: rgba(4, 0, 20, 0.7);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 0 20px rgba(102, 255, 227, 0.25);
+        border-radius: 999px;
+        backdrop-filter: blur(12px);
+        text-transform: uppercase;
+        font-size: 0.85rem;
+        letter-spacing: 0.08em;
+        z-index: 10;
+      }
+
+      .hud span strong {
+        display: block;
+        font-size: 1.25rem;
+        letter-spacing: 0.02em;
+      }
+
+      #overlay {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 1.5rem;
+        font-size: clamp(1.4rem, 4vw, 2.6rem);
+        letter-spacing: 0.08em;
+        color: #ffffff;
+        text-shadow: 0 0 12px rgba(255, 255, 255, 0.45);
+        background: radial-gradient(circle at 50% 40%, rgba(7, 0, 20, 0.55), rgba(0, 0, 0, 0.85));
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s ease, backdrop-filter 0.2s ease;
+        z-index: 9;
+      }
+
+      #overlay.visible {
+        opacity: 1;
+        pointer-events: auto;
+        cursor: pointer;
+      }
+
+      #overlay small {
+        display: block;
+        margin-top: 0.75rem;
+        font-size: 0.6em;
+        letter-spacing: 0.2em;
+        opacity: 0.85;
+      }
+    </style>
+  </head>
+  <body>
+    <a class="back-link" href="./index.html" aria-label="Back to menu">← Menu</a>
+    <div class="hud" aria-live="polite">
+      <span>Score<strong id="score">0</strong></span>
+      <span>Best<strong id="best">0</strong></span>
+      <span>Lives<strong id="lives">3</strong></span>
+    </div>
+    <canvas id="game" aria-label="Retro Neon Fruit Ninja playfield"></canvas>
+    <div id="overlay" class="visible" role="button" tabindex="0">
+      Swipe to slice the neon fruit
+      <small>Tap / Click / Drag to play</small>
+    </div>
+    <script src="./fruit.js"></script>
+  </body>
+</html>

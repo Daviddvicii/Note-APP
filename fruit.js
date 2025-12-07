@@ -12,7 +12,7 @@ const startBtn = document.getElementById("start-btn");
 
 const STORAGE_KEY = "retro-neon-fruit-best";
 const BIG_FRUIT_HITS = 3;
-const GRAVITY = 1050; // softer → longer airtime
+const GRAVITY = 900; // softer → higher / longer arcs
 const TRAIL_FADE_MS = 280;
 const MAX_TRAIL_POINTS = 18;
 const BOMB_CHANCE = 0.22;
@@ -118,13 +118,16 @@ function spawnFruit() {
   state.fruitLaunchCount += 1;
   const isBig = state.fruitLaunchCount % 6 === 0;
   const type = FRUIT_TYPES[Math.floor(Math.random() * FRUIT_TYPES.length)];
-  const radius = isBig ? rand(40, 54) : rand(22, 32);
-  const x = rand(radius + 40, canvas.width - radius - 40);
-  const y = canvas.height + radius + 30;
-  const vx = rand(-220, 220);
 
-  // higher + longer toss
-  const vy = -(rand(700, 980) + (isBig ? 90 : 0));
+  // bigger fruit
+  const radius = isBig ? rand(54, 72) : rand(32, 46);
+
+  const x = rand(radius + 40, canvas.width - radius - 40);
+  const y = canvas.height + radius + 40;
+  const vx = rand(-240, 240);
+
+  // MUCH higher toss for tall 1280px canvas
+  const vy = -(rand(1350, 1700) + (isBig ? 220 : 0));
 
   const fruit = {
     type,
@@ -143,12 +146,12 @@ function spawnFruit() {
 }
 
 function spawnBomb() {
-  const radius = 26;
+  const radius = 32; // a bit bigger too
   const bomb = {
     x: rand(radius + 40, canvas.width - radius - 40),
-    y: canvas.height + radius + 25,
-    vx: rand(-180, 180),
-    vy: -rand(680, 940), // keep bombs a bit lower but similar
+    y: canvas.height + radius + 30,
+    vx: rand(-200, 200),
+    vy: -rand(1150, 1500), // still high but a bit lower than fruit
     radius,
     rotation: rand(0, Math.PI * 2),
     spin: rand(-3, 3),
@@ -220,13 +223,13 @@ function triggerBomb(bomb) {
 // ---------- EFFECTS ----------
 
 function spawnJuice(fruit) {
-  const pieces = fruit.isBig ? 20 : 12;
+  const pieces = fruit.isBig ? 24 : 14;
   for (let i = 0; i < pieces; i++) {
     state.particles.push({
       x: fruit.x,
       y: fruit.y,
-      vx: rand(-260, 260),
-      vy: rand(-260, 60),
+      vx: rand(-280, 280),
+      vy: rand(-280, 80),
       life: rand(0.25, 0.55),
       color: fruit.type.juice
     });
@@ -234,12 +237,12 @@ function spawnJuice(fruit) {
 }
 
 function spawnExplosion(bomb) {
-  for (let i = 0; i < 32; i++) {
+  for (let i = 0; i < 36; i++) {
     state.particles.push({
       x: bomb.x,
       y: bomb.y,
-      vx: rand(-320, 320),
-      vy: rand(-320, 320),
+      vx: rand(-340, 340),
+      vy: rand(-340, 340),
       life: rand(0.2, 0.45),
       color: "#ff446d"
     });
@@ -266,7 +269,7 @@ function update(dt) {
 
   for (let i = state.fruits.length - 1; i >= 0; i--) {
     const fruit = state.fruits[i];
-    if (fruit.y - fruit.radius > canvas.height + 80) {
+    if (fruit.y - fruit.radius > canvas.height + 120) {
       state.fruits.splice(i, 1);
       loseLife();
       if (!state.running) return;
@@ -275,7 +278,7 @@ function update(dt) {
 
   for (let i = state.bombs.length - 1; i >= 0; i--) {
     const bomb = state.bombs[i];
-    if (bomb.y - bomb.radius > canvas.height + 80) {
+    if (bomb.y - bomb.radius > canvas.height + 120) {
       state.bombs.splice(i, 1);
     }
   }
@@ -321,13 +324,13 @@ function drawBackground() {
   ctx.strokeStyle = "rgba(64, 255, 178, 0.09)";
   ctx.lineWidth = 1;
 
-  for (let y = 0; y <= canvas.height; y += 48) {
+  for (let y = 0; y <= canvas.height; y += 64) {
     ctx.beginPath();
     ctx.moveTo(0, y);
     ctx.lineTo(canvas.width, y);
     ctx.stroke();
   }
-  for (let x = 0; x <= canvas.width; x += 64) {
+  for (let x = 0; x <= canvas.width; x += 80) {
     ctx.beginPath();
     ctx.moveTo(x, 0);
     ctx.lineTo(x, canvas.height);
@@ -352,11 +355,11 @@ function drawFruits() {
     grad.addColorStop(1, fruit.type.colors[1]);
     ctx.fillStyle = grad;
     ctx.shadowColor = fruit.type.outline;
-    ctx.shadowBlur = 20;
+    ctx.shadowBlur = 22;
     ctx.beginPath();
     ctx.arc(0, 0, fruit.radius, 0, Math.PI * 2);
     ctx.fill();
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 2.5;
     ctx.strokeStyle = fruit.type.outline;
     ctx.stroke();
 
@@ -370,7 +373,7 @@ function drawFruits() {
       ctx.arc(
         0,
         0,
-        fruit.radius + 6,
+        fruit.radius + 8,
         -Math.PI / 2,
         -Math.PI / 2 + progress * Math.PI * 2
       );
@@ -387,14 +390,14 @@ function drawBombs() {
     ctx.rotate(bomb.rotation);
 
     const bodyRadius = bomb.radius;
-    const grad = ctx.createRadialGradient(0, 0, 4, 0, 0, bodyRadius);
-    grad.addColorStop(0, "#33384a");
-    grad.addColorStop(0.6, "#111425");
+    const grad = ctx.createRadialGradient(0, 0, 5, 0, 0, bodyRadius);
+    grad.addColorStop(0, "#3b4055");
+    grad.addColorStop(0.6, "#141827");
     grad.addColorStop(1, "#050611");
     ctx.fillStyle = grad;
 
     ctx.shadowColor = "#ff3040";
-    ctx.shadowBlur = 28;
+    ctx.shadowBlur = 30;
 
     ctx.beginPath();
     ctx.arc(0, 0, bodyRadius, 0, Math.PI * 2);
@@ -409,15 +412,15 @@ function drawBombs() {
     ctx.strokeStyle = "#c0c4d8";
     ctx.beginPath();
     ctx.moveTo(0, -bodyRadius + 4);
-    ctx.lineTo(0, -bodyRadius - 14);
+    ctx.lineTo(0, -bodyRadius - 18);
     ctx.stroke();
 
     // spark
     ctx.fillStyle = "#ffea5a";
     ctx.shadowColor = "#ffea5a";
-    ctx.shadowBlur = 16;
+    ctx.shadowBlur = 18;
     ctx.beginPath();
-    ctx.arc(0, -bodyRadius - 18, 5, 0, Math.PI * 2);
+    ctx.arc(0, -bodyRadius - 22, 6, 0, Math.PI * 2);
     ctx.fill();
 
     ctx.restore();

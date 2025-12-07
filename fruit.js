@@ -118,13 +118,11 @@ function spawnFruit() {
   state.fruitLaunchCount += 1;
   const isBig = state.fruitLaunchCount % 6 === 0;
   const type = FRUIT_TYPES[Math.floor(Math.random() * FRUIT_TYPES.length)];
-  const radius = isBig ? rand(40, 54) : rand(22, 32); // small tweak
+  const radius = isBig ? rand(40, 54) : rand(22, 32);
   const x = rand(radius + 40, canvas.width - radius - 40);
   const y = canvas.height + radius + 30;
   const vx = rand(-220, 220);
-
-  // slower launch speeds
-  const vy = -(rand(540, 780) + (isBig ? 60 : 0));
+  const vy = -(rand(540, 780) + (isBig ? 60 : 0)); // slower launch
 
   const fruit = {
     type,
@@ -148,7 +146,7 @@ function spawnBomb() {
     x: rand(radius + 40, canvas.width - radius - 40),
     y: canvas.height + radius + 25,
     vx: rand(-180, 180),
-    vy: -rand(640, 880), // slower bombs too
+    vy: -rand(640, 880), // slower bombs
     radius,
     rotation: rand(0, Math.PI * 2),
     spin: rand(-3, 3),

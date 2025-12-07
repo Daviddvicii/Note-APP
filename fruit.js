@@ -12,7 +12,7 @@ const startBtn = document.getElementById("start-btn");
 
 const STORAGE_KEY = "retro-neon-fruit-best";
 const BIG_FRUIT_HITS = 3;
-const GRAVITY = 1100; // even slower
+const GRAVITY = 1050; // softer → longer airtime
 const TRAIL_FADE_MS = 280;
 const MAX_TRAIL_POINTS = 18;
 const BOMB_CHANCE = 0.22;
@@ -65,7 +65,7 @@ function startGame() {
   state.score = 0;
   state.lives = 3;
   state.spawnTimer = 0;
-  state.spawnDelay = rand(0.8, 1.35); // a bit fewer waves
+  state.spawnDelay = rand(0.8, 1.35);
   state.fruits.length = 0;
   state.bombs.length = 0;
   state.particles.length = 0;
@@ -122,7 +122,9 @@ function spawnFruit() {
   const x = rand(radius + 40, canvas.width - radius - 40);
   const y = canvas.height + radius + 30;
   const vx = rand(-220, 220);
-  const vy = -(rand(540, 780) + (isBig ? 60 : 0)); // slower launch
+
+  // higher + longer toss
+  const vy = -(rand(700, 980) + (isBig ? 90 : 0));
 
   const fruit = {
     type,
@@ -146,7 +148,7 @@ function spawnBomb() {
     x: rand(radius + 40, canvas.width - radius - 40),
     y: canvas.height + radius + 25,
     vx: rand(-180, 180),
-    vy: -rand(640, 880), // slower bombs
+    vy: -rand(680, 940), // keep bombs a bit lower but similar
     radius,
     rotation: rand(0, Math.PI * 2),
     spin: rand(-3, 3),

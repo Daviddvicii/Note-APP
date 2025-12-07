@@ -2,7 +2,10 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
     <title>Retro Neon Fruit Ninja</title>
     <style>
       :root {
@@ -22,10 +25,23 @@
       body {
         margin: 0;
         min-height: 100vh;
-        font-family: "Space Grotesk", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-        background: radial-gradient(circle at 20% -20%, rgba(255, 95, 210, 0.35), transparent 45%),
-          radial-gradient(circle at 80% 0%, rgba(87, 183, 255, 0.4), transparent 48%),
-          radial-gradient(circle at 50% 120%, rgba(64, 255, 178, 0.4), transparent 55%),
+        font-family: "Space Grotesk", "Segoe UI", system-ui, -apple-system,
+          BlinkMacSystemFont, sans-serif;
+        background: radial-gradient(
+            circle at 20% -20%,
+            rgba(255, 95, 210, 0.35),
+            transparent 45%
+          ),
+          radial-gradient(
+            circle at 80% 0%,
+            rgba(87, 183, 255, 0.4),
+            transparent 48%
+          ),
+          radial-gradient(
+            circle at 50% 120%,
+            rgba(64, 255, 178, 0.4),
+            transparent 55%
+          ),
           linear-gradient(140deg, var(--bg-dark), var(--bg-mid) 50%, var(--bg-light));
         color: var(--hud);
         display: flex;
@@ -227,6 +243,8 @@
       </div>
     </main>
     <footer>Hold + swipe anywhere inside the arena. Slice fruit, dodge bombs, keep the lives glowing.</footer>
-    <script type="module" src="./fruit.js"></script>
+
+    <!-- IMPORTANT: normal script, not module -->
+    <script src="./fruit.js"></script>
   </body>
 </html>

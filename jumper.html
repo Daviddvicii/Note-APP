@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neon Sky Jumper</title>
+    <style>
+        :root {
+            --bg-dark: #0a0a1a;
+            --bg-mid: #1a1a3a;
+            --accent: #00ffff;
+            --accent-2: #ff00ff;
+            --accent-3: #00ff88;
+            --hud: #ffffff;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: radial-gradient(ellipse at center, #1a1a3a 0%, #0a0a1a 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            color: var(--hud);
+            overflow-x: hidden;
+        }
+
+        #header {
+            width: min(700px, 100vw);
+            display: flex;
+            justify-content: space-between;
+            padding: 15px 20px;
+            margin-bottom: 10px;
+            background: rgba(26, 26, 58, 0.8);
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+        }
+
+        #header span {
+            font-size: 18px;
+            font-weight: bold;
+            text-shadow: 0 0 10px var(--accent);
+        }
+
+        #arena-wrapper {
+            aspect-ratio: 9 / 16;
+            width: min(700px, 100vw);
+            max-height: calc(100vh - 130px);
+            position: relative;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.5), 
+                        0 0 60px rgba(255, 0, 255, 0.3);
+        }
+
+        #game-canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to bottom, #0a0a1a 0%, #1a1a3a 50%, #0a0a1a 100%);
+        }
+
+        #overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(10, 10, 26, 0.95);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            text-align: center;
+            padding: 30px;
+        }
+
+        #overlay.hidden {
+            display: none;
+        }
+
+        #overlay h1 {
+            font-size: 42px;
+            margin-bottom: 20px;
+            text-shadow: 0 0 20px var(--accent), 0 0 40px var(--accent-2);
+            color: var(--accent);
+            letter-spacing: 3px;
+        }
+
+        #overlay p {
+            font-size: 18px;
+            margin-bottom: 30px;
+            color: var(--hud);
+            line-height: 1.6;
+            max-width: 500px;
+        }
+
+        #start-button {
+            padding: 15px 40px;
+            font-size: 20px;
+            font-weight: bold;
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            border: none;
+            border-radius: 30px;
+            color: var(--bg-dark);
+            cursor: pointer;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.6);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        #start-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.8);
+        }
+
+        #start-button:active {
+            transform: scale(0.95);
+        }
+    </style>
+</head>
+<body>
+    <div id="header">
+        <span>SCORE: <span id="score">0</span></span>
+        <span>BEST: <span id="best">0</span></span>
+    </div>
+
+    <div id="arena-wrapper">
+        <canvas id="game-canvas" width="720" height="1280"></canvas>
+        <div id="overlay">
+            <h1 id="overlay-title">Neon Sky Jumper</h1>
+            <p id="overlay-message">Tap and hold to move left/right. Jump from platform to platform and climb as high as you can!</p>
+            <button id="start-button">Tap to Jump</button>
+        </div>
+    </div>
+
+    <script src="./jumper.js"></script>
+</body>
+</html>

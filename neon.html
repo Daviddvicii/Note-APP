@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, user-scalable=no"
+    />
+    <meta name="theme-color" content="#000000" />
+    <title>Neon Tap Defense</title>
+    <link rel="stylesheet" href="styles.css" />
+    <style>
+      :root {
+        --safe-top: env(safe-area-inset-top, 0px);
+        --ui-top: calc(var(--safe-top) + 12px);
+      }
+
+      .back-link {
+        top: var(--ui-top) !important;
+      }
+    </style>
+  </head>
+  <body>
+    <a class="back-link" href="./index.html" aria-label="Back to game menu"
+      >← Back</a
+    >
+    <canvas id="game" aria-label="Neon Tap Defense game canvas" role="img"></canvas>
+    <script src="./neon.js"></script>
+  </body>
+</html>
+

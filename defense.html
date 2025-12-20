@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+  <title>Neon Tap Defense</title>
+  <link rel="stylesheet" href="styles.css" />
+
+  <style>
+    :root {
+      --safe-top: env(safe-area-inset-top, 0px);
+      --ui-top: calc(var(--safe-top) + 12px);
+    }
+
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: #0a0a12;
+    }
+
+    .back-link {
+      position: fixed !important;
+      top: var(--ui-top) !important;
+      left: 12px !important;
+      z-index: 10000;
+    }
+
+    #btn-mute {
+      position: fixed !important;
+      top: var(--ui-top) !important;
+      right: 12px !important;
+      z-index: 10000;
+      font: 600 18px/1 monospace;
+      padding: 8px 10px;
+      border: 2px solid #7fffd4;
+      border-radius: 14px;
+      color: #7fffd4;
+      background: rgba(0,0,0,0.45);
+      backdrop-filter: blur(2px);
+      touch-action: manipulation;
+    }
+  </style>
+</head>
+<body>
+  <a class="back-link" href="./index.html" aria-label="Back to game menu">← Back</a>
+  
+  <canvas id="game" aria-label="Neon Tap Defense game canvas" role="img"></canvas>
+  
+  <button id="btn-mute" class="control-btn small" aria-label="Toggle mute" title="M to toggle">🔊</button>
+
+  <script>
+    window.onerror = function (msg, src, line, col) {
+      const d = document.createElement('div');
+      d.style.cssText = 'position:fixed;left:8px;bottom:8px;color:#ff6b6b;font:12px monospace;white-space:pre-wrap;z-index:9999';
+      d.textContent = String(msg) + (src ? `\n${src}:${line}:${col||0}` : '');
+      document.body.appendChild(d);
+    };
+  </script>
+
+  <script src="defense.js?v=1"></script>
+</body>
+</html>

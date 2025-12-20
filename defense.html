@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+    <title>Neon Tap Defense</title>
+    <style>
+      :root {
+        --neon-cyan: #00ffff;
+        --neon-pink: #ff00ff;
+        --neon-yellow: #ffff00;
+        --neon-green: #00ff00;
+        --neon-red: #ff0055;
+        --bg: #0a0a0a;
+      }
+
+      * {
+        box-sizing: border-box;
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      body {
+        margin: 0;
+        height: 100vh;
+        background: var(--bg);
+        color: var(--neon-cyan);
+        font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        touch-action: none;
+        user-select: none;
+      }
+
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+
+      header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.6rem 1rem;
+        background: rgba(0, 255, 255, 0.05);
+        border-bottom: 1px solid rgba(0, 255, 255, 0.3);
+        position: relative;
+        z-index: 10;
+      }
+
+      .back-button {
+        padding: 0.3rem 0.7rem;
+        border: 1px solid var(--neon-cyan);
+        border-radius: 4px;
+        background: transparent;
+        font-size: 0.85rem;
+        transition: all 0.2s;
+        box-shadow: 0 0 5px rgba(0, 255, 255, 0.3);
+      }
+
+      .back-button:hover {
+        background: var(--neon-cyan);
+        color: var(--bg);
+        box-shadow: 0 0 10px rgba(0, 255, 255, 0.6);
+      }
+
+      .hud {
+        display: flex;
+        align-items: center;
+        gap: 1.2rem;
+        font-size: 0.9rem;
+        letter-spacing: 0.05em;
+        text-shadow: 0 0 8px currentColor;
+      }
+
+      .hud span {
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+      }
+
+      .hud strong {
+        font-weight: 700;
+        color: var(--neon-yellow);
+      }
+
+      main {
+        flex: 1;
+        position: relative;
+        overflow: hidden;
+      }
+
+      canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+        background: radial-gradient(circle at 50% 50%, #1a1a2e 0%, var(--bg) 100%);
+        cursor: crosshair;
+      }
+
+      #overlay {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: rgba(0, 0, 0, 0.85);
+        color: var(--neon-cyan);
+        font-size: clamp(1.2rem, 4vw, 2rem);
+        letter-spacing: 0.08em;
+        text-align: center;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease;
+        padding: 2rem;
+        text-shadow: 0 0 20px currentColor;
+      }
+
+      #overlay.visible {
+        opacity: 1;
+        pointer-events: all;
+        cursor: pointer;
+      }
+
+      #overlay .subtitle {
+        font-size: 0.5em;
+        margin-top: 1rem;
+        color: var(--neon-pink);
+        opacity: 0.8;
+      }
+
+      #overlay .wave-complete {
+        color: var(--neon-green);
+        animation: pulse 1s ease-in-out infinite;
+      }
+
+      @keyframes pulse {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.7; transform: scale(1.05); }
+      }
+
+      .game-info {
+        position: absolute;
+        bottom: 1rem;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0, 0, 0, 0.7);
+        padding: 0.5rem 1rem;
+        border: 1px solid var(--neon-cyan);
+        border-radius: 6px;
+        font-size: 0.75rem;
+        text-align: center;
+        box-shadow: 0 0 15px rgba(0, 255, 255, 0.4);
+        z-index: 5;
+        max-width: 90%;
+        text-shadow: 0 0 5px currentColor;
+      }
+
+      @media (max-width: 600px) {
+        .hud {
+          gap: 0.8rem;
+          font-size: 0.8rem;
+        }
+
+        .game-info {
+          font-size: 0.7rem;
+          padding: 0.4rem 0.8rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <a class="back-button" href="./index.html" aria-label="Back to menu">← Back</a>
+      <div class="hud">
+        <span>Wave: <strong id="wave">1</strong></span>
+        <span>Score: <strong id="score">0</strong></span>
+        <span>HP: <strong id="hp">100</strong></span>
+      </div>
+      <div style="width: 52px"></div>
+    </header>
+    <main>
+      <canvas id="game-canvas"></canvas>
+      <div id="overlay">
+        <div>TAP TO START</div>
+        <div class="subtitle">Tap to shoot enemies · Survive the waves</div>
+      </div>
+      <div class="game-info">
+        Tap anywhere to shoot · Turrets auto-fire when enemies near
+      </div>
+    </main>
+    <script src="./defense.js"></script>
+  </body>
+</html>

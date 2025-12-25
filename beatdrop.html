@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Neon Beat Drop</title>
+    <style>
+      :root{
+        --bg0:#070816;
+        --bg1:#0b0f2a;
+        --neonA:#00e5ff;
+        --neonB:#ff3df2;
+        --neonC:#7c4dff;
+        --text:#eaf6ff;
+        --muted:rgba(234,246,255,.72);
+        --panel:rgba(8,10,24,.68);
+        --panel2:rgba(10,12,30,.82);
+        --stroke:rgba(255,255,255,.10);
+        --shadow:rgba(0,0,0,.4);
+      }
+
+      *{box-sizing:border-box}
+      html,body{height:100%}
+      body{
+        margin:0;
+        color:var(--text);
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+        overflow:hidden;
+        background:
+          radial-gradient(1200px 800px at 10% 10%, rgba(255,61,242,.18), transparent 60%),
+          radial-gradient(1200px 800px at 90% 20%, rgba(0,229,255,.18), transparent 60%),
+          radial-gradient(900px 700px at 60% 90%, rgba(124,77,255,.16), transparent 60%),
+          linear-gradient(160deg, var(--bg0), var(--bg1));
+      }
+
+      /* Subtle animated scanline/glow without images */
+      body::before{
+        content:"";
+        position:fixed;
+        inset:0;
+        pointer-events:none;
+        background:
+          repeating-linear-gradient(
+            to bottom,
+            rgba(255,255,255,.035) 0px,
+            rgba(255,255,255,.035) 1px,
+            rgba(0,0,0,0) 3px,
+            rgba(0,0,0,0) 7px
+          );
+        opacity:.22;
+        mix-blend-mode:overlay;
+      }
+
+      #app{
+        height:100%;
+        display:flex;
+        flex-direction:column;
+        align-items:center;
+        padding: max(12px, env(safe-area-inset-top)) 12px max(14px, env(safe-area-inset-bottom));
+        gap:10px;
+      }
+
+      #hud{
+        width:min(520px, 100%);
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        padding:10px 12px;
+        border-radius:14px;
+        background:linear-gradient(180deg, rgba(8,10,24,.72), rgba(8,10,24,.42));
+        border:1px solid var(--stroke);
+        box-shadow: 0 12px 28px rgba(0,0,0,.28);
+        backdrop-filter: blur(10px);
+      }
+
+      .hud-item{
+        display:flex;
+        flex-direction:column;
+        gap:2px;
+        min-width: 0;
+      }
+      .hud-item .label{
+        font-size:11px;
+        letter-spacing:.16em;
+        text-transform:uppercase;
+        color:var(--muted);
+      }
+      .hud-item .value{
+        font-size:18px;
+        font-weight:800;
+        text-shadow: 0 0 18px rgba(0,229,255,.22);
+        white-space:nowrap;
+        overflow:hidden;
+        text-overflow:ellipsis;
+      }
+      #hud .value.accent{
+        background: linear-gradient(90deg, var(--neonA), var(--neonB));
+        -webkit-background-clip:text;
+        background-clip:text;
+        color:transparent;
+        text-shadow:none;
+      }
+
+      /* Portrait arena wrapper */
+      #arena-wrapper{
+        width:min(520px, 100%);
+        aspect-ratio: 9 / 16;
+        position:relative;
+        border-radius:18px;
+        overflow:hidden;
+        border:1px solid rgba(255,255,255,.12);
+        background:
+          radial-gradient(900px 600px at 50% 20%, rgba(0,229,255,.12), transparent 70%),
+          radial-gradient(800px 700px at 40% 90%, rgba(255,61,242,.10), transparent 60%),
+          linear-gradient(180deg, rgba(8,10,26,.88), rgba(8,10,26,.40));
+        box-shadow:
+          0 26px 60px rgba(0,0,0,.45),
+          0 0 0 1px rgba(0,229,255,.08) inset;
+        touch-action:none;
+      }
+
+      canvas#arena{
+        width:100%;
+        height:100%;
+        display:block;
+      }
+
+      /* Overlay (start + game over) */
+      #overlay{
+        position:absolute;
+        inset:0;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        padding:16px;
+        background:
+          radial-gradient(700px 500px at 50% 20%, rgba(0,229,255,.18), transparent 65%),
+          radial-gradient(700px 600px at 50% 90%, rgba(255,61,242,.16), transparent 60%),
+          linear-gradient(180deg, rgba(4,6,18,.80), rgba(4,6,18,.58));
+        backdrop-filter: blur(10px);
+      }
+      #overlay.hidden{display:none}
+
+      .panel{
+        width:min(420px, 100%);
+        border-radius:18px;
+        padding:16px;
+        background: linear-gradient(180deg, var(--panel2), rgba(8,10,24,.62));
+        border:1px solid rgba(255,255,255,.12);
+        box-shadow: 0 24px 70px rgba(0,0,0,.52);
+      }
+      .title{
+        font-size:28px;
+        font-weight:900;
+        letter-spacing:.02em;
+        margin:0 0 10px 0;
+        background: linear-gradient(90deg, var(--neonA), var(--neonB), var(--neonC));
+        -webkit-background-clip:text;
+        background-clip:text;
+        color:transparent;
+      }
+      .subtitle{
+        margin:0 0 14px 0;
+        color: var(--muted);
+        font-size:13px;
+        line-height:1.35;
+      }
+
+      .section{
+        margin-top:12px;
+        padding-top:12px;
+        border-top:1px solid rgba(255,255,255,.10);
+      }
+      .section h3{
+        margin:0 0 10px 0;
+        font-size:12px;
+        color:var(--muted);
+        letter-spacing:.14em;
+        text-transform:uppercase;
+      }
+
+      .song-grid{
+        display:grid;
+        grid-template-columns: 1fr;
+        gap:10px;
+      }
+
+      .btn{
+        appearance:none;
+        border:1px solid rgba(255,255,255,.12);
+        background: rgba(6,8,18,.48);
+        color:var(--text);
+        border-radius:14px;
+        padding:12px 12px;
+        font-weight:750;
+        font-size:14px;
+        cursor:pointer;
+        box-shadow: 0 10px 26px rgba(0,0,0,.28);
+        transition: transform .08s ease, border-color .12s ease, box-shadow .12s ease, background .12s ease;
+        text-align:left;
+      }
+      .btn:active{transform: translateY(1px) scale(.995)}
+      .btn.primary{
+        text-align:center;
+        font-size:15px;
+        padding:12px 14px;
+        background: linear-gradient(90deg, rgba(0,229,255,.22), rgba(255,61,242,.18));
+        border-color: rgba(0,229,255,.22);
+        box-shadow: 0 14px 34px rgba(0,0,0,.38), 0 0 0 1px rgba(0,229,255,.12) inset;
+      }
+      .btn.song.active{
+        border-color: rgba(0,229,255,.55);
+        box-shadow: 0 18px 42px rgba(0,0,0,.44), 0 0 0 1px rgba(0,229,255,.20) inset;
+        background: linear-gradient(90deg, rgba(0,229,255,.18), rgba(255,61,242,.12));
+      }
+
+      .song-name{
+        display:block;
+        font-weight:900;
+        margin-bottom:4px;
+      }
+      .song-meta{
+        display:flex;
+        justify-content:space-between;
+        gap:10px;
+        color:var(--muted);
+        font-size:12px;
+      }
+
+      #overlay-message{
+        margin-top:10px;
+        color: rgba(255,255,255,.86);
+        font-size:12px;
+        line-height:1.4;
+        background: rgba(0,0,0,.20);
+        border:1px solid rgba(255,255,255,.10);
+        border-radius:12px;
+        padding:10px 10px;
+      }
+      #overlay-message.hidden{display:none}
+
+      #results{
+        display:none;
+        margin-top:10px;
+        padding:12px;
+        border-radius:14px;
+        background: rgba(0,0,0,.22);
+        border:1px solid rgba(255,255,255,.10);
+      }
+      #results.show{display:block}
+      .results-row{
+        display:flex;
+        justify-content:space-between;
+        gap:12px;
+        font-size:13px;
+        margin:6px 0;
+      }
+      .results-row .k{color:var(--muted)}
+      .results-row .v{font-weight:900}
+      .fineprint{
+        margin-top:10px;
+        color: rgba(234,246,255,.68);
+        font-size:12px;
+        line-height:1.35;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <header id="hud" aria-label="Score HUD">
+        <div class="hud-item">
+          <div class="label">Score</div>
+          <div id="hud-score" class="value accent">0</div>
+        </div>
+        <div class="hud-item" style="text-align:center;">
+          <div class="label">Best</div>
+          <div id="hud-best" class="value">0</div>
+        </div>
+        <div class="hud-item" style="text-align:right;">
+          <div class="label">Combo</div>
+          <div id="hud-combo" class="value">0</div>
+        </div>
+      </header>
+
+      <div id="arena-wrapper">
+        <canvas id="arena" width="720" height="1280" aria-label="Neon Beat Drop playfield"></canvas>
+
+        <div id="overlay" role="dialog" aria-modal="true">
+          <div class="panel">
+            <h1 class="title">Neon Beat Drop</h1>
+            <p class="subtitle">
+              Tap anywhere on the playfield to hit notes on the line. Audio must start after a tap (mobile autoplay rules).
+            </p>
+
+            <div class="section">
+              <h3>Select Song</h3>
+              <div class="song-grid" id="song-grid">
+                <button class="btn song" data-song="golden" type="button">
+                  <span class="song-name">Demon Hunter - Golden</span>
+                  <span class="song-meta"><span>1 lane</span><span id="meta-golden">BPM: --</span></span>
+                </button>
+                <button class="btn song" data-song="sodapop" type="button">
+                  <span class="song-name">Soda Pop</span>
+                  <span class="song-meta"><span>1 lane</span><span id="meta-sodapop">BPM: --</span></span>
+                </button>
+              </div>
+            </div>
+
+            <div id="results">
+              <div class="results-row"><span class="k">Final Score</span><span class="v" id="result-score">0</span></div>
+              <div class="results-row"><span class="k">Best</span><span class="v" id="result-best">0</span></div>
+              <div class="results-row"><span class="k">Max Combo</span><span class="v" id="result-max-combo">0</span></div>
+            </div>
+
+            <div class="section">
+              <button class="btn primary" id="btn-start" type="button">Tap to Play</button>
+              <div id="overlay-message" class="hidden"></div>
+              <div class="fineprint">
+                Place your audio files here:
+                <br />- <code>assets/golden.ogg</code> (or <code>.mp3</code>)
+                <br />- <code>assets/sodapop.ogg</code> (or <code>.mp3</code>)
+                <br /><span style="opacity:.85">Tip: for timing alignment, tweak each song’s <code>offsetMs</code> in <code>beatdrop.js</code>.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="beatdrop.js"></script>
+  </body>
+</html>
+

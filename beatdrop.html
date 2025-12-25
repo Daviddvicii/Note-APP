@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Neon Beat Drop</title>
+    <style>
+      :root {
+        --bg0: #070513;
+        --bg1: #0b0b2a;
+        --neonA: #00e5ff;
+        --neonB: #ff2bd6;
+        --neonC: #7c4dff;
+        --text: rgba(255, 255, 255, 0.92);
+        --muted: rgba(255, 255, 255, 0.7);
+        --panel: rgba(12, 10, 28, 0.72);
+        --stroke: rgba(255, 255, 255, 0.12);
+        --shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+      }
+
+      * {
+        box-sizing: border-box;
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+        background: radial-gradient(1200px 700px at 20% 15%, rgba(255, 43, 214, 0.22), transparent 55%),
+          radial-gradient(900px 700px at 85% 35%, rgba(0, 229, 255, 0.18), transparent 60%),
+          radial-gradient(900px 800px at 40% 90%, rgba(124, 77, 255, 0.20), transparent 60%),
+          linear-gradient(160deg, var(--bg0), var(--bg1));
+        color: var(--text);
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji",
+          "Segoe UI Emoji";
+        overflow: hidden; /* prevent page scroll during taps */
+      }
+
+      .wrap {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: env(safe-area-inset-top) 14px env(safe-area-inset-bottom) 14px;
+        gap: 10px;
+      }
+
+      header#hud {
+        width: min(520px, 96vw);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 10px 12px;
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
+        border: 1px solid var(--stroke);
+        border-radius: 14px;
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(10px);
+      }
+
+      .hud-item {
+        display: flex;
+        flex-direction: column;
+        line-height: 1.1;
+        min-width: 0;
+      }
+
+      .hud-label {
+        font-size: 12px;
+        color: var(--muted);
+        letter-spacing: 0.12em;
+      }
+
+      .hud-value {
+        font-weight: 800;
+        font-size: 18px;
+        text-shadow: 0 0 14px rgba(0, 229, 255, 0.18);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      #arena-wrapper {
+        width: min(520px, 96vw);
+        aspect-ratio: 9 / 16;
+        position: relative;
+        border-radius: 18px;
+        overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        box-shadow:
+          0 30px 70px rgba(0, 0, 0, 0.55),
+          0 0 0 1px rgba(0, 229, 255, 0.06) inset;
+        background: rgba(0, 0, 0, 0.18);
+        touch-action: manipulation;
+      }
+
+      canvas#game {
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+
+      /* Overlay (start + game over) */
+      #overlay {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 18px;
+        background:
+          radial-gradient(900px 700px at 30% 20%, rgba(255, 43, 214, 0.20), transparent 60%),
+          radial-gradient(700px 600px at 80% 40%, rgba(0, 229, 255, 0.18), transparent 60%),
+          linear-gradient(180deg, rgba(8, 6, 18, 0.62), rgba(8, 6, 18, 0.82));
+        backdrop-filter: blur(10px);
+      }
+
+      #overlay[hidden] {
+        display: none;
+      }
+
+      .panel {
+        width: min(420px, 92%);
+        background: var(--panel);
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        border-radius: 18px;
+        box-shadow: var(--shadow);
+        padding: 16px 14px;
+      }
+
+      .title {
+        font-size: 28px;
+        font-weight: 900;
+        letter-spacing: 0.02em;
+        margin: 2px 0 10px;
+        text-align: center;
+        background: linear-gradient(90deg, var(--neonA), var(--neonB), var(--neonC));
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        text-shadow: 0 0 18px rgba(124, 77, 255, 0.16);
+      }
+
+      .section {
+        margin-top: 12px;
+        padding-top: 12px;
+        border-top: 1px solid rgba(255, 255, 255, 0.10);
+      }
+
+      .section h3 {
+        margin: 0 0 10px;
+        font-size: 12px;
+        letter-spacing: 0.14em;
+        color: var(--muted);
+        font-weight: 800;
+      }
+
+      .song-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 10px;
+      }
+
+      button {
+        appearance: none;
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.03));
+        color: var(--text);
+        border-radius: 14px;
+        padding: 12px 12px;
+        font-weight: 800;
+        cursor: pointer;
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.35);
+        transition: transform 0.08s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+        text-align: left;
+      }
+
+      button:active {
+        transform: translateY(1px);
+      }
+
+      .song-btn[aria-pressed="true"] {
+        border-color: rgba(0, 229, 255, 0.55);
+        box-shadow:
+          0 18px 30px rgba(0, 0, 0, 0.35),
+          0 0 0 1px rgba(0, 229, 255, 0.18) inset,
+          0 0 22px rgba(0, 229, 255, 0.20);
+      }
+
+      .song-name {
+        display: block;
+        font-size: 15px;
+      }
+
+      .song-meta {
+        display: block;
+        margin-top: 6px;
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.72);
+        font-weight: 700;
+        letter-spacing: 0.02em;
+      }
+
+      .primary {
+        width: 100%;
+        text-align: center;
+        padding: 13px 12px;
+        border: 1px solid rgba(0, 229, 255, 0.44);
+        background: linear-gradient(90deg, rgba(0, 229, 255, 0.22), rgba(255, 43, 214, 0.16));
+        box-shadow:
+          0 18px 30px rgba(0, 0, 0, 0.35),
+          0 0 28px rgba(0, 229, 255, 0.22);
+      }
+
+      #overlay-msg {
+        margin-top: 10px;
+        font-size: 13px;
+        color: rgba(255, 255, 255, 0.78);
+        text-align: center;
+        min-height: 18px;
+      }
+
+      #final-line {
+        margin-top: 10px;
+        font-size: 14px;
+        font-weight: 800;
+        color: rgba(255, 255, 255, 0.9);
+        text-align: center;
+        min-height: 18px;
+      }
+
+      .hint {
+        margin-top: 10px;
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.65);
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header id="hud" aria-label="Game HUD">
+        <div class="hud-item">
+          <div class="hud-label">SCORE</div>
+          <div class="hud-value" id="hud-score">0</div>
+        </div>
+        <div class="hud-item">
+          <div class="hud-label">BEST</div>
+          <div class="hud-value" id="hud-best">0</div>
+        </div>
+        <div class="hud-item">
+          <div class="hud-label">COMBO</div>
+          <div class="hud-value" id="hud-combo">0</div>
+        </div>
+      </header>
+
+      <div id="arena-wrapper">
+        <canvas id="game" width="720" height="1280" aria-label="Neon Beat Drop playfield"></canvas>
+
+        <div id="overlay">
+          <div class="panel">
+            <div class="title">Neon Beat Drop</div>
+
+            <div class="section">
+              <h3>SONG SELECT</h3>
+              <div class="song-grid" role="group" aria-label="Song selection">
+                <button class="song-btn" id="song-golden" data-song="golden" aria-pressed="true">
+                  <span class="song-name">Demon Hunter - Golden</span>
+                  <span class="song-meta">Tap to select</span>
+                </button>
+                <button class="song-btn" id="song-sodapop" data-song="sodapop" aria-pressed="false">
+                  <span class="song-name">Soda Pop</span>
+                  <span class="song-meta">Tap to select</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="section">
+              <button class="primary" id="start-btn">Tap to Play</button>
+              <div id="final-line"></div>
+              <div id="overlay-msg"></div>
+              <div class="hint">Tap anywhere in the arena to hit notes. Desktop: press Space.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="./beatdrop.js"></script>
+  </body>
+</html>
+

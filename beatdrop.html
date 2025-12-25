@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Neon Beat Drop</title>
+  <style>
+    :root {
+      --neon-blue: #00f3ff;
+      --neon-pink: #ff00ff;
+      --neon-green: #00ff00;
+      --neon-bg: #0a0a12;
+      --glass-bg: rgba(20, 20, 30, 0.85);
+    }
+
+    * {
+      box-sizing: border-box;
+      touch-action: none; /* Prevent browser zooming/scrolling */
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #000;
+      background: linear-gradient(135deg, #050510 0%, #10051a 100%);
+      color: #fff;
+      font-family: 'Courier New', Courier, monospace;
+      overflow: hidden;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* HUD Header */
+    #hud {
+      width: 100%;
+      max-width: 500px;
+      padding: 10px 20px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 1.2rem;
+      font-weight: bold;
+      text-shadow: 0 0 5px var(--neon-blue);
+      z-index: 10;
+    }
+
+    .hud-item span {
+      color: var(--neon-pink);
+    }
+
+    /* Game Container */
+    #game-container {
+      position: relative;
+      width: 100%;
+      max-width: 100%;
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    #arena-wrapper {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      max-width: 56vh; /* Constraint for 9:16 aspect ratio relative to height */
+      aspect-ratio: 9 / 16;
+      background: #000;
+      box-shadow: 0 0 20px rgba(0, 243, 255, 0.2);
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Overlay (Start/Game Over) */
+    #overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: var(--glass-bg);
+      backdrop-filter: blur(5px);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 20;
+      transition: opacity 0.3s;
+    }
+
+    #overlay.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      color: var(--neon-blue);
+      text-transform: uppercase;
+      text-align: center;
+      margin-bottom: 1rem;
+      text-shadow: 0 0 10px var(--neon-blue), 0 0 20px var(--neon-pink);
+      letter-spacing: 2px;
+    }
+
+    .panel {
+      background: rgba(0, 0, 0, 0.6);
+      border: 1px solid var(--neon-pink);
+      padding: 20px;
+      border-radius: 10px;
+      text-align: center;
+      width: 80%;
+      max-width: 320px;
+      box-shadow: 0 0 15px rgba(255, 0, 255, 0.3);
+    }
+
+    .song-select {
+      margin: 20px 0;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .song-btn {
+      background: transparent;
+      border: 1px solid var(--neon-blue);
+      color: #fff;
+      padding: 10px;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 1rem;
+      transition: all 0.2s;
+    }
+
+    .song-btn.selected {
+      background: var(--neon-blue);
+      color: #000;
+      box-shadow: 0 0 10px var(--neon-blue);
+      font-weight: bold;
+    }
+
+    #start-btn {
+      background: var(--neon-green);
+      color: #000;
+      border: none;
+      padding: 15px 30px;
+      font-size: 1.5rem;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 20px;
+      text-transform: uppercase;
+      box-shadow: 0 0 15px var(--neon-green);
+      border-radius: 5px;
+      font-family: inherit;
+      animation: pulse 1.5s infinite;
+    }
+
+    #start-btn:active {
+      transform: scale(0.95);
+    }
+
+    .stats-row {
+      display: flex;
+      justify-content: space-around;
+      margin-bottom: 10px;
+      font-size: 1.1rem;
+    }
+
+    #msg-area {
+      margin-top: 10px;
+      font-size: 0.9rem;
+      color: #aaa;
+    }
+
+    @keyframes pulse {
+      0% { box-shadow: 0 0 10px var(--neon-green); }
+      50% { box-shadow: 0 0 25px var(--neon-green); }
+      100% { box-shadow: 0 0 10px var(--neon-green); }
+    }
+
+    /* Mobile adjustments */
+    @media (max-width: 600px) {
+      h1 { font-size: 2rem; }
+      #hud { font-size: 1rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="hud">
+    <div class="hud-item">SCORE: <span id="score-disp">0</span></div>
+    <div class="hud-item">COMBO: <span id="combo-disp">0</span></div>
+    <div class="hud-item">BEST: <span id="best-disp">0</span></div>
+  </div>
+
+  <div id="game-container">
+    <div id="arena-wrapper">
+      <canvas id="gameCanvas" width="720" height="1280"></canvas>
+      
+      <div id="overlay">
+        <h1>Neon Beat Drop</h1>
+        
+        <div class="panel">
+          <div id="game-over-stats" style="display:none; margin-bottom: 15px;">
+            <h2 style="color:var(--neon-pink); margin:0 0 10px 0;">GAME OVER</h2>
+            <div class="stats-row">
+              <div>Score: <span id="final-score" style="color:var(--neon-blue)">0</span></div>
+              <div>Best: <span id="final-best" style="color:var(--neon-green)">0</span></div>
+            </div>
+            <div style="font-size: 0.9em; margin-bottom: 10px;">Max Combo: <span id="final-combo">0</span></div>
+            <hr style="border-color: #333; margin: 10px 0;">
+          </div>
+
+          <div style="margin-bottom: 10px; font-size: 0.9rem; color: #ccc;">SELECT TRACK</div>
+          
+          <div class="song-select">
+            <button class="song-btn selected" data-id="golden">Demon Hunter - Golden</button>
+            <button class="song-btn" data-id="sodapop">Soda Pop</button>
+          </div>
+
+          <button id="start-btn">TAP TO PLAY</button>
+          <div id="msg-area">Headphones Recommended</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="beatdrop.js"></script>
+</body>
+</html>

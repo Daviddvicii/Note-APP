@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Neon Beat Drop</title>
+    <style>
+        :root {
+            --neon-pink: #ff00ff;
+            --neon-blue: #00ffff;
+            --neon-purple: #bc13fe;
+            --bg-dark: #0a0a12;
+            --overlay-bg: rgba(10, 10, 18, 0.95);
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-dark);
+            background: radial-gradient(circle at center, #1a1a2e 0%, #000000 100%);
+            color: white;
+            font-family: 'Courier New', Courier, monospace; /* Cyberpunk-ish mono */
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        #game-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            max-width: 500px; /* Constrain width on desktop */
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+        }
+
+        /* HUD */
+        #hud {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 15px;
+            background: linear-gradient(180deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%);
+            font-weight: bold;
+            font-size: 1.1rem;
+            z-index: 10;
+            text-shadow: 0 0 5px var(--neon-blue);
+        }
+
+        .hud-item span {
+            color: var(--neon-pink);
+        }
+
+        /* Game Arena */
+        #arena-wrapper {
+            flex: 1;
+            position: relative;
+            width: 100%;
+            /* Aspect ratio handling via JS resizing or object-fit */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(0deg, rgba(0,255,255,0.05) 1px, transparent 1px),
+                        linear-gradient(90deg, rgba(0,255,255,0.05) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: block;
+        }
+
+        /* Overlay */
+        #overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--overlay-bg);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 20;
+            transition: opacity 0.3s;
+            padding: 20px;
+            text-align: center;
+        }
+
+        #overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            color: var(--neon-blue);
+            text-shadow: 0 0 10px var(--neon-blue), 0 0 20px var(--neon-purple);
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        h2 {
+            font-size: 1.5rem;
+            color: white;
+            margin-bottom: 2rem;
+            text-shadow: 0 0 5px white;
+        }
+
+        .section-title {
+            color: #ccc;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Song Selection */
+        .song-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            width: 100%;
+            max-width: 300px;
+            margin-bottom: 30px;
+        }
+
+        .song-btn {
+            background: transparent;
+            border: 2px solid var(--neon-purple);
+            color: white;
+            padding: 15px;
+            font-size: 1rem;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            overflow: hidden;
+            text-transform: uppercase;
+        }
+
+        .song-btn:hover {
+            background: rgba(188, 19, 254, 0.2);
+            box-shadow: 0 0 15px var(--neon-purple);
+        }
+
+        .song-btn.selected {
+            background: var(--neon-purple);
+            color: white;
+            border-color: var(--neon-pink);
+            box-shadow: 0 0 20px var(--neon-purple);
+            font-weight: bold;
+        }
+
+        /* Start Button */
+        #start-btn {
+            background: var(--neon-blue);
+            color: black;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            font-family: inherit;
+            cursor: pointer;
+            text-transform: uppercase;
+            box-shadow: 0 0 20px var(--neon-blue);
+            animation: pulse 2s infinite;
+        }
+
+        #start-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* Stats on Overlay */
+        #overlay-stats {
+            margin-bottom: 20px;
+            display: none; /* Hidden initially */
+        }
+        
+        #overlay-stats p {
+            font-size: 1.2rem;
+            margin: 5px 0;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 15px var(--neon-blue); }
+            50% { box-shadow: 0 0 25px var(--neon-blue), 0 0 10px white; }
+            100% { box-shadow: 0 0 15px var(--neon-blue); }
+        }
+
+        /* Loading message */
+        #loading-msg {
+            margin-top: 10px;
+            font-size: 0.8rem;
+            color: #aaa;
+            height: 1.2rem;
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <div id="hud">
+        <div class="hud-item">SCORE: <span id="score-display">0</span></div>
+        <div class="hud-item">COMBO: <span id="combo-display">0</span></div>
+        <div class="hud-item">BEST: <span id="best-display">0</span></div>
+    </div>
+
+    <div id="arena-wrapper">
+        <canvas id="game-canvas" width="720" height="1280"></canvas>
+    </div>
+
+    <div id="overlay">
+        <h1>Neon Beat Drop</h1>
+        
+        <div id="overlay-stats">
+            <h2 id="result-title">GAME OVER</h2>
+            <p>Score: <span id="final-score" style="color:var(--neon-blue)">0</span></p>
+            <p>Best: <span id="final-best" style="color:var(--neon-pink)">0</span></p>
+        </div>
+
+        <div class="section-title">Select Track</div>
+        <div class="song-list">
+            <button class="song-btn selected" data-id="golden">Demon Hunter - Golden</button>
+            <button class="song-btn" data-id="sodapop">Soda Pop</button>
+        </div>
+
+        <button id="start-btn">Tap to Play</button>
+        <div id="loading-msg"></div>
+    </div>
+</div>
+
+<script src="beatdrop.js"></script>
+</body>
+</html>

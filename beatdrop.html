@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Neon Beat Drop</title>
+    <style>
+        :root {
+            --neon-blue: #00f3ff;
+            --neon-pink: #ff00ff;
+            --neon-green: #00ff00;
+            --bg-dark: #0a0a12;
+            --overlay-bg: rgba(10, 10, 18, 0.85);
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #000;
+            color: #fff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #game-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: radial-gradient(circle at center, #1a1a2e 0%, #000 100%);
+        }
+
+        /* 9:16 Aspect Ratio Arena */
+        #arena-wrapper {
+            position: relative;
+            width: 100vh; /* Fallback */
+            max-width: 100vw;
+            aspect-ratio: 9 / 16;
+            background: linear-gradient(to bottom, #050510, #1a1a2e);
+            box-shadow: 0 0 20px rgba(0, 243, 255, 0.2);
+            overflow: hidden;
+        }
+
+        /* Ensure it fits vertically and horizontally */
+        @media (min-aspect-ratio: 9/16) {
+            #arena-wrapper {
+                height: 100vh;
+                width: auto;
+            }
+        }
+        @media (max-aspect-ratio: 9/16) {
+            #arena-wrapper {
+                width: 100vw;
+                height: auto;
+            }
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        #hud {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 18px;
+            font-weight: bold;
+            text-shadow: 0 0 5px var(--neon-blue);
+            z-index: 10;
+            pointer-events: none;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent);
+        }
+
+        .hud-item span {
+            color: var(--neon-blue);
+        }
+
+        #overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--overlay-bg);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 20;
+            backdrop-filter: blur(5px);
+            transition: opacity 0.3s;
+        }
+
+        #overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        h1 {
+            font-size: 32px;
+            margin: 0 0 30px 0;
+            text-align: center;
+            color: #fff;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: 
+                0 0 5px #fff,
+                0 0 10px #fff,
+                0 0 20px var(--neon-pink),
+                0 0 30px var(--neon-pink);
+            animation: pulse 2s infinite alternate;
+        }
+
+        @keyframes pulse {
+            from { text-shadow: 0 0 10px #fff, 0 0 20px var(--neon-pink); }
+            to { text-shadow: 0 0 20px #fff, 0 0 40px var(--neon-pink); }
+        }
+
+        .section-title {
+            font-size: 14px;
+            color: #aaa;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        #song-select {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 30px;
+            width: 80%;
+            max-width: 300px;
+        }
+
+        .song-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #fff;
+            padding: 15px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: left;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .song-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .song-btn.selected {
+            border-color: var(--neon-blue);
+            background: rgba(0, 243, 255, 0.1);
+            box-shadow: 0 0 15px rgba(0, 243, 255, 0.3);
+        }
+
+        .song-btn.selected::after {
+            content: 'SELECTED';
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 10px;
+            color: var(--neon-blue);
+        }
+
+        #start-btn {
+            background: transparent;
+            color: #fff;
+            border: 2px solid var(--neon-green);
+            padding: 15px 40px;
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+            text-transform: uppercase;
+            box-shadow: 0 0 10px var(--neon-green);
+            text-shadow: 0 0 5px var(--neon-green);
+            transition: transform 0.1s, box-shadow 0.2s;
+        }
+
+        #start-btn:active {
+            transform: scale(0.95);
+        }
+
+        #game-over-stats {
+            display: none; /* Hidden by default */
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 20px;
+            width: 80%;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            margin: 5px 0;
+            font-size: 18px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding-bottom: 5px;
+        }
+
+        .stat-label { color: #aaa; }
+        .stat-value { font-weight: bold; }
+
+        .grade {
+            font-size: 48px;
+            font-weight: bold;
+            margin: 20px 0;
+            text-shadow: 0 0 20px currentColor;
+        }
+
+        #msg-area {
+            margin-top: 10px;
+            color: #ff4444;
+            font-size: 14px;
+            height: 20px;
+        }
+
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <div id="arena-wrapper">
+        <div id="hud">
+            <div class="hud-item">SCORE: <span id="score-display">0</span></div>
+            <div class="hud-item">COMBO: <span id="combo-display">0</span></div>
+        </div>
+
+        <canvas id="game-canvas" width="720" height="1280"></canvas>
+
+        <div id="overlay">
+            <h1 id="overlay-title">Neon Beat Drop</h1>
+
+            <div id="game-over-stats">
+                <div class="grade" id="final-grade" style="color:var(--neon-green)">S</div>
+                <div class="stat-row">
+                    <span class="stat-label">Score</span>
+                    <span class="stat-value" id="final-score">0</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Best</span>
+                    <span class="stat-value" id="final-best">0</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Max Combo</span>
+                    <span class="stat-value" id="final-combo">0</span>
+                </div>
+            </div>
+
+            <div class="section-title" id="select-label">Select Song</div>
+            <div id="song-select">
+                <button class="song-btn selected" data-song="golden">
+                    Demon Hunter - Golden
+                </button>
+                <button class="song-btn" data-song="sodapop">
+                    Soda Pop
+                </button>
+            </div>
+
+            <button id="start-btn">Tap to Play</button>
+            <div id="msg-area"></div>
+        </div>
+    </div>
+</div>
+
+<script src="beatdrop.js"></script>
+</body>
+</html>

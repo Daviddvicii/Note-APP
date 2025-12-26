@@ -13,6 +13,9 @@
       :root {
         --green: #00ff66;
         --green2: #00ffaa;
+        --dim: rgba(0, 255, 102, 0.45);
+        --panel: rgba(0, 10, 6, 0.35);
+        --panel2: rgba(0, 10, 6, 0.55);
       }
 
       html,
@@ -23,6 +26,48 @@
         color: var(--green);
         font-family: ui-monospace, SFMono-Regular, Menlo, Consolas,
           "Liberation Mono", monospace;
+        overflow: hidden;
+      }
+
+      /* ===== CRT EFFECT (C) ===== */
+      body::before {
+        /* scanlines */
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        background: linear-gradient(
+          rgba(255, 255, 255, 0.03),
+          rgba(0, 0, 0, 0.03)
+        );
+        background-size: 100% 4px;
+        mix-blend-mode: overlay;
+        opacity: 0.35;
+        z-index: 10;
+      }
+
+      body::after {
+        /* vignette + subtle flicker */
+        content: "";
+        position: fixed;
+        inset: -20px;
+        pointer-events: none;
+        background:
+          radial-gradient(circle at 50% 45%, rgba(0,255,170,0.10), transparent 55%),
+          radial-gradient(circle at 50% 60%, rgba(0,0,0,0.0), rgba(0,0,0,0.55) 70%);
+        opacity: 0.9;
+        z-index: 11;
+        animation: crtFlicker 5.2s infinite;
+      }
+
+      @keyframes crtFlicker {
+        0%, 100% { filter: brightness(1); }
+        16% { filter: brightness(0.98); }
+        17% { filter: brightness(1.05); }
+        18% { filter: brightness(0.99); }
+        52% { filter: brightness(1.02); }
+        53% { filter: brightness(0.97); }
+        54% { filter: brightness(1.01); }
       }
 
       .menu {
@@ -32,87 +77,448 @@
         align-items: center;
         justify-content: center;
         text-align: center;
-        position: relative;
         padding: 24px;
+        position: relative;
+      }
+
+      .topbar {
+        position: absolute;
+        top: 14px;
+        left: 14px;
+        right: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        z-index: 12; /* above CRT overlays */
+      }
+
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 12px;
+        border: 1px solid var(--dim);
+        border-radius: 999px;
+        background: var(--panel);
+        box-shadow: 0 0 10px rgba(0, 255, 102, 0.18);
+        backdrop-filter: blur(6px);
+      }
+
+      .pill small {
+        opacity: 0.75;
+      }
+
+      .sound-btn {
+        appearance: none;
+        border: 1px solid var(--dim);
+        border-radius: 999px;
+        background: var(--panel2);
+        color: var(--green);
+        padding: 10px 12px;
+        font: inherit;
+        cursor: pointer;
+        box-shadow: 0 0 10px rgba(0, 255, 102, 0.18);
+        transition: transform 0.12s ease, box-shadow 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+      }
+
+      .sound-btn:hover {
+        transform: translateY(-1px);
+        color: var(--green2);
+        border-color: var(--green2);
+        box-shadow: 0 0 14px rgba(0, 255, 170, 0.45);
       }
 
       h1 {
-        margin: 0 0 8px;
+        margin: 0 0 6px;
         font-size: 28px;
-        text-shadow: 0 0 8px var(--green);
+        text-shadow: 0 0 12px var(--green);
+        z-index: 12;
       }
 
       .menu-subtitle {
-        margin: 0 0 24px;
-        opacity: 0.8;
+        margin-bottom: 18px;
+        opacity: 0.75;
+        font-size: 14px;
+        z-index: 12;
       }
 
       .menu-items {
         display: flex;
         flex-direction: column;
-        gap: 14px;
+        gap: 12px;
         width: 100%;
-        max-width: 360px;
+        max-width: 380px;
+        z-index: 12;
       }
 
       .retro-btn {
-        display: block;
-        padding: 14px 18px;
-        border: 1px solid var(--green);
-        border-radius: 10px;
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+
+        padding: 14px 16px 14px 38px;
+        border: 1px solid var(--dim);
+        border-radius: 12px;
         color: var(--green);
         text-decoration: none;
         font-size: 18px;
-        box-shadow: 0 0 8px rgba(0, 255, 102, 0.3);
-        transition:
-          transform 0.06s ease,
-          box-shadow 0.06s ease,
-          color 0.06s ease,
-          border-color 0.06s ease;
+        background: rgba(0, 0, 0, 0.25);
+        box-shadow: 0 0 8px rgba(0, 255, 102, 0.22);
+        transition: all 0.12s ease;
       }
 
-      .retro-btn:hover {
-        transform: translateY(-1px);
+      .retro-btn::before {
+        content: "▶";
+        position: absolute;
+        left: 14px;
+        opacity: 0;
+        transform: translateX(-6px);
+        transition: all 0.12s ease;
+      }
+
+      .retro-btn:hover,
+      .retro-btn.active {
+        transform: scale(1.03);
         color: var(--green2);
         border-color: var(--green2);
-        box-shadow: 0 0 12px rgba(0, 255, 170, 0.5);
+        box-shadow: 0 0 16px rgba(0, 255, 170, 0.55);
+      }
+
+      .retro-btn:hover::before,
+      .retro-btn.active::before {
+        opacity: 1;
+        transform: translateX(0);
+      }
+
+      .label {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 0;
+      }
+
+      .label span {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      /* ===== BEST badge (A) ===== */
+      .best-badge {
+        flex: 0 0 auto;
+        font-size: 12px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        padding: 7px 10px;
+        border-radius: 999px;
+        border: 1px solid rgba(0, 255, 102, 0.35);
+        background: rgba(0, 255, 102, 0.06);
+        color: rgba(0, 255, 170, 0.9);
+        box-shadow: 0 0 10px rgba(0, 255, 102, 0.12);
+      }
+
+      .best-badge b {
+        color: #eafff5;
+        letter-spacing: 0.06em;
       }
 
       .menu-hint {
-        margin-top: 20px;
+        margin-top: 18px;
         font-size: 12px;
-        opacity: 0.7;
+        opacity: 0.65;
+        max-width: 560px;
+        z-index: 12;
+      }
+
+      @media (max-width: 420px) {
+        .retro-btn {
+          font-size: 16px;
+        }
       }
     </style>
   </head>
 
   <body>
     <div class="menu" role="navigation" aria-label="Game selection menu">
-      <h1>🎮 Retro Game Hub</h1>
-      <p class="menu-subtitle">Select a game</p>
+      <div class="topbar">
+        <div class="pill">
+          <small>Arcade Mode:</small>
+          <span>↑ ↓ Select · Enter Start</span>
+        </div>
+        <button id="soundBtn" class="sound-btn" type="button" aria-label="Toggle sound">
+          🔊 Sound: ON
+        </button>
+      </div>
 
-      <nav class="menu-items">
-        <a class="retro-btn" href="./flappy.html">🐤 Play Flappy Bird</a>
-        <a class="retro-btn" href="./invaders.html">👾 Play Space Invaders</a>
-        <a class="retro-btn" href="./pacman.html">ᗣ 👻 Play Pac-Man</a>
-        <a class="retro-btn" href="./snake.html">🐍 Play Snake</a>
-        <a class="retro-btn" href="./pong.html">🏓 Play Pong</a>
-        <a class="retro-btn" href="./breakout.html">🧱 Play Breakout</a>
-        <a class="retro-btn" href="./tetris.html">🧊 Play Tetris</a>
-        <a class="retro-btn" href="./city.html">🚗 Play Neon City Driver</a>
-        <a class="retro-btn" href="./defense.html">🛡️ Play Neon Tap Defense</a>
-        <!-- NEW: Neon Fruit game -->
-        <a class="retro-btn" href="./fruit.html">🍉 Play Neon Fruit Ninja</a>
-        <!-- NEW: Neon Sky Jumper game -->
-        <a class="retro-btn" href="./jumper.html">🚀 Play Neon Sky Jumper</a>
+      <h1>🎮 Retro Game Hub</h1>
+      <div class="menu-subtitle">Tap to play · Keyboard supported · CRT Mode enabled</div>
+
+      <nav class="menu-items" id="menu">
+        <a class="retro-btn" href="./flappy.html" data-id="flappy" data-best-key="flappy-best">
+          <span class="label"><span>🐤 Flappy Bird</span></span>
+          <span class="best-badge">BEST <b data-best-for="flappy">—</b></span>
+        </a>
+
+        <a class="retro-btn" href="./invaders.html" data-id="invaders" data-best-key="invaders-best">
+          <span class="label"><span>👾 Space Invaders</span></span>
+          <span class="best-badge">BEST <b data-best-for="invaders">—</b></span>
+        </a>
+
+        <a class="retro-btn" href="./pacman.html" data-id="pacman" data-best-key="pacman-best">
+          <span class="label"><span>ᗣ 👻 Pac-Man</span></span>
+          <span class="best-badge">BEST <b data-best-for="pacman">—</b></span>
+        </a>
+
+        <a class="retro-btn" href="./snake.html" data-id="snake" data-best-key="snake-best">
+          <span class="label"><span>🐍 Snake</span></span>
+          <span class="best-badge">BEST <b data-best-for="snake">—</b></span>
+        </a>
+
+        <a class="retro-btn" href="./pong.html" data-id="pong" data-best-key="pong-best">
+          <span class="label"><span>🏓 Pong</span></span>
+          <span class="best-badge">BEST <b data-best-for="pong">—</b></span>
+        </a>
+
+        <a class="retro-btn" href="./breakout.html" data-id="breakout" data-best-key="breakout-best">
+          <span class="label"><span>🧱 Breakout</span></span>
+          <span class="best-badge">BEST <b data-best-for="breakout">—</b></span>
+        </a>
+
+        <a class="retro-btn" href="./tetris.html" data-id="tetris" data-best-key="tetris-best">
+          <span class="label"><span>🧊 Tetris</span></span>
+          <span class="best-badge">BEST <b data-best-for="tetris">—</b></span>
+        </a>
+
+        <a class="retro-btn" href="./city.html" data-id="city" data-best-key="city-best">
+          <span class="label"><span>🚗 Neon City Driver</span></span>
+          <span class="best-badge">BEST <b data-best-for="city">—</b></span>
+        </a>
+
+        <!-- swapped order preserved -->
+        <a class="retro-btn" href="./fruit.html" data-id="fruit" data-best-key="retro-neon-fruit-best">
+          <span class="label"><span>🍉 Neon Fruit Ninja</span></span>
+          <span class="best-badge">BEST <b data-best-for="fruit">—</b></span>
+        </a>
+
+        <a class="retro-btn" href="./defense.html" data-id="defense" data-best-key="defense-best">
+          <span class="label"><span>🛡️ Neon Tap Defense</span></span>
+          <span class="best-badge">BEST <b data-best-for="defense">—</b></span>
+        </a>
+
+        <a class="retro-btn" href="./jumper.html" data-id="jumper" data-best-key="neon-sky-jumper-best">
+          <span class="label"><span>🚀 Neon Sky Jumper</span></span>
+          <span class="best-badge">BEST <b data-best-for="jumper">—</b></span>
+        </a>
+
+        <a class="retro-btn" href="./beatdrop.html" data-id="beatdrop" data-best-key="beatdrop-best">
+          <span class="label"><span>🎵 Neon Beat Drop</span></span>
+          <span class="best-badge">BEST <b data-best-for="beatdrop">—</b></span>
+        </a>
       </nav>
 
       <p class="menu-hint">
-        Flappy: Tap / Space · Invaders: ← → + Space · Pac-Man: Arrows · Snake:
-        Arrows / D-pad · Pong: W/S or ↑/↓ · Breakout: ←/→ or A/D · Tetris:
-        Arrows / ↑ rotate · Driver: WASD / Arrows · Tap Defense: tap to shoot + tap
-        turrets · Fruit: drag / swipe to slice · Jumper: swipe left/right or A/D
+        Tip: If a BEST shows “—”, that game either hasn’t saved a best score yet, or its storage key is different.
+        Tell me your defense/beatdrop save keys and I’ll wire them perfectly.
       </p>
     </div>
+
+    <script>
+      // ===== A) BEST score read + render =====
+      function readBest(key) {
+        const raw = localStorage.getItem(key);
+        if (raw == null) return null;
+
+        // numeric-ish best
+        const n = Number(raw);
+        if (!Number.isNaN(n) && Number.isFinite(n)) return Math.floor(n);
+
+        // some games may store JSON; try common patterns
+        try {
+          const obj = JSON.parse(raw);
+          if (obj && typeof obj.best === "number") return Math.floor(obj.best);
+          if (obj && typeof obj.highScore === "number") return Math.floor(obj.highScore);
+        } catch (_) {}
+
+        return null;
+      }
+
+      const items = Array.from(document.querySelectorAll(".retro-btn"));
+      const bestTargets = new Map();
+      document.querySelectorAll("[data-best-for]").forEach((b) => {
+        bestTargets.set(b.getAttribute("data-best-for"), b);
+      });
+
+      function refreshAllBest() {
+        items.forEach((a) => {
+          const id = a.dataset.id;
+          const key = a.dataset.bestKey;
+          const target = bestTargets.get(id);
+          if (!target) return;
+          const best = key ? readBest(key) : null;
+          target.textContent = best == null ? "—" : String(best);
+        });
+      }
+
+      refreshAllBest();
+      // refresh when returning to tab
+      window.addEventListener("focus", refreshAllBest);
+
+      // ===== Arcade navigation (kept) =====
+      let index = 0;
+      function updateActive() {
+        items.forEach((el, i) => el.classList.toggle("active", i === index));
+      }
+      updateActive();
+
+      // ===== D) WebAudio: BGM + SFX + mute toggle =====
+      let audioReady = false;
+      let audioCtx = null;
+      let master = null;
+      let bgmGain = null;
+      let sfxGain = null;
+      let bgmTimer = null;
+      let soundOn = true;
+
+      const soundBtn = document.getElementById("soundBtn");
+
+      function ensureAudio() {
+        if (audioReady) return;
+        audioReady = true;
+
+        const AC = window.AudioContext || window.webkitAudioContext;
+        audioCtx = new AC();
+
+        master = audioCtx.createGain();
+        master.gain.value = 0.55;
+        master.connect(audioCtx.destination);
+
+        bgmGain = audioCtx.createGain();
+        bgmGain.gain.value = 0.10; // subtle
+        bgmGain.connect(master);
+
+        sfxGain = audioCtx.createGain();
+        sfxGain.gain.value = 0.25;
+        sfxGain.connect(master);
+
+        startBgm();
+        applyMuteState();
+      }
+
+      function applyMuteState() {
+        if (!master) return;
+        master.gain.value = soundOn ? 0.55 : 0.0001;
+        soundBtn.textContent = soundOn ? "🔊 Sound: ON" : "🔇 Sound: OFF";
+      }
+
+      function beep(freq, durMs, type = "square", gain = 0.12) {
+        if (!audioCtx || !sfxGain || !soundOn) return;
+        const t = audioCtx.currentTime;
+
+        const o = audioCtx.createOscillator();
+        const g = audioCtx.createGain();
+        o.type = type;
+        o.frequency.value = freq;
+
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(gain, t + 0.01);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + durMs / 1000);
+
+        o.connect(g);
+        g.connect(sfxGain);
+
+        o.start(t);
+        o.stop(t + durMs / 1000 + 0.02);
+      }
+
+      // simple neon arpeggio loop
+      function startBgm() {
+        if (!audioCtx || !bgmGain) return;
+        if (bgmTimer) clearInterval(bgmTimer);
+
+        const scale = [220, 277.18, 329.63, 440, 554.37, 659.25]; // A minor-ish
+        let step = 0;
+
+        bgmTimer = setInterval(() => {
+          if (!soundOn || !audioCtx) return;
+
+          const t = audioCtx.currentTime;
+          const freq = scale[step % scale.length];
+
+          const o = audioCtx.createOscillator();
+          const g = audioCtx.createGain();
+
+          o.type = "triangle";
+          o.frequency.setValueAtTime(freq, t);
+
+          g.gain.setValueAtTime(0.0001, t);
+          g.gain.exponentialRampToValueAtTime(0.06, t + 0.01);
+          g.gain.exponentialRampToValueAtTime(0.0001, t + 0.18);
+
+          // slight detune layer for "arcade shimmer"
+          const o2 = audioCtx.createOscillator();
+          const g2 = audioCtx.createGain();
+          o2.type = "sine";
+          o2.frequency.setValueAtTime(freq * 2, t);
+          g2.gain.setValueAtTime(0.0001, t);
+          g2.gain.exponentialRampToValueAtTime(0.02, t + 0.01);
+          g2.gain.exponentialRampToValueAtTime(0.0001, t + 0.18);
+
+          o.connect(g); g.connect(bgmGain);
+          o2.connect(g2); g2.connect(bgmGain);
+
+          o.start(t); o.stop(t + 0.2);
+          o2.start(t); o2.stop(t + 0.2);
+
+          step++;
+        }, 180);
+      }
+
+      soundBtn.addEventListener("click", () => {
+        ensureAudio();
+        soundOn = !soundOn;
+        applyMuteState();
+        // feedback beep
+        beep(soundOn ? 880 : 220, 90, "square", 0.10);
+      });
+
+      // Start audio on first user interaction (mobile autoplay rules)
+      const kickAudio = () => ensureAudio();
+      window.addEventListener("pointerdown", kickAudio, { once: true });
+      window.addEventListener("keydown", kickAudio, { once: true });
+
+      // ===== Navigation + SFX =====
+      window.addEventListener("keydown", (e) => {
+        if (e.key === "ArrowDown") {
+          index = (index + 1) % items.length;
+          updateActive();
+          ensureAudio();
+          beep(660, 55, "square", 0.10);
+        } else if (e.key === "ArrowUp") {
+          index = (index - 1 + items.length) % items.length;
+          updateActive();
+          ensureAudio();
+          beep(520, 55, "square", 0.10);
+        } else if (e.key === "Enter") {
+          ensureAudio();
+          beep(880, 110, "square", 0.12);
+          items[index].click();
+        }
+      });
+
+      items.forEach((el, i) => {
+        el.addEventListener("mouseenter", () => {
+          index = i;
+          updateActive();
+        });
+
+        el.addEventListener("click", () => {
+          ensureAudio();
+          beep(990, 120, "square", 0.12);
+        });
+      });
+    </script>
   </body>
 </html>

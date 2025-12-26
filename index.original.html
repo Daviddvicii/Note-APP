@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, user-scalable=no"
+    />
+    <meta name="theme-color" content="#0b1426" />
+    <title>Retro Arcade</title>
+
+    <style>
+      :root {
+        --green: #00ff66;
+        --green2: #00ffaa;
+      }
+
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+        background: #000;
+        color: var(--green);
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas,
+          "Liberation Mono", monospace;
+      }
+
+      .menu {
+        min-height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        position: relative;
+        padding: 24px;
+      }
+
+      h1 {
+        margin: 0 0 8px;
+        font-size: 28px;
+        text-shadow: 0 0 8px var(--green);
+      }
+
+      .menu-subtitle {
+        margin: 0 0 24px;
+        opacity: 0.8;
+      }
+
+      .menu-items {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        width: 100%;
+        max-width: 360px;
+      }
+
+      .retro-btn {
+        display: block;
+        padding: 14px 18px;
+        border: 1px solid var(--green);
+        border-radius: 10px;
+        color: var(--green);
+        text-decoration: none;
+        font-size: 18px;
+        box-shadow: 0 0 8px rgba(0, 255, 102, 0.3);
+        transition:
+          transform 0.06s ease,
+          box-shadow 0.06s ease,
+          color 0.06s ease,
+          border-color 0.06s ease;
+      }
+
+      .retro-btn:hover {
+        transform: translateY(-1px);
+        color: var(--green2);
+        border-color: var(--green2);
+        box-shadow: 0 0 12px rgba(0, 255, 170, 0.5);
+      }
+
+      .menu-hint {
+        margin-top: 20px;
+        font-size: 12px;
+        opacity: 0.7;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="menu" role="navigation" aria-label="Game selection menu">
+      <h1>🎮 Retro Game Hub</h1>
+      <p class="menu-subtitle">Select a game</p>
+
+      <nav class="menu-items">
+        <a class="retro-btn" href="./flappy.html">🐤 Play Flappy Bird</a>
+        <a class="retro-btn" href="./invaders.html">👾 Play Space Invaders</a>
+        <a class="retro-btn" href="./pacman.html">ᗣ 👻 Play Pac-Man</a>
+        <a class="retro-btn" href="./snake.html">🐍 Play Snake</a>
+        <a class="retro-btn" href="./pong.html">🏓 Play Pong</a>
+        <a class="retro-btn" href="./breakout.html">🧱 Play Breakout</a>
+        <a class="retro-btn" href="./tetris.html">🧊 Play Tetris</a>
+        <a class="retro-btn" href="./city.html">🚗 Play Neon City Driver</a>
+        <a class="retro-btn" href="./defense.html">🛡️ Play Neon Tap Defense</a>
+        <a class="retro-btn" href="./fruit.html">🍉 Play Neon Fruit Ninja</a>
+        <a class="retro-btn" href="./jumper.html">🚀 Play Neon Sky Jumper</a>
+      </nav>
+
+      <p class="menu-hint">
+        Flappy: Tap / Space · Invaders: ← → + Space · Pac-Man: Arrows · Snake:
+        Arrows / D-pad · Pong: W/S or ↑/↓ · Breakout: ←/→ or A/D · Tetris:
+        Arrows / ↑ rotate · Driver: WASD / Arrows · Tap Defense: tap to shoot + tap
+        turrets · Fruit: drag / swipe to slice · Jumper: swipe left/right or A/D
+      </p>
+    </div>
+  </body>
+</html>

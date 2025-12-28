@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+    <meta name="theme-color" content="#000000" />
+    <title>Neon Stack</title>
+
+    <style>
+      :root {
+        --green: #00ff66;
+        --green2: #00ffaa;
+        --dim: rgba(0, 255, 102, 0.45);
+        --panel: rgba(0, 10, 6, 0.35);
+        --panel2: rgba(0, 10, 6, 0.55);
+      }
+
+      * { box-sizing: border-box; }
+
+      html, body {
+        height: 100%;
+        margin: 0;
+        background: #000;
+        color: var(--green);
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+        overflow: hidden;
+        overscroll-behavior: none;
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      /* CRT scanlines + vignette */
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        background: linear-gradient(rgba(255, 255, 255, 0.03), rgba(0, 0, 0, 0.03));
+        background-size: 100% 4px;
+        mix-blend-mode: overlay;
+        opacity: 0.35;
+        z-index: 10;
+      }
+      body::after {
+        content: "";
+        position: fixed;
+        inset: -20px;
+        pointer-events: none;
+        background:
+          radial-gradient(circle at 50% 45%, rgba(0, 255, 170, 0.12), transparent 55%),
+          radial-gradient(circle at 50% 60%, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.62) 70%);
+        opacity: 0.95;
+        z-index: 11;
+        animation: crtFlicker 5.2s infinite;
+      }
+      @keyframes crtFlicker {
+        0%, 100% { filter: brightness(1); }
+        16% { filter: brightness(0.98); }
+        17% { filter: brightness(1.05); }
+        18% { filter: brightness(0.99); }
+        52% { filter: brightness(1.02); }
+        53% { filter: brightness(0.97); }
+        54% { filter: brightness(1.01); }
+      }
+
+      .app {
+        min-height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: calc(env(safe-area-inset-top, 0px) + 12px) 12px calc(env(safe-area-inset-bottom, 0px) + 14px);
+        position: relative;
+        z-index: 1; /* under CRT overlays */
+      }
+
+      .topbar {
+        width: min(560px, 100%);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+      }
+
+      .pill {
+        display: inline-flex;
+        align-items: baseline;
+        gap: 12px;
+        padding: 10px 12px;
+        border: 1px solid var(--dim);
+        border-radius: 999px;
+        background: var(--panel);
+        box-shadow: 0 0 10px rgba(0, 255, 102, 0.18);
+        backdrop-filter: blur(6px);
+        white-space: nowrap;
+      }
+
+      .btn {
+        appearance: none;
+        border: 1px solid var(--dim);
+        border-radius: 999px;
+        background: var(--panel2);
+        color: var(--green);
+        padding: 10px 12px;
+        font: inherit;
+        cursor: pointer;
+        text-decoration: none;
+        box-shadow: 0 0 10px rgba(0, 255, 102, 0.18);
+        transition: transform 0.12s ease, box-shadow 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+      }
+
+      .btn:hover, .btn:active {
+        transform: translateY(-1px);
+        color: var(--green2);
+        border-color: var(--green2);
+        box-shadow: 0 0 14px rgba(0, 255, 170, 0.45);
+      }
+
+      .hud small { opacity: 0.75; }
+      .hud b { color: #eafff5; letter-spacing: 0.06em; }
+
+      .stage {
+        width: min(560px, 100%);
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding-top: 12px;
+      }
+
+      .canvas-wrap {
+        position: relative;
+        width: 100%;
+        max-width: 560px;
+        aspect-ratio: 9 / 16;
+        max-height: calc(100vh - 120px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+        border-radius: 16px;
+        overflow: hidden;
+        border: 1px solid rgba(0, 255, 102, 0.35);
+        box-shadow:
+          0 0 16px rgba(0, 255, 102, 0.22),
+          0 0 34px rgba(0, 255, 170, 0.14),
+          inset 0 0 40px rgba(0, 0, 0, 0.65);
+        background: #000;
+      }
+
+      canvas#game {
+        display: block;
+        width: 100%;
+        height: 100%;
+        touch-action: none; /* critical: prevent scroll/zoom while playing */
+        user-select: none;
+      }
+
+      .overlay {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 22px 18px;
+        background: rgba(0, 0, 0, 0.76);
+        backdrop-filter: blur(6px);
+        z-index: 5;
+      }
+      .overlay.hidden { display: none; }
+
+      .title {
+        margin: 0 0 10px;
+        font-size: clamp(28px, 7vw, 44px);
+        letter-spacing: 0.04em;
+        text-shadow: 0 0 14px rgba(0, 255, 102, 0.8);
+      }
+      .desc {
+        margin: 0 0 18px;
+        opacity: 0.82;
+        line-height: 1.5;
+        font-size: clamp(13px, 3.6vw, 16px);
+      }
+      .stats {
+        margin: 0 0 18px;
+        font-size: 14px;
+        opacity: 0.9;
+      }
+      .stats div { margin: 4px 0; }
+
+      .cta {
+        padding: 12px 18px;
+        border-radius: 999px;
+        border: 1px solid rgba(0, 255, 170, 0.55);
+        background: rgba(0, 255, 102, 0.08);
+        color: var(--green2);
+        font: inherit;
+        cursor: pointer;
+        box-shadow: 0 0 18px rgba(0, 255, 102, 0.2);
+        text-transform: uppercase;
+        letter-spacing: 0.14em;
+      }
+      .cta:hover, .cta:active {
+        border-color: rgba(0, 255, 170, 0.9);
+        box-shadow: 0 0 26px rgba(0, 255, 170, 0.35);
+        transform: translateY(-1px);
+      }
+
+      @media (max-width: 420px) {
+        .pill, .btn { padding: 8px 10px; font-size: 12px; }
+        .hud small { display: none; }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="app">
+      <div class="topbar" aria-label="Top bar">
+        <a class="btn" href="./index.html" aria-label="Back to game menu">← Back</a>
+        <div class="pill hud" aria-label="Score and best">
+          <small>Score</small> <b id="scoreText">0</b>
+          <small>Best</small> <b id="bestText">0</b>
+        </div>
+      </div>
+
+      <div class="stage">
+        <div class="canvas-wrap">
+          <canvas id="game" aria-label="Neon Stack game canvas" role="img"></canvas>
+
+          <div id="overlay" class="overlay" role="dialog" aria-modal="true">
+            <h1 id="overlayTitle" class="title">Neon Stack</h1>
+            <p id="overlayDesc" class="desc">Tap to drop. Stack as high as you can.</p>
+            <div class="stats" id="overlayStats" aria-live="polite" style="display:none;">
+              <div>Score: <b id="finalScore">0</b></div>
+              <div>Best: <b id="finalBest">0</b></div>
+            </div>
+            <button id="overlayBtn" class="cta" type="button">Tap to Play</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <noscript>This game requires JavaScript to run.</noscript>
+    <script src="./stack.js"></script>
+  </body>
+</html>

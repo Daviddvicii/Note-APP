@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Neon Stack</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <style>
+    :root {
+      --bg-color: #0b1426;
+      --neon-green: #39ff14;
+      --neon-dim: #228b22;
+      --text-color: #ffffff;
+      --font-family: 'Press Start 2P', system-ui, -apple-system, sans-serif;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: var(--bg-color);
+      font-family: var(--font-family);
+      color: var(--text-color);
+      touch-action: none; /* Prevent scroll on mobile */
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    #game-container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle at center, #1a2a40 0%, #000000 100%);
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Top HUD */
+    #hud {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      padding: 10px 15px;
+      box-sizing: border-box;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 10;
+      pointer-events: none; /* Let clicks pass through to canvas unless on button */
+    }
+
+    .hud-group {
+      display: flex;
+      gap: 20px;
+      font-size: 16px;
+      text-shadow: 0 0 5px var(--neon-green);
+    }
+
+    #back-btn {
+      pointer-events: auto;
+      text-decoration: none;
+      color: var(--neon-green);
+      border: 2px solid var(--neon-green);
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-weight: bold;
+      background: rgba(0, 0, 0, 0.5);
+      font-size: 14px;
+      text-transform: uppercase;
+      box-shadow: 0 0 5px var(--neon-green);
+      transition: all 0.2s;
+    }
+
+    #back-btn:active {
+      transform: translateY(2px);
+      box-shadow: none;
+    }
+
+    /* Overlays */
+    .overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 20;
+      opacity: 1;
+      transition: opacity 0.3s;
+      pointer-events: auto;
+    }
+
+    .overlay.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    h1 {
+      font-size: 32px;
+      color: var(--neon-green);
+      text-shadow: 0 0 10px var(--neon-green), 0 0 20px var(--neon-green);
+      margin-bottom: 10px;
+      text-align: center;
+      line-height: 1.4;
+    }
+
+    p {
+      font-size: 14px;
+      margin-bottom: 30px;
+      color: #ddd;
+      text-align: center;
+      max-width: 80%;
+      line-height: 1.5;
+    }
+
+    .btn {
+      background: var(--neon-green);
+      color: #000;
+      border: none;
+      padding: 15px 30px;
+      font-size: 18px;
+      font-family: inherit;
+      border-radius: 4px;
+      cursor: pointer;
+      box-shadow: 0 0 10px var(--neon-green);
+      animation: pulse 1.5s infinite;
+      text-transform: uppercase;
+      font-weight: bold;
+    }
+
+    .btn:active {
+      transform: scale(0.95);
+    }
+
+    @keyframes pulse {
+      0% { box-shadow: 0 0 10px var(--neon-green); }
+      50% { box-shadow: 0 0 20px var(--neon-green); }
+      100% { box-shadow: 0 0 10px var(--neon-green); }
+    }
+
+    #perfect-msg {
+      position: absolute;
+      top: 20%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: #fff;
+      font-size: 24px;
+      font-weight: bold;
+      text-shadow: 0 0 10px #fff, 0 0 20px #0ff;
+      opacity: 0;
+      pointer-events: none;
+      z-index: 15;
+      transition: opacity 0.1s, transform 0.5s;
+    }
+    
+    #perfect-msg.show {
+      opacity: 1;
+      transform: translate(-50%, -80%) scale(1.2);
+    }
+
+  </style>
+</head>
+<body>
+
+<div id="game-container">
+  <canvas id="gameCanvas"></canvas>
+  
+  <div id="hud">
+    <a href="./index.html" id="back-btn">← Back</a>
+    <div class="hud-group">
+      <span>Score: <span id="score">0</span></span>
+      <span>Best: <span id="best">0</span></span>
+    </div>
+  </div>
+
+  <div id="perfect-msg">PERFECT!</div>
+
+  <!-- Start Screen -->
+  <div id="start-overlay" class="overlay">
+    <h1>NEON STACK</h1>
+    <p>Tap to place the block.<br>Stack as high as you can!</p>
+    <button id="start-btn" class="btn">Tap to Play</button>
+  </div>
+
+  <!-- Game Over Screen -->
+  <div id="gameover-overlay" class="overlay hidden">
+    <h1>GAME OVER</h1>
+    <p>Score: <span id="final-score">0</span><br>Best: <span id="final-best">0</span></p>
+    <button id="restart-btn" class="btn">Play Again</button>
+  </div>
+</div>
+
+<script src="stack.js"></script>
+</body>
+</html>

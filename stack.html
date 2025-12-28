@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+    <meta name="theme-color" content="#0b1426" />
+    <title>Neon Stack</title>
+    <style>
+      :root {
+        --green: #00ff66;
+        --green-dim: rgba(0, 255, 102, 0.2);
+        --bg: #0b1426;
+        --overlay: rgba(0, 10, 6, 0.85);
+        --text: #ffffff;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        padding: 0;
+        background: var(--bg);
+        color: var(--green);
+        font-family: 'Courier New', Courier, monospace; /* Retro font fallback */
+        overflow: hidden; /* No scrolling */
+        height: 100vh;
+        width: 100vw;
+        display: flex;
+        flex-direction: column;
+        user-select: none;
+        -webkit-user-select: none;
+      }
+
+      /* CRT Scanline Effect Overlay */
+      body::after {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        background: linear-gradient(rgba(18, 16, 16, 0), rgba(0, 0, 0, 0.25) 50%, rgba(0, 0, 0, 0.5) 50%, rgba(0, 0, 0, 0.25));
+        background-size: 100% 4px;
+        z-index: 100;
+        opacity: 0.15;
+      }
+
+      #top-bar {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 60px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 16px;
+        z-index: 20;
+        pointer-events: none; /* Let clicks pass through to canvas if not on buttons */
+      }
+
+      .back-btn {
+        pointer-events: auto;
+        text-decoration: none;
+        color: var(--green);
+        border: 2px solid var(--green);
+        padding: 6px 12px;
+        border-radius: 4px;
+        font-weight: bold;
+        background: rgba(0, 0, 0, 0.3);
+        font-size: 14px;
+        text-transform: uppercase;
+        box-shadow: 0 0 5px var(--green-dim);
+      }
+
+      .score-container {
+        display: flex;
+        gap: 16px;
+        font-size: 18px;
+        font-weight: bold;
+        text-shadow: 0 0 5px var(--green);
+        pointer-events: none;
+      }
+
+      #game-container {
+        position: relative;
+        flex: 1;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        overflow: hidden;
+      }
+
+      canvas {
+        display: block;
+        touch-action: none; /* Prevent scroll on mobile */
+        width: 100%;
+        height: 100%;
+      }
+
+      /* Overlays */
+      .overlay {
+        position: absolute;
+        inset: 0;
+        background: var(--overlay);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 50;
+        transition: opacity 0.3s ease;
+        text-align: center;
+        padding: 20px;
+      }
+
+      .hidden {
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      h1 {
+        font-size: 42px;
+        margin: 0 0 10px;
+        color: var(--green);
+        text-shadow: 0 0 10px var(--green), 2px 2px 0px #000;
+        letter-spacing: 2px;
+      }
+
+      p {
+        font-size: 16px;
+        color: #ddd;
+        margin-bottom: 30px;
+        line-height: 1.5;
+        max-width: 400px;
+      }
+
+      .action-btn {
+        background: transparent;
+        color: var(--green);
+        border: 2px solid var(--green);
+        padding: 16px 32px;
+        font-size: 20px;
+        font-family: inherit;
+        font-weight: bold;
+        cursor: pointer;
+        border-radius: 6px;
+        box-shadow: 0 0 15px var(--green-dim);
+        text-transform: uppercase;
+        animation: pulse 1.5s infinite;
+      }
+
+      .action-btn:active {
+        transform: scale(0.96);
+        background: var(--green-dim);
+      }
+
+      @keyframes pulse {
+        0% { box-shadow: 0 0 10px var(--green-dim); }
+        50% { box-shadow: 0 0 25px rgba(0, 255, 102, 0.5); }
+        100% { box-shadow: 0 0 10px var(--green-dim); }
+      }
+
+      /* CRT Screen flicker */
+      @keyframes flicker {
+        0% { opacity: 0.98; }
+        50% { opacity: 1; }
+        100% { opacity: 0.98; }
+      }
+      body {
+        animation: flicker 0.2s infinite;
+      }
+      
+      .score-label {
+        color: #aaa;
+        font-size: 0.7em;
+        margin-right: 4px;
+      }
+    </style>
+  </head>
+  <body>
+
+    <div id="top-bar">
+      <a href="./index.html" class="back-btn">← Back</a>
+      <div class="score-container">
+        <div><span class="score-label">BEST</span><span id="best-display">0</span></div>
+        <div><span class="score-label">SCORE</span><span id="score-display">0</span></div>
+      </div>
+    </div>
+
+    <div id="game-container">
+      <canvas id="gameCanvas"></canvas>
+      
+      <!-- Start Overlay -->
+      <div id="start-overlay" class="overlay">
+        <h1>NEON STACK</h1>
+        <p>Tap to drop the block.<br>Stack as high as you can.<br>Align perfectly for bonus points!</p>
+        <button id="start-btn" class="action-btn">Tap to Play</button>
+      </div>
+
+      <!-- Game Over Overlay -->
+      <div id="gameover-overlay" class="overlay hidden">
+        <h1>GAME OVER</h1>
+        <p>Final Score: <span id="final-score">0</span></p>
+        <p>Best: <span id="final-best">0</span></p>
+        <button id="restart-btn" class="action-btn">Play Again</button>
+      </div>
+    </div>
+
+    <script src="stack.js"></script>
+  </body>
+</html>

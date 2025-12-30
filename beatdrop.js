@@ -33,19 +33,19 @@
   // Song metadata (easy to tweak)
   // -----------------------------
   const SONGS = {
-    golden: {
-      displayName: "Demon Hunter - Golden",
-      audioCandidates: ["assets/golden.ogg", "assets/golden.mp3"],
-      bpm: 140, // placeholder (tweak)
-      offsetMs: 0, // tweak to align first beat
-    },
-    sodapop: {
-      displayName: "Soda Pop",
-      audioCandidates: ["assets/sodapop.ogg", "assets/sodapop.mp3"],
-      bpm: 128, // placeholder (tweak)
-      offsetMs: 0, // tweak to align first beat
-    },
-  };
+  golden: {
+    displayName: "Demon Hunter - Golden",
+    audioCandidates: ["/Note-APP/assets/golden.ogg", "/Note-APP/assets/golden.mp3"],
+    bpm: 140,
+    offsetMs: 0,
+  },
+  sodapop: {
+    displayName: "Soda Pop",
+    audioCandidates: ["/Note-APP/assets/sodapop.ogg", "/Note-APP/assets/sodapop.mp3"],
+    bpm: 128,
+    offsetMs: 0,
+  },
+};
 
   // -----------------------------
   // DOM

@@ -1,0 +1,1140 @@
+<!--
+README (GitHub Pages deploy)
+- Put this file in your repo (root is fine) as `neon-rage-dodge.html`.
+- Commit + push to GitHub.
+- In GitHub: Settings → Pages → Build and deployment → Source: “Deploy from a branch”
+  - Branch: `main` (or your default) / Folder: `/ (root)` → Save.
+- Your game will be live at: https://<username>.github.io/<repo>/neon-rage-dodge.html
+- If you want it as the homepage, rename this file to `index.html`.
+-->
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, viewport-fit=cover" />
+    <meta name="theme-color" content="#0a0620" />
+    <title>Neon Rage Dodge</title>
+    <style>
+      :root {
+        --bg0: #060615;
+        --bg1: #0a0a2a;
+        --bg2: #140b3c;
+        --cyan: #35f2ff;
+        --mag: #ff3df7;
+        --purp: #9b4dff;
+        --lime: #35ff9b;
+        --txt: rgba(235, 245, 255, 0.92);
+        --muted: rgba(235, 245, 255, 0.62);
+        --panel: rgba(0, 0, 0, 0.35);
+        --panel2: rgba(0, 0, 0, 0.52);
+        --stroke: rgba(255, 255, 255, 0.12);
+      }
+
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+        background: radial-gradient(1200px 900px at 50% 20%, #18106b 0%, #09061f 42%, #04040f 100%);
+        color: var(--txt);
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Apple Color Emoji",
+          "Segoe UI Emoji";
+        overflow: hidden;
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+      }
+
+      .wrap {
+        position: fixed;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        padding: 10px;
+      }
+
+      .stage {
+        position: relative;
+        width: min(100vw, calc(100vh * 0.5625));
+        height: min(100vh, calc(100vw / 0.5625));
+        max-width: 720px;
+        max-height: 1280px;
+        border-radius: 18px;
+        overflow: hidden;
+        background: linear-gradient(180deg, rgba(5, 3, 17, 0.85), rgba(3, 3, 9, 0.9));
+        box-shadow:
+          0 20px 80px rgba(0, 0, 0, 0.55),
+          0 0 26px rgba(53, 242, 255, 0.12),
+          0 0 26px rgba(255, 61, 247, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.07);
+      }
+
+      canvas {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        display: block;
+        image-rendering: auto;
+      }
+
+      /* HUD + overlays (HTML, game renders on canvas) */
+      .hud {
+        position: absolute;
+        left: 10px;
+        right: 10px;
+        top: 10px;
+        z-index: 5;
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 10px;
+        pointer-events: none;
+      }
+
+      .hud .block {
+        pointer-events: auto;
+        display: inline-flex;
+        align-items: baseline;
+        gap: 10px;
+        padding: 10px 12px;
+        border-radius: 14px;
+        background: var(--panel);
+        border: 1px solid rgba(255, 255, 255, 0.10);
+        backdrop-filter: blur(8px);
+        box-shadow: 0 0 16px rgba(53, 242, 255, 0.12);
+      }
+
+      .hud .k {
+        font-size: 11px;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        opacity: 0.8;
+      }
+      .hud .v {
+        font-weight: 800;
+        font-variant-numeric: tabular-nums;
+      }
+      .hud .sep {
+        opacity: 0.22;
+      }
+
+      .btn {
+        appearance: none;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        background: var(--panel2);
+        color: var(--txt);
+        border-radius: 12px;
+        padding: 10px 12px;
+        font: inherit;
+        font-weight: 700;
+        cursor: pointer;
+        transition: transform 0.08s ease, border-color 0.12s ease, box-shadow 0.12s ease;
+        user-select: none;
+      }
+      .btn:active {
+        transform: translateY(1px) scale(0.995);
+      }
+      .btn-glow {
+        border-color: rgba(53, 242, 255, 0.35);
+        box-shadow: 0 0 18px rgba(53, 242, 255, 0.18), 0 0 18px rgba(255, 61, 247, 0.10);
+      }
+
+      .overlay {
+        position: absolute;
+        inset: 0;
+        z-index: 6;
+        display: grid;
+        place-items: center;
+        padding: 18px;
+        background:
+          radial-gradient(800px 600px at 50% 18%, rgba(155, 77, 255, 0.22), transparent 65%),
+          radial-gradient(900px 800px at 50% 65%, rgba(53, 242, 255, 0.12), transparent 62%),
+          linear-gradient(180deg, rgba(0, 0, 0, 0.62), rgba(0, 0, 0, 0.30));
+        backdrop-filter: blur(6px);
+      }
+
+      .card {
+        width: min(520px, 100%);
+        border-radius: 18px;
+        padding: 18px 16px 16px;
+        background: rgba(0, 0, 0, 0.35);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        box-shadow:
+          0 22px 80px rgba(0, 0, 0, 0.55),
+          0 0 22px rgba(53, 242, 255, 0.16),
+          0 0 22px rgba(255, 61, 247, 0.12);
+      }
+
+      .title {
+        margin: 0 0 6px;
+        font-size: 28px;
+        line-height: 1.05;
+        letter-spacing: 0.02em;
+        text-shadow: 0 0 16px rgba(53, 242, 255, 0.32), 0 0 16px rgba(255, 61, 247, 0.20);
+      }
+      .subtitle {
+        margin: 0 0 14px;
+        opacity: 0.82;
+        color: rgba(235, 245, 255, 0.86);
+        font-size: 13px;
+        line-height: 1.35;
+      }
+
+      .row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 12px;
+      }
+
+      .hint {
+        font-size: 12px;
+        opacity: 0.82;
+        color: var(--muted);
+      }
+
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 10px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        background: rgba(0, 0, 0, 0.22);
+        font-size: 12px;
+        color: rgba(235, 245, 255, 0.86);
+      }
+
+      .tiny {
+        font-size: 11px;
+        opacity: 0.75;
+        color: rgba(235, 245, 255, 0.75);
+      }
+
+      .hidden {
+        display: none !important;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="stage" id="stage">
+        <canvas id="c" width="720" height="1280" aria-label="Neon Rage Dodge"></canvas>
+
+        <div class="hud" aria-hidden="false">
+          <div class="block" aria-label="Score HUD">
+            <span class="k">SCORE</span>
+            <span class="v" id="hudScore">0</span>
+            <span class="sep">|</span>
+            <span class="k">BEST</span>
+            <span class="v" id="hudBest">0</span>
+            <span class="sep">|</span>
+            <span class="k">STREAK</span>
+            <span class="v" id="hudStreak">0</span>
+          </div>
+          <div class="block" aria-label="Toggles">
+            <button class="btn btn-glow" id="soundBtn" type="button" aria-label="Toggle sound">Sound: ON</button>
+          </div>
+        </div>
+
+        <div class="overlay" id="startOverlay" role="dialog" aria-modal="true">
+          <div class="card">
+            <h1 class="title">Neon Rage Dodge</h1>
+            <p class="subtitle">
+              Tap / click / press <b>Space</b> to switch lanes. Survive. Get “SICK” near-misses. Don’t blink.
+            </p>
+            <div class="row">
+              <button class="btn btn-glow" id="playBtn" type="button">Tap to Play</button>
+              <button class="btn" id="dailyBtn" type="button">Daily: OFF</button>
+            </div>
+            <div class="row">
+              <span class="pill" id="seedPill" title="Daily seed for fair competition">Daily Seed: —</span>
+              <span class="hint">Only input: toggle lanes. No dragging.</span>
+            </div>
+            <div class="row">
+              <span class="tiny">Tip: dodge late for near-miss streaks.</span>
+              <span class="tiny">Best saved on this device.</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="overlay hidden" id="gameOverOverlay" role="dialog" aria-modal="true">
+          <div class="card">
+            <h2 class="title" style="font-size: 24px; margin-bottom: 6px">Game Over</h2>
+            <p class="subtitle" id="tauntLine" style="margin-bottom: 10px">One more.</p>
+            <div class="row">
+              <span class="pill">Final: <b id="finalScore">0</b></span>
+              <span class="pill">Best: <b id="finalBest">0</b></span>
+            </div>
+            <div class="row">
+              <button class="btn btn-glow" id="againBtn" type="button">Play Again</button>
+              <span class="hint">Instant restart. Tap anywhere.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      (() => {
+        "use strict";
+
+        // ===== Constants / sizing =====
+        const W = 720;
+        const H = 1280;
+
+        const BEST_KEY = "neon-rage-dodge-best";
+
+        const canvas = document.getElementById("c");
+        const ctx = canvas.getContext("2d", { alpha: false, desynchronized: true });
+
+        // Pre-baked scanline pattern (faster than per-line fills)
+        const scanPattern = (() => {
+          const oc = document.createElement("canvas");
+          oc.width = 4;
+          oc.height = 4;
+          const ocx = oc.getContext("2d");
+          ocx.clearRect(0, 0, oc.width, oc.height);
+          ocx.fillStyle = "rgba(0,0,0,1)";
+          ocx.fillRect(0, 0, oc.width, 1);
+          return ctx.createPattern(oc, "repeat");
+        })();
+
+        const hudScore = document.getElementById("hudScore");
+        const hudBest = document.getElementById("hudBest");
+        const hudStreak = document.getElementById("hudStreak");
+
+        const startOverlay = document.getElementById("startOverlay");
+        const gameOverOverlay = document.getElementById("gameOverOverlay");
+        const playBtn = document.getElementById("playBtn");
+        const againBtn = document.getElementById("againBtn");
+        const soundBtn = document.getElementById("soundBtn");
+        const dailyBtn = document.getElementById("dailyBtn");
+        const seedPill = document.getElementById("seedPill");
+        const finalScoreEl = document.getElementById("finalScore");
+        const finalBestEl = document.getElementById("finalBest");
+        const tauntLineEl = document.getElementById("tauntLine");
+
+        function clamp(v, a, b) {
+          return Math.max(a, Math.min(b, v));
+        }
+        function lerp(a, b, t) {
+          return a + (b - a) * t;
+        }
+
+        // ===== RNG (Daily mode optional) =====
+        function mulberry32(seed) {
+          let a = seed >>> 0;
+          return function () {
+            a |= 0;
+            a = (a + 0x6d2b79f5) | 0;
+            let t = Math.imul(a ^ (a >>> 15), 1 | a);
+            t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+            return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+          };
+        }
+        function yyyymmdd() {
+          const d = new Date();
+          const y = d.getFullYear();
+          const m = String(d.getMonth() + 1).padStart(2, "0");
+          const da = String(d.getDate()).padStart(2, "0");
+          return `${y}${m}${da}`;
+        }
+        function hashSeed(str) {
+          // Simple stable string hash → 32-bit
+          let h = 2166136261 >>> 0;
+          for (let i = 0; i < str.length; i++) {
+            h ^= str.charCodeAt(i);
+            h = Math.imul(h, 16777619);
+          }
+          return h >>> 0;
+        }
+
+        let dailyMode = false;
+        let dailySeedStr = yyyymmdd();
+        seedPill.textContent = `Daily Seed: ${dailySeedStr}`;
+
+        // ===== Audio (WebAudio; starts after first user gesture) =====
+        let audioReady = false;
+        let audioCtx = null;
+        let master = null;
+        let soundOn = true;
+
+        function ensureAudio() {
+          if (audioReady) return;
+          audioReady = true;
+          const AC = window.AudioContext || window.webkitAudioContext;
+          audioCtx = new AC();
+          master = audioCtx.createGain();
+          master.gain.value = 0.55;
+          master.connect(audioCtx.destination);
+          applyMuteState();
+        }
+
+        function applyMuteState() {
+          soundBtn.textContent = soundOn ? "Sound: ON" : "Sound: OFF";
+          if (!master) return;
+          master.gain.value = soundOn ? 0.55 : 0.0001;
+        }
+
+        function blip(freq, durMs, type = "square", gain = 0.09) {
+          if (!audioCtx || !master || !soundOn) return;
+          const t0 = audioCtx.currentTime;
+          const o = audioCtx.createOscillator();
+          const g = audioCtx.createGain();
+          o.type = type;
+          o.frequency.setValueAtTime(freq, t0);
+          g.gain.setValueAtTime(0.0001, t0);
+          g.gain.exponentialRampToValueAtTime(gain, t0 + 0.01);
+          g.gain.exponentialRampToValueAtTime(0.0001, t0 + durMs / 1000);
+          o.connect(g);
+          g.connect(master);
+          o.start(t0);
+          o.stop(t0 + durMs / 1000 + 0.02);
+        }
+
+        soundBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          ensureAudio();
+          soundOn = !soundOn;
+          applyMuteState();
+          blip(soundOn ? 880 : 220, 90, "square", 0.10);
+        });
+
+        dailyBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          dailyMode = !dailyMode;
+          dailyBtn.textContent = dailyMode ? "Daily: ON" : "Daily: OFF";
+          seedPill.style.opacity = dailyMode ? "1" : "0.65";
+          ensureAudio();
+          blip(dailyMode ? 660 : 330, 80, "triangle", 0.10);
+        });
+
+        window.addEventListener(
+          "pointerdown",
+          () => {
+            ensureAudio();
+          },
+          { once: true }
+        );
+        window.addEventListener(
+          "keydown",
+          () => {
+            ensureAudio();
+          },
+          { once: true }
+        );
+
+        // ===== Game state =====
+        const State = Object.freeze({ START: 0, PLAY: 1, OVER: 2 });
+        let state = State.START;
+
+        let best = 0;
+        try {
+          const raw = localStorage.getItem(BEST_KEY);
+          const n = Number(raw);
+          best = Number.isFinite(n) ? Math.max(0, Math.floor(n)) : 0;
+        } catch (_) {
+          best = 0;
+        }
+        hudBest.textContent = String(best);
+
+        const taunts = [
+          "Skill issue.",
+          "One more.",
+          "Close…",
+          "Not bad.",
+          "You blinked.",
+          "Hands faster than thoughts?",
+          "Neon wins. Again.",
+          "That was CLEAN… until it wasn’t.",
+        ];
+
+        // Logical lane positions
+        const laneCenterY = 1060;
+        const laneGap = 210;
+        const laneX = [W / 2 - laneGap / 2, W / 2 + laneGap / 2];
+        const laneRailX = [W / 2 - laneGap * 0.95, W / 2 + laneGap * 0.95];
+
+        const player = {
+          lane: 0,
+          r: 22,
+          y: laneCenterY,
+          x: laneX[0],
+          // for “late dodge” feel / near-miss flavor
+          lastToggleAt: 0,
+          prevLane: 0,
+          prevX: laneX[0],
+        };
+
+        const obstacles = [];
+        const particles = [];
+        const floaters = []; // text pops like "SICK"
+
+        let rng = Math.random;
+        let tNow = 0; // seconds, monotonic in game
+        let tStart = 0;
+        let lastFrame = 0;
+
+        let spawnTimer = 0;
+        let queuedSpawns = []; // pattern queue: [{ delay, lane, kind, size, jitter }]
+
+        let score = 0;
+        let streak = 0;
+        let lastNearAt = -999;
+
+        // Background motion
+        let gridPhase = 0;
+        let flicker = 0;
+
+        // ===== Helpers: particles + text =====
+        function addParticles(x, y, count, baseColor) {
+          const n = clamp(count, 0, 40);
+          for (let i = 0; i < n; i++) {
+            const a = rng() * Math.PI * 2;
+            const sp = lerp(80, 520, rng());
+            particles.push({
+              x,
+              y,
+              vx: Math.cos(a) * sp,
+              vy: Math.sin(a) * sp,
+              life: lerp(0.25, 0.7, rng()),
+              t: 0,
+              r: lerp(1.6, 3.6, rng()),
+              color: baseColor,
+            });
+          }
+        }
+
+        function addFloater(text, x, y, color) {
+          floaters.push({
+            text,
+            x,
+            y,
+            vy: -120,
+            life: 0.65,
+            t: 0,
+            color,
+          });
+        }
+
+        // ===== Difficulty curve (fair first ~10–15s) =====
+        function difficulty(elapsed) {
+          // d starts near 0 then ramps; keep easy for ~12s.
+          // Smooth-ish curve: 0..1+ across time.
+          const d = Math.max(0, elapsed);
+          const ramp = clamp((d - 8) / 32, 0, 1); // stays calm early
+          const ramp2 = clamp((d - 18) / 42, 0, 1);
+          return {
+            speed: lerp(520, 1180, ramp) + lerp(0, 260, ramp2), // px/sec
+            interval: lerp(0.86, 0.34, ramp) + lerp(0, -0.06, ramp2), // sec
+            jitter: lerp(10, 42, ramp), // lateral wobble inside lane
+          };
+        }
+
+        function chooseLane(biasToPlayerLane = 0.0) {
+          if (rng() < biasToPlayerLane) return player.lane;
+          return rng() < 0.5 ? 0 : 1;
+        }
+
+        function spawnOne(lane, baseSpeed, jitter, kindHint = null) {
+          const isCircle = kindHint ? kindHint === "circle" : rng() < 0.55;
+          const size = isCircle ? lerp(18, 44, rng()) : lerp(28, 70, rng());
+          const x = laneX[lane] + lerp(-jitter, jitter, rng());
+          const y = -80;
+          const huePick = rng();
+          const color = huePick < 0.5 ? "#35f2ff" : huePick < 0.82 ? "#ff3df7" : "#9b4dff";
+          obstacles.push({
+            lane,
+            x,
+            y,
+            vx: lerp(-25, 25, rng()),
+            speed: baseSpeed * lerp(0.92, 1.08, rng()),
+            isCircle,
+            r: isCircle ? size : 0,
+            w: isCircle ? 0 : size * lerp(0.8, 1.25, rng()),
+            h: isCircle ? 0 : size * lerp(0.8, 1.25, rng()),
+            color,
+            passed: false,
+            nearCounted: false,
+          });
+        }
+
+        function enqueuePattern(elapsed) {
+          const d = difficulty(elapsed);
+          const baseSpeed = d.speed;
+          const jitter = d.jitter;
+
+          // Patterns: single, double, fake-out (gap then double)
+          // Start fair, then more doubles over time.
+          const ramp = clamp((elapsed - 10) / 28, 0, 1);
+          const pDouble = lerp(0.10, 0.38, ramp);
+          const pFake = lerp(0.05, 0.26, ramp);
+          const r = rng();
+
+          if (r < pFake) {
+            // fake-out rhythm: one beat gap then double
+            const laneA = chooseLane(lerp(0.12, 0.22, ramp));
+            const laneB = rng() < 0.5 ? 1 - laneA : laneA;
+            queuedSpawns.push({ delay: 0.0, lane: laneA, baseSpeed, jitter });
+            queuedSpawns.push({ delay: 0.26, lane: laneB, baseSpeed, jitter });
+            queuedSpawns.push({ delay: 0.34, lane: 1 - laneB, baseSpeed, jitter });
+            return;
+          }
+
+          if (r < pFake + pDouble) {
+            // double: two quick spawns
+            const laneA = chooseLane(lerp(0.18, 0.28, ramp));
+            const laneB = rng() < 0.45 ? laneA : 1 - laneA;
+            queuedSpawns.push({ delay: 0.0, lane: laneA, baseSpeed, jitter });
+            queuedSpawns.push({ delay: 0.14, lane: laneB, baseSpeed, jitter });
+            return;
+          }
+
+          // single
+          queuedSpawns.push({ delay: 0.0, lane: chooseLane(lerp(0.10, 0.20, ramp)), baseSpeed, jitter });
+        }
+
+        function resetRun() {
+          obstacles.length = 0;
+          particles.length = 0;
+          floaters.length = 0;
+          queuedSpawns = [];
+
+          score = 0;
+          streak = 0;
+          lastNearAt = -999;
+          hudScore.textContent = "0";
+          hudStreak.textContent = "0";
+
+          player.lane = 0;
+          player.x = laneX[0];
+          player.lastToggleAt = 0;
+
+          spawnTimer = 0;
+          gridPhase = 0;
+          flicker = 0;
+        }
+
+        function startGame() {
+          resetRun();
+          state = State.PLAY;
+          startOverlay.classList.add("hidden");
+          gameOverOverlay.classList.add("hidden");
+
+          tStart = performance.now() / 1000;
+          tNow = 0;
+          lastFrame = performance.now();
+
+          // RNG: daily seed or random
+          if (dailyMode) {
+            dailySeedStr = yyyymmdd();
+            seedPill.textContent = `Daily Seed: ${dailySeedStr}`;
+            rng = mulberry32(hashSeed(dailySeedStr));
+          } else {
+            dailySeedStr = yyyymmdd();
+            seedPill.textContent = `Daily Seed: ${dailySeedStr}`;
+            rng = Math.random;
+          }
+
+          blip(880, 90, "square", 0.10);
+        }
+
+        function gameOver() {
+          state = State.OVER;
+
+          // update best
+          if (score > best) {
+            best = score;
+            try {
+              localStorage.setItem(BEST_KEY, String(best));
+            } catch (_) {}
+            hudBest.textContent = String(best);
+          }
+
+          finalScoreEl.textContent = String(score);
+          finalBestEl.textContent = String(best);
+          tauntLineEl.textContent = taunts[Math.floor(rng() * taunts.length)];
+
+          gameOverOverlay.classList.remove("hidden");
+          blip(130, 180, "sawtooth", 0.12);
+          blip(92, 220, "triangle", 0.08);
+        }
+
+        function toggleLane() {
+          if (state !== State.PLAY) return;
+          player.prevLane = player.lane;
+          player.prevX = player.x;
+          player.lane = 1 - player.lane;
+          player.x = laneX[player.lane];
+          player.lastToggleAt = tNow;
+          blip(player.lane === 0 ? 740 : 980, 45, "square", 0.07);
+        }
+
+        function handlePrimaryAction() {
+          if (state === State.START) {
+            startGame();
+            return;
+          }
+          if (state === State.OVER) {
+            startGame();
+            return;
+          }
+          toggleLane();
+        }
+
+        // Pointer input: tap anywhere (buttons stopPropagation)
+        const stage = document.getElementById("stage");
+        stage.addEventListener("pointerdown", (e) => {
+          // prevent unwanted double-tap zoom-ish behaviors
+          e.preventDefault();
+          ensureAudio();
+          handlePrimaryAction();
+        });
+
+        // Buttons
+        playBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          ensureAudio();
+          startGame();
+        });
+        againBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          ensureAudio();
+          startGame();
+        });
+
+        // Keyboard
+        window.addEventListener("keydown", (e) => {
+          if (e.code === "Space") {
+            e.preventDefault();
+            ensureAudio();
+            handlePrimaryAction();
+          }
+        });
+
+        // ===== Collision + near miss =====
+        function circleRectDistSq(cx, cy, r, rx, ry, rw, rh) {
+          const dx = cx - clamp(cx, rx, rx + rw);
+          const dy = cy - clamp(cy, ry, ry + rh);
+          return dx * dx + dy * dy;
+        }
+
+        function checkCollision(o) {
+          const px = player.x;
+          const py = player.y;
+          const pr = player.r;
+
+          if (o.isCircle) {
+            const dx = o.x - px;
+            const dy = o.y - py;
+            const rr = o.r + pr;
+            return dx * dx + dy * dy <= rr * rr;
+          }
+
+          const rx = o.x - o.w / 2;
+          const ry = o.y - o.h / 2;
+          return circleRectDistSq(px, py, pr, rx, ry, o.w, o.h) <= pr * pr;
+        }
+
+        function scoreNearMiss(o) {
+          if (o.nearCounted) return;
+          o.nearCounted = true;
+
+          // Near-miss definition (2-lane dodge):
+          // Award when an obstacle passes the *lane you just left* shortly after you switched.
+          // This matches the “that would’ve hit me” feeling in a strict 2-lane game.
+          if (o.lane === player.lane) return; // can't be a near miss if it's in your current lane
+
+          const py = player.y;
+          const dxPrev = o.x - player.prevX;
+          const dyPrev = o.y - py;
+          const distPrev = Math.hypot(dxPrev, dyPrev);
+
+          const lateWindow = 0.55;
+          const late = tNow - player.lastToggleAt < lateWindow && o.lane === player.prevLane;
+
+          // “Within X pixels” of where you WERE.
+          const nearDist = 90;
+          if (!late || distPrev > nearDist) return;
+
+          const bonusBase = 220;
+
+          // Streak decays if you go too long without a near miss.
+          if (tNow - lastNearAt > 2.4) streak = 0;
+          streak++;
+          lastNearAt = tNow;
+
+          const bonus = bonusBase + Math.min(12, streak) * 18;
+          score += bonus;
+
+          hudStreak.textContent = String(streak);
+          hudScore.textContent = String(score);
+
+          addFloater(streak >= 4 ? `SICK x${streak}` : "SICK", player.x, py - 40, streak >= 4 ? "#ff3df7" : "#35f2ff");
+          addParticles(o.x, py, 16, "#ff3df7");
+          addParticles(player.x, py, 10, "#35f2ff");
+          blip(1320, 55, "triangle", 0.09);
+        }
+
+        // ===== Update & render =====
+        function update(dt) {
+          tNow += dt;
+
+          // Score = survival time (ms-based-ish) + bonuses
+          // Keep it punchy: 10 points per 0.1s ≈ 100 pts/sec
+          score = Math.max(score, Math.floor(tNow * 100));
+
+          // decay streak if you chill too long
+          if (streak > 0 && tNow - lastNearAt > 2.6) {
+            streak = 0;
+          }
+
+          hudScore.textContent = String(score);
+          hudStreak.textContent = String(streak);
+
+          // Difficulty & spawns
+          const d = difficulty(tNow);
+          spawnTimer -= dt;
+          if (spawnTimer <= 0) {
+            enqueuePattern(tNow);
+            // a little randomization to prevent strict metronome (still fair)
+            spawnTimer = Math.max(0.20, d.interval * lerp(0.90, 1.08, rng()));
+          }
+
+          // Process queued pattern spawns
+          for (let i = queuedSpawns.length - 1; i >= 0; i--) {
+            const q = queuedSpawns[i];
+            q.delay -= dt;
+            if (q.delay <= 0) {
+              spawnOne(q.lane, q.baseSpeed, q.jitter);
+              queuedSpawns.splice(i, 1);
+            }
+          }
+
+          // Obstacles move
+          for (let i = obstacles.length - 1; i >= 0; i--) {
+            const o = obstacles[i];
+            o.y += o.speed * dt;
+            o.x += o.vx * dt;
+
+            // gentle lane “wobble” to vary near-miss distance (still readable)
+            const maxOff = 60;
+            const homeX = laneX[o.lane];
+            o.x = clamp(o.x, homeX - maxOff, homeX + maxOff);
+
+            // collision
+            if (checkCollision(o)) {
+              addParticles(player.x, player.y, 28, "#ff3df7");
+              addParticles(player.x, player.y, 18, "#35f2ff");
+              gameOver();
+              return;
+            }
+
+            // near miss check when it passes the player
+            if (!o.passed && o.y >= player.y) {
+              o.passed = true;
+              scoreNearMiss(o);
+            }
+
+            // cull off-screen
+            if (o.y > H + 120) obstacles.splice(i, 1);
+          }
+
+          // particles
+          for (let i = particles.length - 1; i >= 0; i--) {
+            const p = particles[i];
+            p.t += dt;
+            const k = p.t / p.life;
+            p.x += p.vx * dt;
+            p.y += p.vy * dt;
+            p.vx *= 0.985;
+            p.vy = p.vy * 0.985 + 520 * dt; // gravity-ish
+            if (k >= 1) particles.splice(i, 1);
+          }
+
+          // floaters
+          for (let i = floaters.length - 1; i >= 0; i--) {
+            const f = floaters[i];
+            f.t += dt;
+            f.y += f.vy * dt;
+            if (f.t >= f.life) floaters.splice(i, 1);
+          }
+
+          // background motion
+          gridPhase += dt * (0.55 + Math.min(1.0, tNow / 40) * 0.95);
+          flicker = (rng() < 0.10 ? rng() * 0.10 : flicker * 0.9);
+        }
+
+        function drawBackground() {
+          // base gradient
+          const g = ctx.createLinearGradient(0, 0, 0, H);
+          g.addColorStop(0, "#07061c");
+          g.addColorStop(0.45, "#090728");
+          g.addColorStop(1, "#050412");
+          ctx.fillStyle = g;
+          ctx.fillRect(0, 0, W, H);
+
+          // soft glow vignettes
+          ctx.globalAlpha = 0.9;
+          ctx.fillStyle = "rgba(155,77,255,0.16)";
+          ctx.beginPath();
+          ctx.arc(W * 0.25, H * 0.2, 340, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = "rgba(53,242,255,0.11)";
+          ctx.beginPath();
+          ctx.arc(W * 0.75, H * 0.35, 420, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.globalAlpha = 1;
+
+          // moving neon grid (subtle)
+          const gridY = (gridPhase * 120) % 60;
+          ctx.save();
+          ctx.globalAlpha = 0.12;
+          ctx.strokeStyle = "rgba(53,242,255,0.55)";
+          ctx.lineWidth = 1;
+          for (let y = -60; y < H + 60; y += 60) {
+            const yy = y + gridY;
+            ctx.beginPath();
+            ctx.moveTo(0, yy);
+            ctx.lineTo(W, yy);
+            ctx.stroke();
+          }
+          ctx.globalAlpha = 0.10;
+          for (let x = 60; x < W; x += 60) {
+            ctx.beginPath();
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, H);
+            ctx.stroke();
+          }
+          ctx.restore();
+
+          // scanlines
+          ctx.save();
+          ctx.globalAlpha = 0.10;
+          ctx.fillStyle = scanPattern;
+          ctx.fillRect(0, 0, W, H);
+          ctx.restore();
+
+          // CRT flicker
+          if (flicker > 0.001) {
+            ctx.save();
+            ctx.globalAlpha = flicker;
+            ctx.fillStyle = "rgba(255,255,255,0.55)";
+            ctx.fillRect(0, 0, W, H);
+            ctx.restore();
+          }
+        }
+
+        function drawLanes() {
+          // lane rails + hit zone pulse
+          const pulse = 0.5 + 0.5 * Math.sin(tNow * 6.4);
+          const hitA = lerp(0.10, 0.30, pulse);
+
+          ctx.save();
+          ctx.lineWidth = 3;
+          ctx.globalAlpha = 0.30;
+          ctx.shadowBlur = 10;
+          ctx.shadowColor = "rgba(53,242,255,0.55)";
+          ctx.strokeStyle = "rgba(53,242,255,0.45)";
+          for (const x of laneRailX) {
+            ctx.beginPath();
+            ctx.moveTo(x, 120);
+            ctx.lineTo(x, H - 140);
+            ctx.stroke();
+          }
+
+          // center divider (very subtle)
+          ctx.shadowBlur = 0;
+          ctx.globalAlpha = 0.10;
+          ctx.strokeStyle = "rgba(255,255,255,0.45)";
+          ctx.setLineDash([10, 16]);
+          ctx.beginPath();
+          ctx.moveTo(W / 2, 140);
+          ctx.lineTo(W / 2, H - 150);
+          ctx.stroke();
+          ctx.setLineDash([]);
+
+          // hit zone ring
+          ctx.globalAlpha = hitA;
+          ctx.shadowBlur = 18;
+          ctx.shadowColor = "rgba(255,61,247,0.42)";
+          ctx.strokeStyle = "rgba(255,61,247,0.55)";
+          ctx.lineWidth = 4;
+          ctx.beginPath();
+          ctx.ellipse(W / 2, player.y, 260, 52, 0, 0, Math.PI * 2);
+          ctx.stroke();
+
+          ctx.restore();
+        }
+
+        function drawPlayer() {
+          const px = player.x;
+          const py = player.y;
+          const r = player.r;
+          const glow = 16;
+
+          // outer glow
+          ctx.save();
+          ctx.shadowBlur = glow;
+          ctx.shadowColor = "rgba(53,242,255,0.75)";
+          ctx.fillStyle = "rgba(53,242,255,0.95)";
+          ctx.beginPath();
+          ctx.arc(px, py, r, 0, Math.PI * 2);
+          ctx.fill();
+
+          // inner core
+          ctx.shadowBlur = 10;
+          ctx.shadowColor = "rgba(255,61,247,0.55)";
+          ctx.fillStyle = "rgba(255,255,255,0.92)";
+          ctx.beginPath();
+          ctx.arc(px, py, r * 0.42, 0, Math.PI * 2);
+          ctx.fill();
+
+          // tiny trail notch (direction hint)
+          ctx.shadowBlur = 0;
+          ctx.globalAlpha = 0.85;
+          ctx.fillStyle = "rgba(155,77,255,0.85)";
+          ctx.beginPath();
+          ctx.arc(px, py + r * 0.9, r * 0.28, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.restore();
+        }
+
+        function drawObstacle(o) {
+          ctx.save();
+
+          // glow (keep blur small for mobile)
+          ctx.shadowBlur = 14;
+          ctx.shadowColor = o.color;
+          ctx.globalAlpha = 0.95;
+
+          if (o.isCircle) {
+            ctx.fillStyle = o.color;
+            ctx.beginPath();
+            ctx.arc(o.x, o.y, o.r, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.shadowBlur = 0;
+            ctx.globalAlpha = 0.20;
+            ctx.strokeStyle = "rgba(255,255,255,0.75)";
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(o.x, o.y, o.r + 2, 0, Math.PI * 2);
+            ctx.stroke();
+          } else {
+            const x = o.x - o.w / 2;
+            const y = o.y - o.h / 2;
+            const rr = 10;
+            ctx.fillStyle = o.color;
+            roundRect(ctx, x, y, o.w, o.h, rr);
+            ctx.fill();
+
+            ctx.shadowBlur = 0;
+            ctx.globalAlpha = 0.18;
+            ctx.strokeStyle = "rgba(255,255,255,0.75)";
+            ctx.lineWidth = 2;
+            roundRect(ctx, x, y, o.w, o.h, rr);
+            ctx.stroke();
+          }
+
+          ctx.restore();
+        }
+
+        function roundRect(c, x, y, w, h, r) {
+          const rr = Math.min(r, w / 2, h / 2);
+          c.beginPath();
+          c.moveTo(x + rr, y);
+          c.arcTo(x + w, y, x + w, y + h, rr);
+          c.arcTo(x + w, y + h, x, y + h, rr);
+          c.arcTo(x, y + h, x, y, rr);
+          c.arcTo(x, y, x + w, y, rr);
+          c.closePath();
+        }
+
+        function drawParticles() {
+          if (particles.length === 0) return;
+          ctx.save();
+          for (const p of particles) {
+            const k = p.t / p.life;
+            const a = 1 - clamp(k, 0, 1);
+            ctx.globalAlpha = a;
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = p.color;
+            ctx.fillStyle = p.color;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+            ctx.fill();
+          }
+          ctx.restore();
+        }
+
+        function drawFloaters() {
+          if (floaters.length === 0) return;
+          ctx.save();
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          for (const f of floaters) {
+            const k = f.t / f.life;
+            const a = 1 - clamp(k, 0, 1);
+            const pop = 1 + Math.sin(clamp(k * Math.PI, 0, Math.PI)) * 0.12;
+            ctx.globalAlpha = a;
+            ctx.shadowBlur = 16;
+            ctx.shadowColor = f.color;
+            ctx.fillStyle = f.color;
+            ctx.font = `800 ${Math.floor(34 * pop)}px ui-sans-serif, system-ui`;
+            ctx.fillText(f.text, f.x, f.y);
+          }
+          ctx.restore();
+        }
+
+        function render() {
+          drawBackground();
+          drawLanes();
+
+          // obstacles
+          for (const o of obstacles) drawObstacle(o);
+
+          // player
+          drawPlayer();
+
+          // particles + text
+          drawParticles();
+          drawFloaters();
+        }
+
+        function frame(ts) {
+          const now = ts;
+          const dt = clamp((now - lastFrame) / 1000, 0, 1 / 20);
+          lastFrame = now;
+
+          if (state === State.PLAY) update(dt);
+          render();
+
+          requestAnimationFrame(frame);
+        }
+
+        requestAnimationFrame((t) => {
+          lastFrame = t;
+          requestAnimationFrame(frame);
+        });
+
+        // Initial UI state
+        dailyBtn.textContent = dailyMode ? "Daily: ON" : "Daily: OFF";
+        seedPill.style.opacity = dailyMode ? "1" : "0.65";
+        startOverlay.classList.remove("hidden");
+        gameOverOverlay.classList.add("hidden");
+
+        // Prevent UI buttons from also toggling lanes / starting via bubbling.
+        for (const el of [soundBtn, dailyBtn, playBtn, againBtn]) {
+          el.addEventListener("pointerdown", (e) => e.stopPropagation());
+        }
+
+        // On OVER state, allow tap anywhere to restart (stage handler handles it).
+      })();
+    </script>
+  </body>
+</html>
+

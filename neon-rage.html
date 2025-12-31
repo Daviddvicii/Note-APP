@@ -1,0 +1,302 @@
+<!--
+NEON RAGE DODGE
+===============
+
+Deploy to GitHub Pages:
+1. Commit this file as 'index.html' and 'game.js' (or keep names and link accordingly).
+2. Go to your GitHub repository > Settings > Pages.
+3. Select the branch (e.g., 'main') and folder (root) and save.
+4. Wait a moment, then access the provided URL.
+
+Game Description:
+A mobile-first, 2-lane reaction game. Tap to switch lanes. Dodge falling neon shapes.
+Survive for high scores.
+
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>Neon Rage Dodge</title>
+    <style>
+        :root {
+            --bg-color: #050510;
+            --neon-blue: #0ff;
+            --neon-pink: #f0f;
+            --neon-purple: #b0f;
+            --grid-color: rgba(0, 255, 255, 0.1);
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--bg-color);
+            overflow: hidden;
+            font-family: 'Courier New', Courier, monospace;
+            touch-action: none; /* Prevent default touch actions like scroll */
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        #game-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: radial-gradient(circle at center, #1a1a2e 0%, #000 100%);
+        }
+
+        canvas {
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+            background-color: rgba(0, 0, 0, 0.8);
+            max-width: 100%;
+            max-height: 100%;
+            /* Maintain aspect ratio via JS resizing or object-fit if needed, 
+               but direct canvas scaling is better for pixel perfection */
+        }
+
+        /* Scanline effect overlay */
+        .scanlines {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                to bottom,
+                rgba(255,255,255,0),
+                rgba(255,255,255,0) 50%,
+                rgba(0,0,0,0.2) 50%,
+                rgba(0,0,0,0.2)
+            );
+            background-size: 100% 4px;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .scanlines::before {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            z-index: 2;
+            background-size: 100% 2px, 3px 100%;
+            pointer-events: none;
+        }
+
+        /* Flicker animation */
+        @keyframes flicker {
+            0% { opacity: 0.97; }
+            5% { opacity: 0.95; }
+            10% { opacity: 0.9; }
+            15% { opacity: 0.95; }
+            20% { opacity: 0.99; }
+            50% { opacity: 0.95; }
+            55% { opacity: 0.9; }
+            60% { opacity: 0.95; }
+            90% { opacity: 0.9; }
+            100% { opacity: 0.97; }
+        }
+
+        .crt-flicker {
+            animation: flicker 0.15s infinite;
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(18, 16, 16, 0.1);
+            pointer-events: none;
+            z-index: 11;
+        }
+
+        #ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none; /* Let clicks pass through to game */
+            z-index: 20;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        /* HUD */
+        #hud {
+            display: flex;
+            justify-content: space-between;
+            padding: 20px;
+            font-size: 24px;
+            color: #fff;
+            text-shadow: 0 0 5px var(--neon-blue);
+            font-weight: bold;
+        }
+
+        .score-box {
+            text-align: center;
+        }
+        .label {
+            font-size: 12px;
+            color: #aaa;
+            display: block;
+        }
+
+        /* Overlays */
+        #start-screen, #game-over-screen {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: white;
+            background: rgba(0, 0, 0, 0.85);
+            padding: 30px;
+            border: 2px solid var(--neon-blue);
+            box-shadow: 0 0 20px var(--neon-blue);
+            border-radius: 10px;
+            pointer-events: auto; /* Enable clicking on buttons */
+            min-width: 250px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 32px;
+            color: var(--neon-pink);
+            text-shadow: 2px 2px 0px var(--neon-blue);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        button {
+            background: transparent;
+            border: 2px solid var(--neon-blue);
+            color: var(--neon-blue);
+            padding: 15px 30px;
+            font-size: 20px;
+            font-family: inherit;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: all 0.2s;
+            font-weight: bold;
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.2);
+        }
+
+        button:hover {
+            background: var(--neon-blue);
+            color: #000;
+            box-shadow: 0 0 20px var(--neon-blue);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .big-text {
+            font-size: 48px;
+            color: #fff;
+            margin: 10px 0;
+        }
+
+        #taunt-msg {
+            color: var(--neon-pink);
+            font-style: italic;
+            font-size: 18px;
+        }
+
+        #audio-toggle {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            width: 40px;
+            height: 40px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: rgba(255,255,255,0.5);
+            cursor: pointer;
+            pointer-events: auto;
+            z-index: 30;
+            font-size: 20px;
+        }
+        
+        #seed-display {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 10px;
+            color: rgba(255,255,255,0.3);
+            pointer-events: none;
+        }
+
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <canvas id="gameCanvas"></canvas>
+    
+    <div class="scanlines"></div>
+    <div class="crt-flicker"></div>
+
+    <div id="ui-layer">
+        <div id="hud">
+            <div class="score-box">
+                <span class="label">TIME</span>
+                <span id="score-display">0.00</span>
+            </div>
+            <div id="streak-box" class="score-box hidden">
+                <span class="label">STREAK</span>
+                <span id="streak-display" style="color:var(--neon-pink)">0</span>
+            </div>
+            <div class="score-box">
+                <span class="label">BEST</span>
+                <span id="best-display">0.00</span>
+            </div>
+        </div>
+        
+        <!-- Audio Toggle Button -->
+        <div id="audio-toggle">🔊</div>
+    </div>
+
+    <div id="start-screen">
+        <h1>Neon Rage<br>Dodge</h1>
+        <p>Tap Left/Right to Switch Lanes</p>
+        <p style="font-size: 14px; color: #aaa;">Avoid the falling neon shapes.</p>
+        <button id="start-btn">TAP TO PLAY</button>
+        <div id="daily-seed-info" style="font-size:12px; margin-top:10px; color:#666;"></div>
+    </div>
+
+    <div id="game-over-screen" class="hidden">
+        <h1>GAME OVER</h1>
+        <div id="taunt-msg">Skill Issue.</div>
+        <div>
+            <span class="label">SCORE</span>
+            <div class="big-text" id="final-score">0.00</div>
+        </div>
+        <div>
+            <span class="label">BEST</span>
+            <div style="color: var(--neon-blue)" id="final-best">0.00</div>
+        </div>
+        <button id="restart-btn">PLAY AGAIN</button>
+    </div>
+</div>
+
+<script src="neon-rage.js"></script>
+</body>
+</html>

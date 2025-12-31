@@ -1,575 +1,1099 @@
 <!doctype html>
+<!--
+README (GitHub Pages deploy)
+- Put this file at your repo root as `index.html`
+- Commit & push to GitHub
+- In GitHub: Settings → Pages → Build and deployment → Source: Deploy from a branch
+- Select Branch: `main` (or `master`) and Folder: `/ (root)`
+- Save. Your game will appear at: https://<username>.github.io/<repo>/
+
+Neon Rage Dodge
+- Mobile-first, 2-lane toggle reaction dodger
+- Controls: Tap/Click anywhere or press Space to toggle lanes
+- Best score saved in localStorage key: "neon-rage-dodge-best"
+-->
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
-    <meta name="theme-color" content="#0b1426" />
-    <title>Retro Arcade</title>
-
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+    <meta name="theme-color" content="#090716" />
+    <title>Neon Rage Dodge</title>
     <style>
       :root {
-        --green: #00ff66;
-        --green2: #00ffaa;
-        --dim: rgba(0, 255, 102, 0.45);
-        --panel: rgba(0, 10, 6, 0.35);
-        --panel2: rgba(0, 10, 6, 0.55);
+        --bg0: #070513;
+        --bg1: #0b0730;
+        --cyan: #39f6ff;
+        --magenta: #ff34d2;
+        --purple: #8b5cff;
+        --text: rgba(240, 248, 255, 0.92);
+        --muted: rgba(240, 248, 255, 0.72);
+        --panel: rgba(5, 6, 14, 0.55);
+        --panel2: rgba(5, 6, 14, 0.72);
+        --stroke: rgba(57, 246, 255, 0.25);
       }
 
-      html,
-      body {
+      * { box-sizing: border-box; }
+
+      html, body {
         height: 100%;
         margin: 0;
-        background: #000;
-        color: var(--green);
-        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
-
-        overflow-x: hidden;
-        overflow-y: auto;
-        -webkit-overflow-scrolling: touch;
+        background: radial-gradient(1200px 900px at 50% 20%, #1a0f46 0%, var(--bg0) 58%, #05030d 100%);
+        color: var(--text);
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica, Arial;
+        overscroll-behavior: none;
+        overflow: hidden;
       }
 
-      body::before {
-        content: "";
+      .wrap {
         position: fixed;
         inset: 0;
-        pointer-events: none;
-        background: linear-gradient(rgba(255, 255, 255, 0.03), rgba(0, 0, 0, 0.03));
-        background-size: 100% 4px;
-        mix-blend-mode: overlay;
-        opacity: 0.35;
-        z-index: 10;
+        display: grid;
+        place-items: center;
+        padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
       }
 
-      body::after {
-        content: "";
-        position: fixed;
-        inset: -20px;
-        pointer-events: none;
-        background:
-          radial-gradient(circle at 50% 45%, rgba(0, 255, 170, 0.1), transparent 55%),
-          radial-gradient(circle at 50% 60%, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.55) 70%);
-        opacity: 0.9;
-        z-index: 11;
-        animation: crtFlicker 5.2s infinite;
-      }
-
-      @keyframes crtFlicker {
-        0%, 100% { filter: brightness(1); }
-        16% { filter: brightness(0.98); }
-        17% { filter: brightness(1.05); }
-        18% { filter: brightness(0.99); }
-        52% { filter: brightness(1.02); }
-        53% { filter: brightness(0.97); }
-        54% { filter: brightness(1.01); }
-      }
-
-      .menu {
-        min-height: 100%;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: flex-start;
-        text-align: center;
-        padding: 88px 18px 28px;
+      .stage {
         position: relative;
+        width: min(100vw, 520px);
+        height: 100vh;
+        max-height: 100vh;
+        display: grid;
+        place-items: center;
       }
 
-      .topbar {
-        position: fixed;
-        top: 12px;
-        left: 12px;
-        right: 12px;
+      canvas {
+        display: block;
+        width: 0;
+        height: 0;
+        touch-action: none;
+        user-select: none;
+        -webkit-tap-highlight-color: transparent;
+        image-rendering: auto;
+      }
+
+      .hud {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        right: 10px;
+        z-index: 5;
         display: flex;
         align-items: center;
         justify-content: space-between;
         gap: 10px;
-        z-index: 20;
+        pointer-events: none;
+      }
+
+      .hud-left {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
       }
 
       .pill {
+        pointer-events: none;
         display: inline-flex;
-        align-items: center;
+        align-items: baseline;
         gap: 8px;
         padding: 10px 12px;
-        border: 1px solid var(--dim);
         border-radius: 999px;
         background: var(--panel);
-        box-shadow: 0 0 10px rgba(0, 255, 102, 0.18);
+        border: 1px solid var(--stroke);
+        box-shadow: 0 0 14px rgba(57, 246, 255, 0.12);
         backdrop-filter: blur(6px);
-        white-space: nowrap;
+        font-variant-numeric: tabular-nums;
       }
 
-      .pill small { opacity: 0.75; }
+      .pill b {
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        font-size: 12px;
+        color: rgba(240, 248, 255, 0.75);
+      }
 
-      .sound-btn {
+      .pill span {
+        font-weight: 800;
+        color: rgba(240, 248, 255, 0.95);
+      }
+
+      .btn {
+        pointer-events: auto;
         appearance: none;
-        border: 1px solid var(--dim);
-        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.18);
         background: var(--panel2);
-        color: var(--green);
+        color: rgba(240, 248, 255, 0.92);
         padding: 10px 12px;
+        border-radius: 999px;
         font: inherit;
         cursor: pointer;
-        box-shadow: 0 0 10px rgba(0, 255, 102, 0.18);
-        transition: transform 0.12s ease, box-shadow 0.12s ease, color 0.12s ease, border-color 0.12s ease;
-        white-space: nowrap;
+        box-shadow: 0 0 14px rgba(255, 52, 210, 0.10);
+        transition: transform 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease;
       }
 
-      .sound-btn:hover {
-        transform: translateY(-1px);
-        color: var(--green2);
-        border-color: var(--green2);
-        box-shadow: 0 0 14px rgba(0, 255, 170, 0.45);
-      }
+      .btn:active { transform: translateY(1px); }
+      .btn:focus-visible { outline: 2px solid rgba(57, 246, 255, 0.75); outline-offset: 2px; }
 
-      h1 {
-        margin: 0 0 6px;
-        font-size: 28px;
-        text-shadow: 0 0 12px var(--green);
-        z-index: 12;
-      }
-
-      .menu-subtitle {
-        margin-bottom: 18px;
-        opacity: 0.75;
-        font-size: 14px;
-        z-index: 12;
-      }
-
-      .menu-items {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-        width: 100%;
-        max-width: 380px;
-        z-index: 12;
-      }
-
-      .retro-btn {
-        position: relative;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-
-        padding: 14px 16px 14px 38px;
-        border: 1px solid var(--dim);
-        border-radius: 12px;
-        color: var(--green);
-        text-decoration: none;
-        font-size: 18px;
-        background: rgba(0, 0, 0, 0.25);
-        box-shadow: 0 0 8px rgba(0, 255, 102, 0.22);
-        transition: all 0.12s ease;
-      }
-
-      .retro-btn::before {
-        content: "▶";
+      .overlay {
         position: absolute;
-        left: 14px;
-        opacity: 0;
-        transform: translateX(-6px);
-        transition: all 0.12s ease;
+        inset: 0;
+        z-index: 10;
+        display: none;
+        place-items: center;
+        padding: 22px 16px;
+        background:
+          radial-gradient(700px 520px at 50% 25%, rgba(57, 246, 255, 0.10), transparent 55%),
+          radial-gradient(700px 520px at 50% 75%, rgba(255, 52, 210, 0.10), transparent 55%),
+          rgba(0, 0, 0, 0.22);
+        backdrop-filter: blur(6px);
       }
 
-      .retro-btn:hover,
-      .retro-btn.active {
-        transform: scale(1.03);
-        color: var(--green2);
-        border-color: var(--green2);
-        box-shadow: 0 0 16px rgba(0, 255, 170, 0.55);
+      .overlay.show { display: grid; }
+
+      .card {
+        width: min(520px, 92vw);
+        border-radius: 18px;
+        border: 1px solid rgba(57, 246, 255, 0.20);
+        background: rgba(5, 6, 14, 0.62);
+        box-shadow:
+          0 12px 50px rgba(0, 0, 0, 0.55),
+          0 0 24px rgba(57, 246, 255, 0.12);
+        padding: 18px 16px;
+        text-align: center;
       }
 
-      .retro-btn:hover::before,
-      .retro-btn.active::before {
-        opacity: 1;
-        transform: translateX(0);
+      .title {
+        margin: 0 0 8px;
+        font-size: 28px;
+        letter-spacing: 0.02em;
+        text-shadow: 0 0 18px rgba(57, 246, 255, 0.30), 0 0 22px rgba(255, 52, 210, 0.14);
       }
 
-      .label {
+      .subtitle {
+        margin: 0 0 14px;
+        color: var(--muted);
+        font-size: 14px;
+        line-height: 1.35;
+      }
+
+      .hint {
+        margin: 10px 0 0;
+        color: rgba(240, 248, 255, 0.70);
+        font-size: 12px;
+      }
+
+      .big {
         display: inline-flex;
         align-items: center;
-        gap: 8px;
-        min-width: 0;
+        justify-content: center;
+        gap: 10px;
+        margin-top: 10px;
+        padding: 14px 18px;
+        border-radius: 14px;
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        background: linear-gradient(180deg, rgba(57, 246, 255, 0.16), rgba(255, 52, 210, 0.10));
+        color: rgba(240, 248, 255, 0.95);
+        font-weight: 900;
+        letter-spacing: 0.02em;
+        cursor: pointer;
+        user-select: none;
+        -webkit-tap-highlight-color: transparent;
+        box-shadow:
+          0 0 0 1px rgba(57, 246, 255, 0.12) inset,
+          0 0 18px rgba(57, 246, 255, 0.16),
+          0 0 22px rgba(255, 52, 210, 0.10);
+        transition: transform 0.10s ease;
       }
 
-      .label span {
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
+      .big:active { transform: translateY(1px) scale(0.99); }
+
+      .row {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 10px;
       }
 
-      .best-badge {
-        flex: 0 0 auto;
+      .tiny {
         font-size: 12px;
-        letter-spacing: 0.12em;
-        text-transform: uppercase;
-        padding: 7px 10px;
+        padding: 10px 12px;
         border-radius: 999px;
-        border: 1px solid rgba(0, 255, 102, 0.35);
-        background: rgba(0, 255, 102, 0.06);
-        color: rgba(0, 255, 170, 0.9);
-        box-shadow: 0 0 10px rgba(0, 255, 102, 0.12);
-        white-space: nowrap;
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        background: rgba(0, 0, 0, 0.18);
+        color: rgba(240, 248, 255, 0.84);
+        cursor: pointer;
       }
 
-      .best-badge b { color: #eafff5; letter-spacing: 0.06em; }
+      .tiny strong { color: rgba(240, 248, 255, 0.96); }
 
-      .menu-hint {
-        margin-top: 18px;
+      .footer {
+        margin-top: 12px;
         font-size: 12px;
-        opacity: 0.65;
-        max-width: 560px;
-        z-index: 12;
+        color: rgba(240, 248, 255, 0.65);
       }
 
-      @media (max-width: 480px) {
-        .menu { padding: 72px 14px 26px; }
-        .topbar { top: 10px; left: 10px; right: 10px; }
-
-        .pill { padding: 8px 10px; font-size: 12px; gap: 8px; }
-        .pill small, .pill span { display: none; }
-        .pill::after { content: "🕹️ Arcade"; opacity: 0.9; }
-
-        .sound-btn { padding: 8px 10px; font-size: 12px; }
-        h1 { font-size: 22px; margin: 8px 0 4px; }
-        .menu-subtitle { font-size: 12px; margin-bottom: 12px; }
-        .menu-items { gap: 10px; max-width: 420px; }
-        .retro-btn { font-size: 16px; padding: 12px 12px 12px 34px; }
-        .best-badge { font-size: 11px; padding: 6px 9px; }
+      @media (max-width: 420px) {
+        .title { font-size: 24px; }
+        .pill { padding: 9px 11px; }
+        .pill b { font-size: 11px; }
       }
     </style>
   </head>
-
   <body>
-    <div class="menu" role="navigation" aria-label="Game selection menu">
-      <div class="topbar">
-        <div class="pill" aria-label="Arcade navigation hint">
-          <small>Arcade Mode:</small>
-          <span>↑ ↓ Select · Enter Start</span>
+    <div class="wrap">
+      <div class="stage" id="stage">
+        <canvas id="game" aria-label="Neon Rage Dodge game canvas"></canvas>
+
+        <div class="hud" aria-hidden="true">
+          <div class="hud-left">
+            <div class="pill"><b>Score</b><span id="hudScore">0</span></div>
+            <div class="pill"><b>Best</b><span id="hudBest">0</span></div>
+            <div class="pill"><b>Streak</b><span id="hudStreak">0</span></div>
+          </div>
+          <button class="btn" id="soundBtn" type="button" aria-label="Toggle sound">Sound: ON</button>
         </div>
-        <button id="soundBtn" class="sound-btn" type="button" aria-label="Toggle sound">
-          🔊 Sound: ON
-        </button>
+
+        <div class="overlay show" id="overlayStart" role="dialog" aria-label="Start screen">
+          <div class="card">
+            <h1 class="title">Neon Rage Dodge</h1>
+            <p class="subtitle">
+              Super snappy 2‑lane reaction dodger. Survive. Stack streaks. Farm “SICK”.
+            </p>
+            <div class="row">
+              <button class="tiny" id="dailyBtn" type="button" aria-label="Toggle daily seed mode">
+                Daily: <strong id="dailyState">OFF</strong>
+              </button>
+              <span class="tiny" id="seedBadge" style="display:none;">Seed: <strong id="seedText">—</strong></span>
+            </div>
+            <div class="big" id="playBtn" role="button" tabindex="0">Tap to Play</div>
+            <p class="hint">Tap / click / Space = toggle lanes. No dragging.</p>
+            <div class="footer">Tip: “SICK” triggers on late dodges (near‑miss).</div>
+          </div>
+        </div>
+
+        <div class="overlay" id="overlayOver" role="dialog" aria-label="Game over screen">
+          <div class="card">
+            <h2 class="title" style="margin-bottom:6px;">Game Over</h2>
+            <p class="subtitle" id="tauntText" style="margin-top:0;">One more.</p>
+            <p class="subtitle" style="margin: 10px 0 0;">
+              Final: <strong id="finalScore">0</strong> · Best: <strong id="finalBest">0</strong>
+            </p>
+            <div class="big" id="againBtn" role="button" tabindex="0">Play Again</div>
+            <p class="hint">Tap / Space instantly restarts.</p>
+          </div>
+        </div>
       </div>
-
-      <h1>🎮 Retro Game Hub</h1>
-      <div class="menu-subtitle">Tap to play · Keyboard supported · CRT Mode enabled</div>
-
-      <nav class="menu-items" id="menu">
-        <a class="retro-btn" href="./flappy.html" data-id="flappy" data-best-key="flappy-best">
-          <span class="label"><span>🐤 Flappy Bird</span></span>
-          <span class="best-badge">BEST <b data-best-for="flappy">—</b></span>
-        </a>
-
-        <a class="retro-btn" href="./invaders.html" data-id="invaders" data-best-key="invaders-best">
-          <span class="label"><span>👾 Space Invaders</span></span>
-          <span class="best-badge">BEST <b data-best-for="invaders">—</b></span>
-        </a>
-
-        <a class="retro-btn" href="./pacman.html" data-id="pacman" data-best-key="pacman-best">
-          <span class="label"><span>ᗣ 👻 Pac-Man</span></span>
-          <span class="best-badge">BEST <b data-best-for="pacman">—</b></span>
-        </a>
-
-        <a class="retro-btn" href="./snake.html" data-id="snake" data-best-key="snake-best">
-          <span class="label"><span>🐍 Snake</span></span>
-          <span class="best-badge">BEST <b data-best-for="snake">—</b></span>
-        </a>
-
-        <a class="retro-btn" href="./pong.html" data-id="pong" data-best-key="pong-best">
-          <span class="label"><span>🏓 Pong</span></span>
-          <span class="best-badge">BEST <b data-best-for="pong">—</b></span>
-        </a>
-
-        <a class="retro-btn" href="./breakout.html" data-id="breakout" data-best-key="breakout-best">
-          <span class="label"><span>🧱 Breakout</span></span>
-          <span class="best-badge">BEST <b data-best-for="breakout">—</b></span>
-        </a>
-
-        <!-- ✅ NEW: Neon Stack -->
-        <a class="retro-btn" href="./stack.html" data-id="stack" data-best-key="neon-stack-best">
-          <span class="label"><span>🏗 Neon Stack</span></span>
-          <span class="best-badge">BEST <b data-best-for="stack">—</b></span>
-        </a>
-
-        <a class="retro-btn" href="./tetris.html" data-id="tetris" data-best-key="tetris-best">
-          <span class="label"><span>🧊 Tetris</span></span>
-          <span class="best-badge">BEST <b data-best-for="tetris">—</b></span>
-        </a>
-
-        <a class="retro-btn" href="./city.html" data-id="city" data-best-key="city-best">
-          <span class="label"><span>🚗 Neon City Driver</span></span>
-          <span class="best-badge">BEST <b data-best-for="city">—</b></span>
-        </a>
-
-        <a class="retro-btn" href="./fruit.html" data-id="fruit" data-best-key="retro-neon-fruit-best">
-          <span class="label"><span>🍉 Neon Fruit Ninja</span></span>
-          <span class="best-badge">BEST <b data-best-for="fruit">—</b></span>
-        </a>
-
-        <a class="retro-btn" href="./defense.html" data-id="defense" data-best-key="defense-best">
-          <span class="label"><span>🛡️ Neon Tap Defense</span></span>
-          <span class="best-badge">BEST <b data-best-for="defense">—</b></span>
-        </a>
-
-        <a class="retro-btn" href="./jumper.html" data-id="jumper" data-best-key="neon-sky-jumper-best">
-          <span class="label"><span>🚀 Neon Sky Jumper</span></span>
-          <span class="best-badge">BEST <b data-best-for="jumper">—</b></span>
-        </a>
-
-        <a class="retro-btn" href="./beatdrop.html" data-id="beatdrop" data-best-key="beatdrop-best">
-          <span class="label"><span>🎵 Neon Beat Drop</span></span>
-          <span class="best-badge">BEST <b data-best-for="beatdrop">—</b></span>
-        </a>
-      </nav>
-
-      <p class="menu-hint">
-        If BEST is “—”, it means the game saved a different key name. This menu now auto-detects many common keys.
-      </p>
     </div>
 
     <script>
-      // ===== Robust BEST detector (fixes your issue) =====
+      (() => {
+        "use strict";
 
-      function parseBestValue(raw) {
-        if (raw == null) return null;
+        // ========= Config =========
+        const LOGICAL_W = 720;
+        const LOGICAL_H = 1280;
+        const BEST_KEY = "neon-rage-dodge-best";
 
-        // numeric
-        const n = Number(raw);
-        if (!Number.isNaN(n) && Number.isFinite(n)) return Math.floor(n);
-
-        // JSON common fields
-        try {
-          const obj = JSON.parse(raw);
-          if (obj && typeof obj.best === "number") return Math.floor(obj.best);
-          if (obj && typeof obj.highScore === "number") return Math.floor(obj.highScore);
-          if (obj && typeof obj.score === "number") return Math.floor(obj.score);
-        } catch (_) {}
-
-        return null;
-      }
-
-      function tryKeys(keys) {
-        for (const k of keys) {
-          if (!k) continue;
-          const v = parseBestValue(localStorage.getItem(k));
-          if (v != null) return { key: k, best: v };
-        }
-        return null;
-      }
-
-      function findBestForGame(id, primaryKey) {
-        const common = [
-          `${id}-best`,
-          `${id}_best`,
-          `${id}Best`,
-          `${id}-highscore`,
-          `${id}-highScore`,
-          `${id}_highscore`,
-          `${id}-score`,
-          `${id}-bestScore`,
-          `best-${id}`,
-          `highscore-${id}`,
-          `${id}-hiscore`,
+        const TAUNTS = [
+          "Skill issue.",
+          "One more.",
+          "Close…",
+          "Not bad.",
+          "You blinked.",
+          "Hands faster.",
+          "Again. Again.",
+          "You had that.",
+          "Rage -> Retry.",
         ];
 
-        // 1) primary key from HTML + common patterns
-        let hit = tryKeys([primaryKey, ...common]);
-        if (hit) return hit;
+        const canvas = document.getElementById("game");
+        const stage = document.getElementById("stage");
+        const ctx = canvas.getContext("2d", { alpha: false, desynchronized: true });
+        if (!ctx) throw new Error("Canvas 2D not supported.");
 
-        // 2) scan localStorage for something that includes the id + best/highscore
-        const idLower = id.toLowerCase();
-        const candidates = [];
-        for (let i = 0; i < localStorage.length; i++) {
-          const k = localStorage.key(i);
-          if (!k) continue;
-          const kl = k.toLowerCase();
-          const looksRelated = kl.includes(idLower) && (kl.includes("best") || kl.includes("high") || kl.includes("score"));
-          if (looksRelated) candidates.push(k);
+        const hudScore = document.getElementById("hudScore");
+        const hudBest = document.getElementById("hudBest");
+        const hudStreak = document.getElementById("hudStreak");
+        const soundBtn = document.getElementById("soundBtn");
+
+        const overlayStart = document.getElementById("overlayStart");
+        const overlayOver = document.getElementById("overlayOver");
+        const playBtn = document.getElementById("playBtn");
+        const againBtn = document.getElementById("againBtn");
+        const finalScoreEl = document.getElementById("finalScore");
+        const finalBestEl = document.getElementById("finalBest");
+        const tauntText = document.getElementById("tauntText");
+
+        const dailyBtn = document.getElementById("dailyBtn");
+        const dailyState = document.getElementById("dailyState");
+        const seedBadge = document.getElementById("seedBadge");
+        const seedText = document.getElementById("seedText");
+
+        // ========= Resize / fixed logical resolution =========
+        let dpr = 1;
+        function resize() {
+          dpr = Math.max(1, Math.min(2, Math.floor(window.devicePixelRatio || 1)));
+          canvas.width = LOGICAL_W * dpr;
+          canvas.height = LOGICAL_H * dpr;
+          ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+          const r = stage.getBoundingClientRect();
+          const scale = Math.min(r.width / LOGICAL_W, r.height / LOGICAL_H);
+          canvas.style.width = `${Math.floor(LOGICAL_W * scale)}px`;
+          canvas.style.height = `${Math.floor(LOGICAL_H * scale)}px`;
+        }
+        window.addEventListener("resize", resize, { passive: true });
+        resize();
+
+        // ========= RNG (daily seed optional) =========
+        function yyyymmdd(d = new Date()) {
+          const y = d.getFullYear();
+          const m = String(d.getMonth() + 1).padStart(2, "0");
+          const day = String(d.getDate()).padStart(2, "0");
+          return `${y}${m}${day}`;
         }
 
-        // prioritize best-like keys first
-        candidates.sort((a, b) => {
-          const al = a.toLowerCase();
-          const bl = b.toLowerCase();
-          const aw = (al.includes("best") ? 3 : 0) + (al.includes("high") ? 2 : 0) + (al.includes("score") ? 1 : 0);
-          const bw = (bl.includes("best") ? 3 : 0) + (bl.includes("high") ? 2 : 0) + (bl.includes("score") ? 1 : 0);
-          return bw - aw;
-        });
+        function hashStringToU32(str) {
+          // FNV-1a-ish
+          let h = 2166136261 >>> 0;
+          for (let i = 0; i < str.length; i++) {
+            h ^= str.charCodeAt(i);
+            h = Math.imul(h, 16777619);
+          }
+          return h >>> 0;
+        }
 
-        hit = tryKeys(candidates);
-        return hit; // may be null
-      }
+        function makeXorshift32(seedU32) {
+          let x = (seedU32 >>> 0) || 0x12345678;
+          return {
+            nextU32() {
+              x ^= (x << 13) >>> 0;
+              x ^= (x >>> 17) >>> 0;
+              x ^= (x << 5) >>> 0;
+              return (x >>> 0);
+            },
+            next() {
+              return this.nextU32() / 4294967296;
+            },
+            range(min, max) {
+              return min + (max - min) * this.next();
+            },
+            int(min, maxInclusive) {
+              return Math.floor(this.range(min, maxInclusive + 1));
+            },
+            pick(arr) {
+              return arr[Math.floor(this.next() * arr.length)];
+            },
+          };
+        }
 
-      const items = Array.from(document.querySelectorAll(".retro-btn"));
-      const bestTargets = new Map();
-      document.querySelectorAll("[data-best-for]").forEach((b) => {
-        bestTargets.set(b.getAttribute("data-best-for"), b);
-      });
+        let dailyMode = false;
+        let seedStr = yyyymmdd();
+        let rng = makeXorshift32((crypto?.getRandomValues ? crypto.getRandomValues(new Uint32Array(1))[0] : (Math.random() * 2 ** 32) >>> 0));
+        function applySeedMode() {
+          dailyState.textContent = dailyMode ? "ON" : "OFF";
+          if (dailyMode) {
+            seedStr = yyyymmdd();
+            seedText.textContent = seedStr;
+            seedBadge.style.display = "";
+            rng = makeXorshift32(hashStringToU32(seedStr));
+          } else {
+            seedBadge.style.display = "none";
+            rng = makeXorshift32((crypto?.getRandomValues ? crypto.getRandomValues(new Uint32Array(1))[0] : (Math.random() * 2 ** 32) >>> 0));
+          }
+        }
+        applySeedMode();
 
-      function refreshAllBest() {
-        items.forEach((a) => {
-          const id = a.dataset.id;
-          const primaryKey = a.dataset.bestKey;
-          const target = bestTargets.get(id);
-          if (!target) return;
+        // ========= Audio (optional, user-gesture safe) =========
+        let soundOn = true;
+        let audioCtx = null;
+        let master = null;
 
-          const found = findBestForGame(id, primaryKey);
-          target.textContent = found ? String(found.best) : "—";
-        });
-      }
+        function ensureAudioFromGesture() {
+          if (!soundOn) return;
+          if (audioCtx) return;
+          const AC = window.AudioContext || window.webkitAudioContext;
+          audioCtx = new AC();
+          master = audioCtx.createGain();
+          master.gain.value = 0.55;
+          master.connect(audioCtx.destination);
+        }
 
-      refreshAllBest();
-      window.addEventListener("focus", refreshAllBest);
-
-      // ===== Arcade navigation =====
-      let index = 0;
-      function updateActive() {
-        items.forEach((el, i) => el.classList.toggle("active", i === index));
-      }
-      updateActive();
-
-      // ===== WebAudio: BGM + SFX + mute toggle =====
-      let audioReady = false;
-      let audioCtx = null;
-      let master = null;
-      let bgmGain = null;
-      let sfxGain = null;
-      let bgmTimer = null;
-      let soundOn = true;
-
-      const soundBtn = document.getElementById("soundBtn");
-
-      function ensureAudio() {
-        if (audioReady) return;
-        audioReady = true;
-
-        const AC = window.AudioContext || window.webkitAudioContext;
-        audioCtx = new AC();
-
-        master = audioCtx.createGain();
-        master.gain.value = 0.55;
-        master.connect(audioCtx.destination);
-
-        bgmGain = audioCtx.createGain();
-        bgmGain.gain.value = 0.1;
-        bgmGain.connect(master);
-
-        sfxGain = audioCtx.createGain();
-        sfxGain.gain.value = 0.25;
-        sfxGain.connect(master);
-
-        startBgm();
-        applyMuteState();
-      }
-
-      function applyMuteState() {
-        if (!master) return;
-        master.gain.value = soundOn ? 0.55 : 0.0001;
-        soundBtn.textContent = soundOn ? "🔊 Sound: ON" : "🔇 Sound: OFF";
-      }
-
-      function beep(freq, durMs, type = "square", gain = 0.12) {
-        if (!audioCtx || !sfxGain || !soundOn) return;
-        const t = audioCtx.currentTime;
-        const o = audioCtx.createOscillator();
-        const g = audioCtx.createGain();
-        o.type = type;
-        o.frequency.value = freq;
-
-        g.gain.setValueAtTime(0.0001, t);
-        g.gain.exponentialRampToValueAtTime(gain, t + 0.01);
-        g.gain.exponentialRampToValueAtTime(0.0001, t + durMs / 1000);
-
-        o.connect(g);
-        g.connect(sfxGain);
-
-        o.start(t);
-        o.stop(t + durMs / 1000 + 0.02);
-      }
-
-      function startBgm() {
-        if (!audioCtx || !bgmGain) return;
-        if (bgmTimer) clearInterval(bgmTimer);
-
-        const scale = [220, 277.18, 329.63, 440, 554.37, 659.25];
-        let step = 0;
-
-        bgmTimer = setInterval(() => {
-          if (!soundOn || !audioCtx) return;
-
+        function blip(freq, durMs, type = "square", gain = 0.12) {
+          if (!soundOn) return;
+          if (!audioCtx || !master) return;
           const t = audioCtx.currentTime;
-          const freq = scale[step % scale.length];
-
           const o = audioCtx.createOscillator();
           const g = audioCtx.createGain();
-
-          o.type = "triangle";
+          o.type = type;
           o.frequency.setValueAtTime(freq, t);
-
           g.gain.setValueAtTime(0.0001, t);
-          g.gain.exponentialRampToValueAtTime(0.06, t + 0.01);
-          g.gain.exponentialRampToValueAtTime(0.0001, t + 0.18);
-
-          const o2 = audioCtx.createOscillator();
-          const g2 = audioCtx.createGain();
-          o2.type = "sine";
-          o2.frequency.setValueAtTime(freq * 2, t);
-          g2.gain.setValueAtTime(0.0001, t);
-          g2.gain.exponentialRampToValueAtTime(0.02, t + 0.01);
-          g2.gain.exponentialRampToValueAtTime(0.0001, t + 0.18);
-
-          o.connect(g); g.connect(bgmGain);
-          o2.connect(g2); g2.connect(bgmGain);
-
-          o.start(t); o.stop(t + 0.2);
-          o2.start(t); o2.stop(t + 0.2);
-
-          step++;
-        }, 180);
-      }
-
-      soundBtn.addEventListener("click", () => {
-        ensureAudio();
-        soundOn = !soundOn;
-        applyMuteState();
-        beep(soundOn ? 880 : 220, 90, "square", 0.1);
-      });
-
-      const kickAudio = () => ensureAudio();
-      window.addEventListener("pointerdown", kickAudio, { once: true });
-      window.addEventListener("keydown", kickAudio, { once: true });
-
-      window.addEventListener("keydown", (e) => {
-        if (e.key === "ArrowDown") {
-          index = (index + 1) % items.length;
-          updateActive();
-          ensureAudio();
-          beep(660, 55, "square", 0.1);
-        } else if (e.key === "ArrowUp") {
-          index = (index - 1 + items.length) % items.length;
-          updateActive();
-          ensureAudio();
-          beep(520, 55, "square", 0.1);
-        } else if (e.key === "Enter") {
-          ensureAudio();
-          beep(880, 110, "square", 0.12);
-          items[index].click();
+          g.gain.exponentialRampToValueAtTime(gain, t + 0.01);
+          g.gain.exponentialRampToValueAtTime(0.0001, t + durMs / 1000);
+          o.connect(g);
+          g.connect(master);
+          o.start(t);
+          o.stop(t + durMs / 1000 + 0.03);
         }
-      });
 
-      items.forEach((el, i) => {
-        el.addEventListener("mouseenter", () => {
-          index = i;
-          updateActive();
+        function updateSoundBtn() {
+          soundBtn.textContent = soundOn ? "Sound: ON" : "Sound: OFF";
+        }
+        updateSoundBtn();
+
+        soundBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          // Click is a valid gesture to start AudioContext if turning ON
+          if (!soundOn) {
+            soundOn = true;
+            ensureAudioFromGesture();
+            blip(880, 80, "square", 0.10);
+          } else {
+            blip(220, 70, "square", 0.09);
+            soundOn = false;
+          }
+          updateSoundBtn();
         });
 
-        el.addEventListener("click", () => {
-          ensureAudio();
-          beep(990, 120, "square", 0.12);
+        // ========= Game State =========
+        const state = {
+          mode: "start", // start | playing | over
+          t: 0,
+          lastMs: 0,
+          startMs: 0,
+          elapsedMs: 0,
+          score: 0,
+          bonus: 0,
+          best: 0,
+          streak: 0,
+          lastNearMs: 0,
+          sickText: null,
+          sickTimer: 0,
+          flicker: 1,
+          gridOffset: 0,
+        };
+
+        function loadBest() {
+          const n = Number(localStorage.getItem(BEST_KEY));
+          state.best = Number.isFinite(n) ? Math.max(0, Math.floor(n)) : 0;
+          hudBest.textContent = String(state.best);
+        }
+        function saveBestIfNeeded(finalScore) {
+          const s = Math.max(0, Math.floor(finalScore));
+          if (s > state.best) {
+            state.best = s;
+            localStorage.setItem(BEST_KEY, String(s));
+            hudBest.textContent = String(state.best);
+          }
+        }
+        loadBest();
+
+        const player = {
+          lane: 0, // 0 left, 1 right
+          x: LOGICAL_W * 0.34,
+          y: LOGICAL_H * 0.86,
+          r: 18,
+          pulse: 0,
+          toggleFlash: 0,
+        };
+
+        const lanes = {
+          leftX: LOGICAL_W * 0.34,
+          rightX: LOGICAL_W * 0.66,
+          railInset: 90,
+        };
+
+        function laneX(lane) {
+          return lane === 0 ? lanes.leftX : lanes.rightX;
+        }
+
+        const obstacles = [];
+        let spawnAt = 0;
+        const spawnQueue = []; // ms offsets relative to now
+
+        // Particles (pooled)
+        const particles = [];
+        const MAX_PARTICLES = 220;
+        function spawnParticles(x, y, count, baseSpeed, lifeMs, colorA, colorB) {
+          for (let i = 0; i < count; i++) {
+            if (particles.length >= MAX_PARTICLES) break;
+            const a = rng.range(0, Math.PI * 2);
+            const sp = baseSpeed * rng.range(0.35, 1.0);
+            particles.push({
+              x,
+              y,
+              vx: Math.cos(a) * sp,
+              vy: Math.sin(a) * sp,
+              life: lifeMs,
+              maxLife: lifeMs,
+              size: rng.range(2, 6),
+              c0: colorA,
+              c1: colorB,
+            });
+          }
+        }
+
+        function resetRun(nowMs) {
+          state.startMs = nowMs;
+          state.elapsedMs = 0;
+          state.score = 0;
+          state.bonus = 0;
+          state.streak = 0;
+          state.lastNearMs = 0;
+          state.sickText = null;
+          state.sickTimer = 0;
+          player.lane = 0;
+          player.x = laneX(player.lane);
+          player.toggleFlash = 0;
+          obstacles.length = 0;
+          particles.length = 0;
+          spawnAt = nowMs + 700;
+          spawnQueue.length = 0;
+        }
+
+        // ========= Difficulty ramp =========
+        function difficultyAt(elapsedMs) {
+          const t = Math.max(0, elapsedMs / 1000);
+          // first ~12s feel fair; then ramp
+          const speed = 640 + t * 18 + Math.max(0, t - 12) * 9; // px/s
+          const interval = Math.max(260, 880 - t * 9 - Math.max(0, t - 12) * 7); // ms
+          const size = 78 + Math.min(24, t * 0.7);
+          return { t, speed, interval, size };
+        }
+
+        function obstacleRadius(o) {
+          if (o.kind === "circle") return o.r;
+          // rect approximate radius
+          return Math.sqrt((o.w * 0.5) ** 2 + (o.h * 0.5) ** 2);
+        }
+
+        function obstacleThreatWindowY() {
+          return {
+            start: player.y - 240,
+            end: player.y - 46,
+          };
+        }
+
+        function laneWouldBlockBoth(lane, y, minGapY) {
+          // If the *other* lane already has an obstacle near y, then spawning on this lane near y would block both lanes.
+          const otherLane = lane === 0 ? 1 : 0;
+          for (let i = 0; i < obstacles.length; i++) {
+            const o = obstacles[i];
+            if (o.lane !== otherLane) continue;
+            if (Math.abs(o.y - y) < minGapY) return true;
+          }
+          return false;
+        }
+
+        function pickLaneSpawn(y) {
+          // bias toward making player move, but keep it fair
+          const bias = rng.next() < 0.58;
+          let lane = bias ? player.lane : (player.lane ^ 1);
+          // Avoid spawning a "both lanes blocked" situation near the player's zone
+          if (laneWouldBlockBoth(lane, y, 140)) lane ^= 1;
+          // Still blocked? (rare) then return null to skip this spawn.
+          if (laneWouldBlockBoth(lane, y, 140)) return null;
+          return lane;
+        }
+
+        function spawnOne(nowMs, forcedLane = null) {
+          const d = difficultyAt(state.elapsedMs);
+          const y = -110;
+          const lane = forcedLane != null ? forcedLane : pickLaneSpawn(player.y - 520);
+          if (lane == null) return false;
+
+          const kind = rng.next() < 0.55 ? "rect" : "circle";
+          const base = d.size * rng.range(0.92, 1.12);
+          const wobble = rng.range(-18, 18); // subtle drift within lane
+          const huePick = rng.next();
+          const color = huePick < 0.5 ? "cyan" : (huePick < 0.85 ? "magenta" : "purple");
+          const o = {
+            kind: kind === "rect" ? "rect" : "circle",
+            lane,
+            x: laneX(lane) + wobble,
+            y,
+            vy: d.speed * rng.range(0.94, 1.05),
+            w: kind === "rect" ? base * rng.range(0.85, 1.1) : 0,
+            h: kind === "rect" ? base * rng.range(0.85, 1.1) : 0,
+            r: kind === "circle" ? (base * 0.52) : 0,
+            spin: rng.range(-1.6, 1.6),
+            rot: rng.range(0, Math.PI * 2),
+            color,
+            threatened: false,
+            nearEligible: false,
+            nearAwarded: false,
+          };
+          obstacles.push(o);
+          return true;
+        }
+
+        function schedulePattern(nowMs) {
+          // Patterns: single, double, fake-out rhythm
+          // We schedule offsets so spawns feel snappy but readable.
+          const t = state.elapsedMs / 1000;
+          const pDouble = Math.min(0.28, 0.10 + Math.max(0, t - 8) * 0.004);
+          const pFake = Math.min(0.22, 0.06 + Math.max(0, t - 12) * 0.004);
+
+          const r = rng.next();
+          if (r < pFake) {
+            // fake-out: one, beat gap, then double
+            spawnQueue.push(0);
+            spawnQueue.push(320);
+            spawnQueue.push(470);
+          } else if (r < pFake + pDouble) {
+            // double: two quick spawns
+            spawnQueue.push(0);
+            spawnQueue.push(180);
+          } else {
+            spawnQueue.push(0);
+          }
+        }
+
+        // ========= Input =========
+        let seenFirstGesture = false;
+
+        function toggleLane(nowMs) {
+          if (state.mode !== "playing") return;
+          player.lane ^= 1;
+          player.x = laneX(player.lane);
+          player.toggleFlash = 1;
+
+          // mark near-miss eligibility for threats you dodged late
+          const win = obstacleThreatWindowY();
+          const oldLane = player.lane ^ 1;
+          for (let i = 0; i < obstacles.length; i++) {
+            const o = obstacles[i];
+            if (o.lane !== oldLane) continue;
+            if (!o.threatened) continue;
+            if (o.nearEligible) continue;
+            if (o.y > win.start && o.y < win.end) {
+              o.nearEligible = true;
+            }
+          }
+
+          // audio
+          blip(880, 60, "square", 0.10);
+        }
+
+        function onAnyGesture(e) {
+          // Don't treat UI button taps as lane toggles / start taps.
+          const t = e && e.target;
+          if (t && typeof t.closest === "function" && t.closest("button")) return;
+
+          // prevent browser from scrolling/pulling-to-refresh during play
+          if (e && e.cancelable) e.preventDefault();
+
+          if (!seenFirstGesture) {
+            seenFirstGesture = true;
+            ensureAudioFromGesture();
+          }
+
+          const nowMs = performance.now();
+          if (state.mode === "start") {
+            startGame(nowMs);
+            return;
+          }
+          if (state.mode === "over") {
+            startGame(nowMs);
+            return;
+          }
+          toggleLane(nowMs);
+        }
+
+        window.addEventListener("pointerdown", onAnyGesture, { passive: false });
+        window.addEventListener("keydown", (e) => {
+          if (e.code === "Space" && !e.repeat) {
+            e.preventDefault();
+            onAnyGesture(e);
+          }
+        }, { passive: false });
+
+        playBtn.addEventListener("click", (e) => onAnyGesture(e));
+        againBtn.addEventListener("click", (e) => onAnyGesture(e));
+        playBtn.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") onAnyGesture(e); });
+        againBtn.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") onAnyGesture(e); });
+
+        dailyBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          dailyMode = !dailyMode;
+          applySeedMode();
+          blip(dailyMode ? 740 : 330, 70, "square", 0.09);
         });
-      });
+
+        // ========= Start / Over =========
+        function startGame(nowMs) {
+          overlayStart.classList.remove("show");
+          overlayOver.classList.remove("show");
+          state.mode = "playing";
+          resetRun(nowMs);
+          // tiny start ping
+          blip(660, 65, "square", 0.10);
+        }
+
+        function endGame(nowMs) {
+          state.mode = "over";
+          saveBestIfNeeded(state.score);
+          finalScoreEl.textContent = String(Math.floor(state.score));
+          finalBestEl.textContent = String(state.best);
+          tauntText.textContent = rng.pick(TAUNTS);
+          overlayOver.classList.add("show");
+          // death sound
+          blip(110, 220, "sawtooth", 0.12);
+          blip(55, 260, "square", 0.06);
+          // death burst
+          spawnParticles(player.x, player.y, 52, 820, 620, "rgba(255,52,210,0.95)", "rgba(57,246,255,0.9)");
+        }
+
+        // ========= Render helpers =========
+        function clear() {
+          ctx.fillStyle = "#070513";
+          ctx.fillRect(0, 0, LOGICAL_W, LOGICAL_H);
+        }
+
+        function drawBackground(nowMs) {
+          const t = nowMs * 0.001;
+          const flick = 0.98 + (rng.next() * 0.04);
+          state.flicker = state.flicker * 0.88 + flick * 0.12;
+
+          // gradient wash
+          const g = ctx.createLinearGradient(0, 0, 0, LOGICAL_H);
+          g.addColorStop(0, "#160a43");
+          g.addColorStop(0.55, "#070513");
+          g.addColorStop(1, "#04020b");
+          ctx.globalAlpha = 1;
+          ctx.fillStyle = g;
+          ctx.fillRect(0, 0, LOGICAL_W, LOGICAL_H);
+
+          // moving grid (subtle)
+          const gridY = (t * 60) % 60;
+          ctx.save();
+          ctx.globalAlpha = 0.18;
+          ctx.strokeStyle = "rgba(57,246,255,0.16)";
+          ctx.lineWidth = 1;
+          for (let y = -60; y < LOGICAL_H + 60; y += 60) {
+            const yy = y + gridY;
+            ctx.beginPath();
+            ctx.moveTo(0, yy);
+            ctx.lineTo(LOGICAL_W, yy);
+            ctx.stroke();
+          }
+          ctx.globalAlpha = 0.12;
+          for (let x = 0; x <= LOGICAL_W; x += 72) {
+            ctx.beginPath();
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, LOGICAL_H);
+            ctx.stroke();
+          }
+          ctx.restore();
+
+          // scanlines (cheap)
+          ctx.save();
+          ctx.globalAlpha = 0.16 * state.flicker;
+          ctx.fillStyle = "rgba(0,0,0,0.55)";
+          for (let y = 0; y < LOGICAL_H; y += 4) {
+            ctx.fillRect(0, y, LOGICAL_W, 1);
+          }
+          ctx.restore();
+
+          // vignette
+          ctx.save();
+          ctx.globalAlpha = 0.55;
+          const vg = ctx.createRadialGradient(LOGICAL_W * 0.5, LOGICAL_H * 0.55, 180, LOGICAL_W * 0.5, LOGICAL_H * 0.55, 780);
+          vg.addColorStop(0, "rgba(0,0,0,0)");
+          vg.addColorStop(1, "rgba(0,0,0,0.75)");
+          ctx.fillStyle = vg;
+          ctx.fillRect(0, 0, LOGICAL_W, LOGICAL_H);
+          ctx.restore();
+        }
+
+        function drawLanes(nowMs) {
+          const t = nowMs * 0.001;
+          const pulse = 0.5 + 0.5 * Math.sin(t * 3.2);
+          const railX0 = lanes.leftX - lanes.railInset;
+          const railX1 = lanes.rightX + lanes.railInset;
+
+          ctx.save();
+          ctx.globalAlpha = 0.50;
+          ctx.lineWidth = 3;
+          ctx.strokeStyle = `rgba(57,246,255,${0.22 + 0.08 * pulse})`;
+          ctx.shadowColor = "rgba(57,246,255,0.35)";
+          ctx.shadowBlur = 10;
+          ctx.beginPath();
+          ctx.moveTo(railX0, 0);
+          ctx.lineTo(railX0, LOGICAL_H);
+          ctx.moveTo(railX1, 0);
+          ctx.lineTo(railX1, LOGICAL_H);
+          ctx.stroke();
+          ctx.restore();
+
+          // pulsing hit-zone ring near player
+          ctx.save();
+          ctx.globalAlpha = 0.7;
+          const r = 54 + 8 * pulse;
+          ctx.lineWidth = 3;
+          ctx.strokeStyle = `rgba(255,52,210,${0.25 + 0.12 * pulse})`;
+          ctx.shadowColor = "rgba(255,52,210,0.25)";
+          ctx.shadowBlur = 12;
+          ctx.beginPath();
+          ctx.arc(player.x, player.y, r, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.restore();
+        }
+
+        function neonColor(name) {
+          if (name === "magenta") return { core: "#ff34d2", glow: "rgba(255,52,210,0.65)" };
+          if (name === "purple") return { core: "#8b5cff", glow: "rgba(139,92,255,0.55)" };
+          return { core: "#39f6ff", glow: "rgba(57,246,255,0.65)" };
+        }
+
+        function drawPlayer() {
+          ctx.save();
+          ctx.globalAlpha = 1;
+          const t = state.t;
+          player.pulse = player.pulse * 0.86 + (0.5 + 0.5 * Math.sin(t * 4.5)) * 0.14;
+          player.toggleFlash *= 0.86;
+
+          const glow = 10 + 10 * player.pulse + 18 * player.toggleFlash;
+          ctx.shadowColor = "rgba(57,246,255,0.65)";
+          ctx.shadowBlur = glow;
+
+          // ship core
+          ctx.fillStyle = "#39f6ff";
+          ctx.beginPath();
+          ctx.arc(player.x, player.y, player.r, 0, Math.PI * 2);
+          ctx.fill();
+
+          // tiny direction notch
+          ctx.shadowBlur = 0;
+          ctx.fillStyle = "rgba(255,255,255,0.92)";
+          ctx.beginPath();
+          ctx.arc(player.x + player.r * 0.45, player.y - player.r * 0.20, 3.5, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        }
+
+        function drawObstacle(o) {
+          const c = neonColor(o.color);
+          ctx.save();
+          ctx.translate(o.x, o.y);
+          ctx.rotate(o.rot);
+          ctx.shadowColor = c.glow;
+          ctx.shadowBlur = 12;
+          ctx.globalAlpha = 1;
+          ctx.lineWidth = 4;
+          ctx.strokeStyle = c.core;
+          ctx.fillStyle = "rgba(0,0,0,0.0)";
+
+          if (o.kind === "circle") {
+            ctx.beginPath();
+            ctx.arc(0, 0, o.r, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.globalAlpha = 0.22;
+            ctx.fillStyle = c.core;
+            ctx.beginPath();
+            ctx.arc(0, 0, o.r * 0.86, 0, Math.PI * 2);
+            ctx.fill();
+          } else {
+            const w = o.w, h = o.h;
+            ctx.strokeRect(-w * 0.5, -h * 0.5, w, h);
+            ctx.globalAlpha = 0.18;
+            ctx.fillStyle = c.core;
+            ctx.fillRect(-w * 0.44, -h * 0.44, w * 0.88, h * 0.88);
+          }
+          ctx.restore();
+        }
+
+        function drawParticles() {
+          if (particles.length === 0) return;
+          ctx.save();
+          ctx.globalCompositeOperation = "lighter";
+          for (let i = 0; i < particles.length; i++) {
+            const p = particles[i];
+            const a = Math.max(0, p.life / p.maxLife);
+            const col = a > 0.5 ? p.c0 : p.c1;
+            ctx.globalAlpha = 0.85 * a;
+            ctx.fillStyle = col;
+            ctx.shadowColor = col;
+            ctx.shadowBlur = 10;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size * (0.7 + 0.5 * (1 - a)), 0, Math.PI * 2);
+            ctx.fill();
+          }
+          ctx.restore();
+          ctx.globalCompositeOperation = "source-over";
+        }
+
+        function drawSickText() {
+          if (!state.sickText || state.sickTimer <= 0) return;
+          const a = Math.min(1, state.sickTimer / 420);
+          ctx.save();
+          ctx.globalAlpha = 0.9 * a;
+          ctx.font = "900 64px system-ui, -apple-system, Segoe UI, Roboto";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.shadowColor = "rgba(255,52,210,0.7)";
+          ctx.shadowBlur = 18;
+          ctx.fillStyle = "#ff34d2";
+          ctx.fillText(state.sickText, LOGICAL_W * 0.5, LOGICAL_H * 0.22);
+          ctx.restore();
+        }
+
+        // ========= Update loop =========
+        function update(nowMs) {
+          const dtMs = Math.min(34, Math.max(0, nowMs - state.lastMs));
+          state.lastMs = nowMs;
+          state.t = nowMs * 0.001;
+
+          if (state.mode === "playing") {
+            state.elapsedMs = nowMs - state.startMs;
+
+            // score: time survived + bonuses
+            const timePoints = Math.floor(state.elapsedMs / 10); // 100 pts/sec
+            state.score = timePoints + state.bonus;
+
+            // streak decay if you stop getting near-misses
+            if (state.streak > 0 && state.lastNearMs > 0 && (nowMs - state.lastNearMs) > 2500) {
+              state.streak = 0;
+            }
+
+            // spawn scheduler
+            const d = difficultyAt(state.elapsedMs);
+            if (spawnQueue.length === 0 && nowMs >= spawnAt) {
+              schedulePattern(nowMs);
+              spawnAt = nowMs + d.interval;
+            }
+            while (spawnQueue.length && spawnQueue[0] <= 0) {
+              spawnQueue.shift();
+              spawnOne(nowMs);
+            }
+            for (let i = 0; i < spawnQueue.length; i++) spawnQueue[i] -= dtMs;
+
+            // update obstacles
+            const collPad = 2;
+            const collisionSlack = -6; // slightly forgiving hitbox
+            const win = obstacleThreatWindowY();
+
+            for (let i = obstacles.length - 1; i >= 0; i--) {
+              const o = obstacles[i];
+              o.y += (o.vy * dtMs) / 1000;
+              o.rot += o.spin * (dtMs / 1000);
+
+              // mark threatened if it enters player's zone while in player's lane
+              if (!o.threatened && o.lane === player.lane && o.y > win.start) {
+                o.threatened = true;
+              }
+
+              // collision (approx circle)
+              const ox = o.x;
+              const oy = o.y;
+              const pr = player.r;
+              const or = obstacleRadius(o) - collPad;
+              const dx = ox - player.x;
+              const dy = oy - player.y;
+              const dist2 = dx * dx + dy * dy;
+              const hit = dist2 <= (pr + or + collisionSlack) * (pr + or + collisionSlack);
+              if (hit) {
+                endGame(nowMs);
+                break;
+              }
+
+              // near miss award: late dodge only
+              if (!o.nearAwarded && o.nearEligible && o.y > (player.y + obstacleRadius(o))) {
+                o.nearAwarded = true;
+                state.lastNearMs = nowMs;
+                state.streak += 1;
+                const streakMult = 1 + Math.min(1.2, state.streak * 0.10);
+                const add = Math.floor(220 * streakMult);
+                state.bonus += add;
+                state.sickText = "SICK";
+                state.sickTimer = 520;
+                blip(990, 70, "square", 0.11);
+                spawnParticles(o.x, player.y - 40, 18, 520, 520, "rgba(57,246,255,0.95)", "rgba(255,52,210,0.9)");
+              }
+
+              // cleanup
+              if (o.y > LOGICAL_H + 180) obstacles.splice(i, 1);
+            }
+
+            // update particles
+            for (let i = particles.length - 1; i >= 0; i--) {
+              const p = particles[i];
+              p.life -= dtMs;
+              p.vx *= 0.985;
+              p.vy = p.vy * 0.985 + 30 * (dtMs / 1000);
+              p.x += (p.vx * dtMs) / 1000;
+              p.y += (p.vy * dtMs) / 1000;
+              if (p.life <= 0) particles.splice(i, 1);
+            }
+
+            // sick text timer
+            if (state.sickTimer > 0) state.sickTimer -= dtMs;
+          } else {
+            // idle background drift
+            for (let i = particles.length - 1; i >= 0; i--) {
+              const p = particles[i];
+              p.life -= dtMs;
+              p.vx *= 0.99;
+              p.vy *= 0.99;
+              p.x += (p.vx * dtMs) / 1000;
+              p.y += (p.vy * dtMs) / 1000;
+              if (p.life <= 0) particles.splice(i, 1);
+            }
+            if (state.sickTimer > 0) state.sickTimer -= dtMs;
+          }
+
+          // HUD
+          hudScore.textContent = String(Math.floor(state.score));
+          hudStreak.textContent = String(state.streak);
+        }
+
+        // ========= Draw loop =========
+        function draw(nowMs) {
+          drawBackground(nowMs);
+          drawLanes(nowMs);
+
+          // obstacles
+          for (let i = 0; i < obstacles.length; i++) drawObstacle(obstacles[i]);
+
+          // player
+          drawPlayer();
+
+          // particles & text
+          drawParticles();
+          drawSickText();
+
+          // subtle CRT noise flicker overlay
+          ctx.save();
+          ctx.globalAlpha = 0.05 * state.flicker;
+          ctx.fillStyle = "rgba(255,255,255,0.6)";
+          const n = 22;
+          for (let i = 0; i < n; i++) {
+            const x = rng.range(0, LOGICAL_W);
+            const y = rng.range(0, LOGICAL_H);
+            ctx.fillRect(x, y, rng.range(20, 80), 1);
+          }
+          ctx.restore();
+        }
+
+        function frame(nowMs) {
+          update(nowMs);
+          draw(nowMs);
+          requestAnimationFrame(frame);
+        }
+
+        // ========= Boot =========
+        function boot() {
+          state.lastMs = performance.now();
+          // ambient start particles
+          spawnParticles(LOGICAL_W * 0.5, LOGICAL_H * 0.35, 18, 260, 1200, "rgba(57,246,255,0.35)", "rgba(255,52,210,0.28)");
+          overlayStart.classList.add("show");
+          overlayOver.classList.remove("show");
+          requestAnimationFrame(frame);
+        }
+
+        boot();
+      })();
     </script>
   </body>
 </html>

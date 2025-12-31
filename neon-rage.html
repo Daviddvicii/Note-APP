@@ -1,0 +1,117 @@
+<!--
+NEON RAGE DODGE
+===============
+
+DEPLOYMENT TO GITHUB PAGES:
+1. Push this file (neon-rage.html) and neon-rage.js to your GitHub repository.
+2. Go to Repository Settings > Pages.
+3. Select "main" (or "master") branch as source.
+4. The game will be available at https://<username>.github.io/<repo-name>/neon-rage.html
+
+GAMEPLAY:
+- Tap/Click/Space to switch lanes.
+- Avoid falling obstacles.
+- Near-misses give bonuses.
+- Survive for high score.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
+    <title>Neon Rage Dodge</title>
+    <style>
+        :root {
+            --bg-color: #050011;
+            --neon-cyan: #0ff;
+            --neon-magenta: #f0f;
+            --neon-yellow: #ff0;
+        }
+        
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: white;
+            font-family: 'Courier New', Courier, monospace;
+            overflow: hidden;
+            touch-action: none; /* Prevent pull-to-refresh on mobile */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        #game-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            max-width: 100vh; /* Aspect ratio constraint optional, but good for gameplay focus */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        canvas {
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+            image-rendering: pixelated; /* If we want retro feel, though we are using vector drawing */
+        }
+
+        /* Scanline overlay */
+        .scanlines {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                to bottom,
+                rgba(255,255,255,0),
+                rgba(255,255,255,0) 50%,
+                rgba(0,0,0,0.1) 50%,
+                rgba(0,0,0,0.1)
+            );
+            background-size: 100% 4px;
+            pointer-events: none;
+            z-index: 10;
+        }
+        
+        /* CRT Flicker */
+        @keyframes flicker {
+            0% { opacity: 0.97; }
+            5% { opacity: 0.95; }
+            10% { opacity: 0.9; }
+            15% { opacity: 0.95; }
+            20% { opacity: 0.99; }
+            50% { opacity: 0.95; }
+            55% { opacity: 0.9; }
+            60% { opacity: 0.99; }
+            100% { opacity: 0.97; }
+        }
+        
+        .crt-flicker {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(18, 16, 16, 0.05);
+            animation: flicker 0.15s infinite;
+            pointer-events: none;
+            z-index: 11;
+        }
+
+        /* UI Overlay handled in Canvas, but we can add DOM elements if strictly needed. 
+           Canvas is preferred for performance in game loop. */
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <canvas id="gameCanvas"></canvas>
+        <div class="scanlines"></div>
+        <div class="crt-flicker"></div>
+    </div>
+    <script src="neon-rage.js"></script>
+</body>
+</html>

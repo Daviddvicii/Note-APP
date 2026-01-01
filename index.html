@@ -143,6 +143,9 @@
         width: 100%;
         max-width: 420px;
         z-index: 12;
+
+        /* ✅ FIX (safety): make children stretch full width */
+        align-items: stretch;
       }
 
       .retro-btn {
@@ -151,6 +154,10 @@
         align-items: center;
         justify-content: space-between;
         gap: 12px;
+
+        /* ✅ FIX (main): force equal width on mobile */
+        width: 100%;
+        box-sizing: border-box;
 
         padding: 14px 16px 14px 38px;
         border: 1px solid var(--dim);
@@ -323,18 +330,19 @@
           <span class="best-badge">BEST <b data-best-for="beatdrop">—</b></span>
         </a>
 
-        <!-- ✅ NEW: Neon Rage Dodge -->
+        <!-- Neon Rage Dodge -->
         <a class="retro-btn" href="./neon-dodge.html" data-id="neon-dodge" data-best-key="neon-rage-dodge-best">
           <span class="label"><span>⚡ Neon Rage Dodge</span></span>
           <span class="best-badge">BEST <b data-best-for="neon-dodge">—</b></span>
         </a>
-        
+
+        <!-- Neon Arena (separate game) -->
+        <a class="retro-btn" href="./neon-arena.html" data-id="arena" data-best-key="arena-best">
+          <span class="label"><span>⚔️ Neon Arena</span></span>
+          <span class="best-badge">BEST <b data-best-for="arena">—</b></span>
+        </a>
       </nav>
-<!-- ✅ NEW: Neon Arena -->
-<a class="retro-btn" href="./neon-arena.html" data-id="arena" data-best-key="arena-best">
-  <span class="label"><span>⚔️ Neon Arena</span></span>
-  <span class="best-badge">BEST <b data-best-for="arena">—</b></span>
-</a>
+
       <p class="menu-hint">
         BEST is read from localStorage. If it shows “—”, it means your game saved under a different key.
         This hub will try common key patterns AND scan localStorage for related keys to auto-detect.
@@ -597,4 +605,3 @@
     </script>
   </body>
 </html>
-```0

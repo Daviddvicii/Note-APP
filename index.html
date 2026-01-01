@@ -1,1288 +1,228 @@
-<!--
-Neon Rage Dodge (GitHub Pages README)
-
-Deploy on GitHub Pages (no build step):
-- Commit this file as `index.html` in your repo root.
-- GitHub repo → Settings → Pages → Build and deployment:
-  - Source: Deploy from a branch
-  - Branch: `main` (or your default) / folder: `/ (root)`
-- Wait for Pages to publish, then open the provided site URL.
-
-Controls:
-- Tap / click / Space to toggle lanes (LEFT ↔ RIGHT).
-- Sound button (top-right). Audio starts only after first user gesture (autoplay-safe).
-
-Best score persistence:
-- localStorage key: "neon-rage-dodge-best"
-
-Optional Daily Challenge:
-- Enable via button on start screen or `?daily=1` in URL.
-- Daily seed = YYYYMMDD (shown on overlay when enabled).
--->
 <!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, viewport-fit=cover" />
-    <meta name="theme-color" content="#0a0720" />
-    <title>Neon Rage Dodge</title>
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, user-scalable=no"
+    />
+    <meta name="theme-color" content="#0b1426" />
+    <title>Retro Arcade</title>
+
     <style>
       :root {
-        --bg0: #070416;
-        --bg1: #0a0a2a;
-        --bg2: #070b2b;
-        --cyan: #38eaff;
-        --magenta: #ff2bd6;
-        --purple: #7c3cff;
-        --white: #eaffff;
-        --ink: rgba(0, 0, 0, 0.55);
-        --panel: rgba(8, 4, 24, 0.55);
-        --stroke: rgba(56, 234, 255, 0.32);
+        --green: #00ff66;
+        --green2: #00ffaa;
+        --dim: rgba(0, 255, 102, 0.45);
+        --panel: rgba(0, 10, 6, 0.35);
       }
 
-      * { box-sizing: border-box; }
       html, body {
         height: 100%;
         margin: 0;
-        background: radial-gradient(1200px 900px at 50% -10%, #1826a8 0%, var(--bg0) 55%, #02010a 100%);
-        color: var(--white);
-        font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica, Arial;
-        overscroll-behavior: none;
-        touch-action: manipulation;
+        background: #000;
+        color: var(--green);
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
       }
 
-      body::before {
-        content: "";
-        position: fixed;
-        inset: 0;
-        pointer-events: none;
-        background: linear-gradient(rgba(255, 255, 255, 0.035), rgba(0, 0, 0, 0.03));
-        background-size: 100% 4px;
-        mix-blend-mode: overlay;
-        opacity: 0.35;
-        z-index: 20;
-      }
-
-      body::after {
-        content: "";
-        position: fixed;
-        inset: -24px;
-        pointer-events: none;
-        background:
-          radial-gradient(circle at 50% 30%, rgba(56, 234, 255, 0.09), transparent 55%),
-          radial-gradient(circle at 50% 70%, rgba(255, 43, 214, 0.06), transparent 58%),
-          radial-gradient(circle at 50% 65%, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.65) 72%);
-        opacity: 0.95;
-        z-index: 21;
-        animation: crtFlicker 5.6s infinite;
-      }
-
-      @keyframes crtFlicker {
-        0%, 100% { filter: brightness(1) contrast(1); }
-        18% { filter: brightness(0.985) contrast(1.01); }
-        19% { filter: brightness(1.04) contrast(1.06); }
-        20% { filter: brightness(0.99) contrast(1.02); }
-        62% { filter: brightness(1.02) contrast(1.04); }
-        63% { filter: brightness(0.975) contrast(1.02); }
-        64% { filter: brightness(1.01) contrast(1.03); }
-      }
-
-      #app {
-        height: 100%;
-        width: 100%;
-        display: grid;
-        place-items: center;
-        padding: max(10px, env(safe-area-inset-top)) 10px max(10px, env(safe-area-inset-bottom));
-      }
-
-      #stage {
-        width: min(100vw, 520px);
-        height: min(100vh, 940px);
-        aspect-ratio: 9 / 16;
-        position: relative;
-        border-radius: 18px;
-        overflow: hidden;
-        border: 1px solid rgba(56, 234, 255, 0.22);
-        box-shadow:
-          0 18px 60px rgba(0, 0, 0, 0.55),
-          0 0 30px rgba(56, 234, 255, 0.12),
-          0 0 30px rgba(255, 43, 214, 0.09);
-        background: linear-gradient(180deg, rgba(4, 2, 14, 0.35), rgba(4, 2, 14, 0.75));
-      }
-
-      canvas {
-        width: 100%;
-        height: 100%;
-        display: block;
-        touch-action: none;
-        user-select: none;
-      }
-
-      #hud {
-        position: absolute;
-        top: 10px;
-        left: 10px;
-        right: 10px;
+      .menu {
+        min-height: 100%;
         display: flex;
+        flex-direction: column;
         align-items: center;
-        justify-content: space-between;
-        gap: 10px;
-        z-index: 5;
-        pointer-events: none;
-      }
-
-      .hud-left, .hud-right {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        min-width: 0;
-      }
-
-      .pill {
-        pointer-events: none;
-        display: inline-flex;
-        align-items: baseline;
-        gap: 8px;
-        padding: 9px 11px;
-        border-radius: 999px;
-        border: 1px solid rgba(56, 234, 255, 0.22);
-        background: rgba(5, 3, 18, 0.48);
-        backdrop-filter: blur(6px);
-        box-shadow: 0 0 12px rgba(56, 234, 255, 0.12);
-        white-space: nowrap;
-        font-variant-numeric: tabular-nums;
-      }
-
-      .pill b {
-        letter-spacing: 0.04em;
-        color: var(--white);
-        text-shadow: 0 0 12px rgba(56, 234, 255, 0.22);
-      }
-
-      .pill small {
-        opacity: 0.75;
-        letter-spacing: 0.08em;
-      }
-
-      #soundBtn {
-        pointer-events: auto;
-        appearance: none;
-        border: 1px solid rgba(255, 43, 214, 0.28);
-        background: rgba(10, 5, 28, 0.6);
-        color: var(--white);
-        border-radius: 999px;
-        padding: 9px 11px;
-        font: inherit;
-        font-weight: 700;
-        letter-spacing: 0.02em;
-        cursor: pointer;
-        box-shadow: 0 0 14px rgba(255, 43, 214, 0.12);
-        transition: transform 0.11s ease, box-shadow 0.11s ease, border-color 0.11s ease;
-      }
-
-      #soundBtn:active {
-        transform: translateY(1px);
-      }
-
-      #overlay {
-        position: absolute;
-        inset: 0;
-        z-index: 10;
-        display: grid;
-        place-items: center;
-        padding: 18px;
-        background: radial-gradient(900px 900px at 50% 30%, rgba(56, 234, 255, 0.11), transparent 60%),
-          radial-gradient(900px 900px at 50% 70%, rgba(255, 43, 214, 0.10), transparent 60%),
-          rgba(0, 0, 0, 0.50);
-        backdrop-filter: blur(7px);
-      }
-
-      .card {
-        width: min(460px, 92%);
-        border-radius: 16px;
-        border: 1px solid rgba(56, 234, 255, 0.22);
-        background: rgba(8, 4, 24, 0.58);
-        box-shadow: 0 0 22px rgba(56, 234, 255, 0.10), 0 0 22px rgba(255, 43, 214, 0.09);
-        padding: 18px 16px 16px;
+        justify-content: flex-start;
         text-align: center;
+        padding: 80px 18px 30px;
       }
 
-      .title {
+      h1 {
         margin: 0 0 6px;
         font-size: 28px;
-        letter-spacing: 0.03em;
-        text-shadow: 0 0 18px rgba(56, 234, 255, 0.25), 0 0 18px rgba(255, 43, 214, 0.18);
+        text-shadow: 0 0 12px var(--green);
       }
 
-      .subtitle {
-        margin: 0 0 14px;
-        opacity: 0.86;
-        font-weight: 650;
-      }
-
-      .hint {
-        margin: 10px 0 0;
-        opacity: 0.8;
-        font-size: 13px;
-        line-height: 1.35;
-      }
-
-      .stats {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 10px;
-        margin: 12px 0 14px;
-      }
-
-      .stat {
-        border-radius: 12px;
-        border: 1px solid rgba(56, 234, 255, 0.18);
-        background: rgba(0, 0, 0, 0.18);
-        padding: 10px 10px;
-        text-align: left;
-      }
-
-      .stat small {
-        display: block;
-        letter-spacing: 0.10em;
-        opacity: 0.72;
-      }
-
-      .stat b {
-        display: block;
-        font-size: 20px;
-        margin-top: 4px;
-        font-variant-numeric: tabular-nums;
-      }
-
-      .row {
-        display: flex;
-        gap: 10px;
-        justify-content: center;
-        flex-wrap: wrap;
-      }
-
-      .btn {
-        appearance: none;
-        border: 1px solid rgba(56, 234, 255, 0.28);
-        background: linear-gradient(180deg, rgba(56, 234, 255, 0.22), rgba(56, 234, 255, 0.08));
-        color: var(--white);
-        border-radius: 12px;
-        padding: 12px 14px;
-        font: inherit;
-        font-weight: 800;
-        letter-spacing: 0.04em;
-        cursor: pointer;
-        min-width: 150px;
-        box-shadow: 0 0 16px rgba(56, 234, 255, 0.12);
-        transition: transform 0.11s ease, box-shadow 0.11s ease, border-color 0.11s ease;
-      }
-
-      .btn.secondary {
-        border-color: rgba(255, 43, 214, 0.28);
-        background: linear-gradient(180deg, rgba(255, 43, 214, 0.18), rgba(255, 43, 214, 0.06));
-        box-shadow: 0 0 16px rgba(255, 43, 214, 0.10);
-        min-width: 120px;
-      }
-
-      .btn:active { transform: translateY(1px) scale(0.995); }
-
-      .tiny {
-        margin-top: 10px;
-        font-size: 12px;
+      .menu-subtitle {
+        margin-bottom: 18px;
         opacity: 0.75;
+        font-size: 14px;
       }
 
-      @media (max-width: 420px) {
-        #stage { width: min(100vw, 460px); border-radius: 16px; }
-        .title { font-size: 24px; }
-        .stat b { font-size: 18px; }
-        .pill { padding: 8px 10px; gap: 8px; }
-        #soundBtn { padding: 8px 10px; }
+      .menu-items {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        width: 100%;
+        max-width: 380px;
+      }
+
+      .retro-btn {
+        position: relative;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        padding: 14px 16px 14px 36px;
+        border: 1px solid var(--dim);
+        border-radius: 12px;
+        color: var(--green);
+        text-decoration: none;
+        font-size: 18px;
+        background: rgba(0, 0, 0, 0.25);
+        box-shadow: 0 0 8px rgba(0, 255, 102, 0.22);
+        transition: all 0.12s ease;
+      }
+
+      .retro-btn::before {
+        content: "▶";
+        position: absolute;
+        left: 12px;
+        opacity: 0;
+        transform: translateX(-6px);
+        transition: all 0.12s ease;
+      }
+
+      .retro-btn:hover,
+      .retro-btn.active {
+        transform: scale(1.03);
+        color: var(--green2);
+        border-color: var(--green2);
+        box-shadow: 0 0 16px rgba(0, 255, 170, 0.55);
+      }
+
+      .retro-btn:hover::before,
+      .retro-btn.active::before {
+        opacity: 1;
+        transform: translateX(0);
+      }
+
+      .label span {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .best-badge {
+        font-size: 12px;
+        padding: 6px 10px;
+        border-radius: 999px;
+        border: 1px solid rgba(0, 255, 102, 0.35);
+        background: rgba(0, 255, 102, 0.06);
+        color: rgba(0, 255, 170, 0.9);
+        letter-spacing: 0.12em;
+        white-space: nowrap;
+      }
+
+      .best-badge b {
+        color: #eafff5;
+        letter-spacing: 0.06em;
+      }
+
+      .menu-hint {
+        margin-top: 18px;
+        font-size: 12px;
+        opacity: 0.65;
+        max-width: 560px;
       }
     </style>
   </head>
+
   <body>
-    <div id="app">
-      <div id="stage" aria-label="Neon Rage Dodge game">
-        <div id="hud">
-          <div class="hud-left">
-            <div class="pill" aria-label="Score">
-              <small>SCORE</small> <b id="scoreText">0</b>
-            </div>
-            <div class="pill" aria-label="Best score">
-              <small>BEST</small> <b id="bestText">0</b>
-            </div>
-            <div class="pill" aria-label="Streak">
-              <small>STREAK</small> <b id="streakText">0</b>
-            </div>
-          </div>
-          <div class="hud-right">
-            <button id="soundBtn" type="button" aria-label="Toggle sound">SOUND ON</button>
-          </div>
-        </div>
+    <div class="menu" role="navigation">
+      <h1>🎮 Retro Game Hub</h1>
+      <div class="menu-subtitle">Tap to play · BEST auto-saved</div>
 
-        <canvas id="c" width="720" height="1280" aria-label="Game canvas"></canvas>
+      <nav class="menu-items" id="menu">
+        <a class="retro-btn" href="./flappy.html" data-id="flappy" data-best-key="flappy-best">
+          <span class="label"><span>🐤 Flappy Bird</span></span>
+          <span class="best-badge">BEST <b data-best-for="flappy">—</b></span>
+        </a>
 
-        <div id="overlay" role="dialog" aria-modal="true">
-          <div class="card" id="overlayCard">
-            <h1 class="title" id="overlayTitle">NEON RAGE DODGE</h1>
-            <p class="subtitle" id="overlaySubtitle">Tap to Play</p>
-            <div class="stats" id="overlayStats" hidden>
-              <div class="stat">
-                <small>FINAL</small>
-                <b id="finalText">0</b>
-              </div>
-              <div class="stat">
-                <small>BEST</small>
-                <b id="finalBestText">0</b>
-              </div>
-            </div>
-            <div class="row">
-              <button class="btn" id="playBtn" type="button">PLAY</button>
-              <button class="btn secondary" id="dailyBtn" type="button">DAILY: OFF</button>
-            </div>
-            <p class="hint" id="overlayHint">Only control: tap / click / Space to switch lanes. Survive. Farm near-misses for “SICK”.</p>
-            <div class="tiny" id="seedLine" hidden>Daily Seed: <span id="seedText">YYYYMMDD</span></div>
-            <div class="tiny" id="tauntLine" hidden>—</div>
-          </div>
-        </div>
-      </div>
+        <a class="retro-btn" href="./snake.html" data-id="snake" data-best-key="snake-best">
+          <span class="label"><span>🐍 Snake</span></span>
+          <span class="best-badge">BEST <b data-best-for="snake">—</b></span>
+        </a>
+
+        <a class="retro-btn" href="./pong.html" data-id="pong" data-best-key="pong-best">
+          <span class="label"><span>🏓 Pong</span></span>
+          <span class="best-badge">BEST <b data-best-for="pong">—</b></span>
+        </a>
+
+        <a class="retro-btn" href="./tetris.html" data-id="tetris" data-best-key="tetris-best">
+          <span class="label"><span>🧊 Tetris</span></span>
+          <span class="best-badge">BEST <b data-best-for="tetris">—</b></span>
+        </a>
+
+        <!-- Neon Stack -->
+        <a class="retro-btn" href="./stack.html" data-id="stack" data-best-key="neon-stack-best">
+          <span class="label"><span>🏗 Neon Stack</span></span>
+          <span class="best-badge">BEST <b data-best-for="stack">—</b></span>
+        </a>
+
+        <!-- Neon Dodge -->
+        <a class="retro-btn" href="./neon-dodge.html" data-id="neon-dodge" data-best-key="neon-rage-dodge-best">
+          <span class="label"><span>⚡ Neon Dodge</span></span>
+          <span class="best-badge">BEST <b data-best-for="neon-dodge">—</b></span>
+        </a>
+
+        <!-- Beat Drop -->
+        <a class="retro-btn" href="./beatdrop.html" data-id="beatdrop" data-best-key="beatdrop-best">
+          <span class="label"><span>🎵 Neon Beat Drop</span></span>
+          <span class="best-badge">BEST <b data-best-for="beatdrop">—</b></span>
+        </a>
+      </nav>
+
+      <p class="menu-hint">
+        BEST will appear after you play each game once.
+      </p>
     </div>
 
     <script>
-      (() => {
-        "use strict";
+      function parseBest(raw) {
+        if (raw == null) return null;
+        const n = Number(raw);
+        if (!isNaN(n)) return Math.floor(n);
+        try {
+          const o = JSON.parse(raw);
+          if (typeof o.best === "number") return Math.floor(o.best);
+          if (typeof o.score === "number") return Math.floor(o.score);
+        } catch {}
+        return null;
+      }
 
-        // ===== Config =====
-        const LOG_W = 720;
-        const LOG_H = 1280;
-        const BEST_KEY = "neon-rage-dodge-best";
-        const DAILY_KEY = "neon-rage-dodge-daily-enabled";
-        const SOUND_KEY = "neon-rage-dodge-sound-enabled";
-
-        // Two lanes near bottom-center (tight enough to allow near-miss cross-lane).
-        const LANE_X = [Math.round(LOG_W * 0.44), Math.round(LOG_W * 0.56)];
-        const PLAYER_Y = Math.round(LOG_H * 0.82);
-
-        // Near miss
-        const NEAR_MISS_RADIUS = 90;     // distance threshold (px)
-        const NEAR_MISS_POINTS = 160;    // base points
-        const NEAR_MISS_TEXT_MS = 520;
-        const STREAK_DECAY_MS = 2300;
-
-        // Perf
-        const MAX_PARTICLES = 220;
-        // Keep glow rendering snappy on mobile by capping active obstacles.
-        const MAX_OBSTACLES = 42;
-
-        // ===== DOM =====
-        const canvas = document.getElementById("c");
-        const ctx = canvas.getContext("2d", { alpha: false, desynchronized: true });
-
-        const scoreText = document.getElementById("scoreText");
-        const bestText = document.getElementById("bestText");
-        const streakText = document.getElementById("streakText");
-        const soundBtn = document.getElementById("soundBtn");
-
-        const overlay = document.getElementById("overlay");
-        const overlayTitle = document.getElementById("overlayTitle");
-        const overlaySubtitle = document.getElementById("overlaySubtitle");
-        const overlayStats = document.getElementById("overlayStats");
-        const finalText = document.getElementById("finalText");
-        const finalBestText = document.getElementById("finalBestText");
-        const overlayHint = document.getElementById("overlayHint");
-        const tauntLine = document.getElementById("tauntLine");
-        const playBtn = document.getElementById("playBtn");
-        const dailyBtn = document.getElementById("dailyBtn");
-        const seedLine = document.getElementById("seedLine");
-        const seedText = document.getElementById("seedText");
-
-        // ===== Utilities =====
-        const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
-        const lerp = (a, b, t) => a + (b - a) * t;
-        const nowMs = () => performance.now();
-        const fmtInt = (n) => String(Math.max(0, Math.floor(n)));
-
-        function yyyyMMdd(d = new Date()) {
-          const y = d.getFullYear();
-          const m = String(d.getMonth() + 1).padStart(2, "0");
-          const day = String(d.getDate()).padStart(2, "0");
-          return `${y}${m}${day}`;
-        }
-
-        // Deterministic PRNG (Mulberry32)
-        function mulberry32(seed) {
-          let t = seed >>> 0;
-          return function rand() {
-            t += 0x6D2B79F5;
-            let x = Math.imul(t ^ (t >>> 15), 1 | t);
-            x ^= x + Math.imul(x ^ (x >>> 7), 61 | x);
-            return ((x ^ (x >>> 14)) >>> 0) / 4294967296;
-          };
-        }
-
-        function seedFromYYYYMMDD(s) {
-          // 8-digit to uint32
-          let n = 0;
-          for (let i = 0; i < s.length; i++) n = (n * 10 + (s.charCodeAt(i) - 48)) >>> 0;
-          // mix a bit
-          n ^= 0x9E3779B9;
-          n = Math.imul(n, 0x85EBCA6B) >>> 0;
-          return n >>> 0;
-        }
-
-        // ===== Audio (autoplay-safe) =====
-        let audioReady = false;
-        let audioCtx = null;
-        let master = null;
-        let sfxGain = null;
-        let soundOn = true;
-
-        function loadSoundPref() {
-          const raw = localStorage.getItem(SOUND_KEY);
-          if (raw === "0") soundOn = false;
-          if (raw === "1") soundOn = true;
-        }
-
-        function saveSoundPref() {
-          localStorage.setItem(SOUND_KEY, soundOn ? "1" : "0");
-        }
-
-        function ensureAudio() {
-          if (audioReady) return;
-          audioReady = true;
-          const AC = window.AudioContext || window.webkitAudioContext;
-          audioCtx = new AC();
-          master = audioCtx.createGain();
-          master.gain.value = soundOn ? 0.6 : 0.0001;
-          master.connect(audioCtx.destination);
-          sfxGain = audioCtx.createGain();
-          sfxGain.gain.value = 0.24;
-          sfxGain.connect(master);
-        }
-
-        function applySoundUI() {
-          soundBtn.textContent = soundOn ? "SOUND ON" : "SOUND OFF";
-        }
-
-        function beep({ freq = 440, dur = 0.08, type = "square", gain = 0.12, slideTo = null }) {
-          if (!audioCtx || !sfxGain || !soundOn) return;
-          const t0 = audioCtx.currentTime;
-          const o = audioCtx.createOscillator();
-          const g = audioCtx.createGain();
-          o.type = type;
-          o.frequency.setValueAtTime(freq, t0);
-          if (slideTo != null) o.frequency.exponentialRampToValueAtTime(slideTo, t0 + dur);
-          g.gain.setValueAtTime(0.0001, t0);
-          g.gain.exponentialRampToValueAtTime(gain, t0 + 0.012);
-          g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
-          o.connect(g);
-          g.connect(sfxGain);
-          o.start(t0);
-          o.stop(t0 + dur + 0.02);
-        }
-
-        // ===== Game state =====
-        let state = "start"; // "start" | "playing" | "over"
-        let lastT = nowMs();
-        let tGame = 0;          // seconds since start (playing)
-        let score = 0;
-        let best = 0;
-        let streak = 0;
-        let lastNearMissAt = -1e9;
-        let shake = 0;
-        let flash = 0;
-        let flicker = 0;
-
-        let lane = 0;           // 0 left, 1 right
-        let laneAnim = 0;       // smoothed 0..1
-
-        /** @type {{x:number,y:number,vx:number,vy:number,life:number,max:number,size:number,color:string,glow:boolean}[]} */
-        let particles = [];
-
-        /** @type {{id:number,x:number,y:number,vx:number,vy:number,shape:"rect"|"circle",w:number,h:number,r:number,rot:number,spin:number,color:string,glow:string,nearChecked:boolean,alive:boolean,spawnT:number}[]} */
-        let obstacles = [];
-        let nextId = 1;
-
-        /** @type {{text:string,x:number,y:number,vy:number,life:number,max:number,color:string,scale:number}[]} */
-        let popups = [];
-
-        // Spawning / difficulty
-        let spawnAcc = 0;
-        let patternQueue = []; // [{in:number, type:"single"|"double"|"fakeout"}]
-        let laneArrivalGuard = [0, 0]; // predicted "arrival time" in seconds; used to keep fairness
-
-        // Daily mode
-        let dailyEnabled = false;
-        let dailySeedStr = yyyyMMdd();
-        let rng = Math.random;
-
-        const TAUNTS = [
-          "Skill issue.",
-          "One more.",
-          "Close…",
-          "Not bad.",
-          "You blinked.",
-          "That was tragic.",
-          "Again. Faster.",
-          "So close. So neon.",
-          "Who invited that obstacle?",
-          "Respectable. Now do better."
+      function findBest(id, primary) {
+        const keys = [
+          primary,
+          `${id}-best`,
+          `${id}_best`,
+          `${id}-highscore`,
+          `neon-rage-dodge-best`,
+          `neon-dodge-best`
         ];
 
-        // ===== Best score =====
-        function loadBest() {
-          const raw = localStorage.getItem(BEST_KEY);
-          const n = Number(raw);
-          best = Number.isFinite(n) ? Math.max(0, Math.floor(n)) : 0;
-          bestText.textContent = fmtInt(best);
+        for (const k of keys) {
+          const v = parseBest(localStorage.getItem(k));
+          if (v != null) return v;
         }
 
-        function saveBestIfNeeded() {
-          if (score > best) {
-            best = score;
-            localStorage.setItem(BEST_KEY, String(best));
-            bestText.textContent = fmtInt(best);
+        for (let i = 0; i < localStorage.length; i++) {
+          const k = localStorage.key(i);
+          if (k && k.toLowerCase().includes(id)) {
+            const v = parseBest(localStorage.getItem(k));
+            if (v != null) return v;
           }
         }
-
-        // ===== Resizing / crisp canvas =====
-        function resizeCanvas() {
-          const dpr = clamp(window.devicePixelRatio || 1, 1, 2);
-          canvas.width = Math.floor(LOG_W * dpr);
-          canvas.height = Math.floor(LOG_H * dpr);
-          ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-          ctx.imageSmoothingEnabled = true;
-        }
-
-        // ===== FX helpers =====
-        function addParticlesBurst(x, y, count, baseColor, speed, lifeMs, glow = false) {
-          for (let i = 0; i < count; i++) {
-            if (particles.length >= MAX_PARTICLES) break;
-            const a = rng() * Math.PI * 2;
-            const sp = (0.25 + rng() * 0.75) * speed;
-            const p = {
-              x,
-              y,
-              vx: Math.cos(a) * sp,
-              vy: Math.sin(a) * sp,
-              life: lifeMs,
-              max: lifeMs,
-              size: 1.8 + rng() * 3.0,
-              color: baseColor,
-              glow
-            };
-            particles.push(p);
-          }
-        }
-
-        function addPopup(text, x, y, color) {
-          popups.push({
-            text,
-            x,
-            y,
-            vy: -110,
-            life: NEAR_MISS_TEXT_MS,
-            max: NEAR_MISS_TEXT_MS,
-            color,
-            scale: 1.0
-          });
-        }
-
-        // ===== Spawning =====
-        function difficulty01() {
-          // Fair first ~12 seconds, then ramps.
-          // Smoothstep-ish curve: starts slow, then accelerates.
-          const t = clamp(tGame / 58, 0, 1);
-          return t * t * (3 - 2 * t);
-        }
-
-        function speedPxPerSec() {
-          const d = difficulty01();
-          // start comfortable, end spicy
-          return lerp(640, 1480, d);
-        }
-
-        function spawnIntervalSec() {
-          const d = difficulty01();
-          // start sparse, end dense (but still dodgeable)
-          return lerp(0.82, 0.34, d);
-        }
-
-        function patternChances() {
-          // Single early; more rhythm later.
-          const d = difficulty01();
-          const single = lerp(0.78, 0.46, d);
-          const dbl = lerp(0.17, 0.34, d);
-          const fake = lerp(0.05, 0.20, d);
-          return { single, dbl, fake };
-        }
-
-        function pickLaneAvoidingImpossible(spawnY, vy) {
-          // Keep arrivals on both lanes from stacking too tightly.
-          const arrival = tGame + (PLAYER_Y - spawnY) / Math.max(60, vy);
-          const minGap = lerp(0.42, 0.22, difficulty01());
-          const preferred = rng() < 0.5 ? 0 : 1;
-          const other = 1 - preferred;
-
-          const okPreferred = Math.abs(arrival - laneArrivalGuard[1 - preferred]) > minGap;
-          if (okPreferred) return preferred;
-
-          const okOther = Math.abs(arrival - laneArrivalGuard[1 - other]) > minGap;
-          return okOther ? other : preferred; // fallback (rare)
-        }
-
-        function spawnOne() {
-          if (obstacles.length >= MAX_OBSTACLES) return;
-
-          const vy = speedPxPerSec() * (0.92 + rng() * 0.18);
-          const spawnY = -110;
-          const laneIdx = pickLaneAvoidingImpossible(spawnY, vy);
-
-          // horizontal jitter keeps it from feeling robotic and enables near-misses.
-          const laneJitter = (rng() - 0.5) * lerp(92, 120, difficulty01());
-          const x = LANE_X[laneIdx] + laneJitter;
-
-          const shape = rng() < 0.55 ? "rect" : "circle";
-          const sizeK = 0.85 + rng() * 0.6;
-          const r = 22 * sizeK;
-          const w = 70 * sizeK;
-          const h = 44 * sizeK;
-
-          const neonPick = rng();
-          const color = neonPick < 0.5 ? "#38eaff" : (neonPick < 0.84 ? "#ff2bd6" : "#7c3cff");
-          const glow = color;
-
-          const vx = (rng() - 0.5) * lerp(18, 46, difficulty01());
-          const spin = (rng() - 0.5) * 2.2;
-
-          const o = {
-            id: nextId++,
-            x,
-            y: spawnY,
-            vx,
-            vy,
-            shape,
-            w,
-            h,
-            r,
-            rot: rng() * Math.PI * 2,
-            spin,
-            color,
-            glow,
-            nearChecked: false,
-            alive: true,
-            spawnT: tGame
-          };
-
-          obstacles.push(o);
-
-          const arrival = tGame + (PLAYER_Y - spawnY) / Math.max(60, vy);
-          laneArrivalGuard[laneIdx] = arrival;
-        }
-
-        function enqueuePattern() {
-          const { single, dbl, fake } = patternChances();
-          const r = rng();
-          const type = r < single ? "single" : (r < single + dbl ? "double" : "fakeout");
-          const base = spawnIntervalSec();
-
-          if (type === "single") {
-            patternQueue.push({ in: 0, type });
-            return base;
-          }
-
-          if (type === "double") {
-            patternQueue.push({ in: 0, type });
-            patternQueue.push({ in: 0.14, type: "single" });
-            return base * 1.06;
-          }
-
-          // fake-out: one beat gap then double
-          patternQueue.push({ in: 0, type: "single" });
-          patternQueue.push({ in: 0.26, type: "single" });
-          patternQueue.push({ in: 0.40, type: "single" });
-          return base * 1.18;
-        }
-
-        let nextPatternAt = 0.75;
-
-        // ===== Collision / scoring =====
-        function playerPos() {
-          const x = lerp(LANE_X[0], LANE_X[1], laneAnim);
-          return { x, y: PLAYER_Y };
-        }
-
-        function collidePlayer(o, px, py) {
-          // Player is a neon dot/ship: treat as circle
-          const pr = 18;
-          if (o.shape === "circle") {
-            const dx = o.x - px;
-            const dy = o.y - py;
-            const rr = pr + o.r * 0.86;
-            return (dx * dx + dy * dy) <= (rr * rr);
-          }
-          // rotated rect: approximate with AABB (fast + fair)
-          const hw = o.w * 0.52;
-          const hh = o.h * 0.56;
-          const dx = Math.abs(o.x - px);
-          const dy = Math.abs(o.y - py);
-          return dx < (hw + pr * 0.78) && dy < (hh + pr * 0.78);
-        }
-
-        function tryNearMiss(o, px, py) {
-          if (o.nearChecked) return;
-          // only check when passing player's y (closest approach)
-          if (o.y < py) return;
-          o.nearChecked = true;
-
-          const dx = o.x - px;
-          const dy = o.y - py;
-          const dist = Math.hypot(dx, dy);
-          // ensure it is close but not a collision (checked earlier)
-          if (dist <= NEAR_MISS_RADIUS) {
-            const streakBonus = 1 + Math.min(1.8, streak * 0.18);
-            const pts = Math.floor(NEAR_MISS_POINTS * streakBonus);
-            score += pts;
-            streak += 1;
-            lastNearMissAt = nowMs();
-            flash = 1;
-            addPopup("SICK", px, py - 64, "#38eaff");
-            addParticlesBurst(o.x, o.y, 10 + Math.min(10, streak * 2), "#38eaff", 280, 420, false);
-            beep({ freq: 840 + Math.min(320, streak * 28), dur: 0.06, type: "square", gain: 0.11, slideTo: 520 });
-          }
-        }
-
-        // ===== Game flow =====
-        function setOverlayVisible(v) {
-          overlay.style.display = v ? "grid" : "none";
-        }
-
-        function setOverlayModeStart() {
-          overlayTitle.textContent = "NEON RAGE DODGE";
-          overlaySubtitle.textContent = "Tap to Play";
-          overlayHint.textContent = "Only control: tap / click / Space to switch lanes. Survive. Farm near-misses for “SICK”.";
-          overlayStats.hidden = true;
-          tauntLine.hidden = true;
-          playBtn.textContent = "PLAY";
-        }
-
-        function setOverlayModeGameOver() {
-          overlayTitle.textContent = "GAME OVER";
-          overlaySubtitle.textContent = "Tap to instantly restart";
-          overlayStats.hidden = false;
-          tauntLine.hidden = false;
-          playBtn.textContent = "PLAY AGAIN";
-          finalText.textContent = fmtInt(score);
-          finalBestText.textContent = fmtInt(best);
-          const t = TAUNTS[Math.floor(rng() * TAUNTS.length)];
-          tauntLine.textContent = t;
-        }
-
-        function resetGame() {
-          tGame = 0;
-          score = 0;
-          streak = 0;
-          lastNearMissAt = -1e9;
-          shake = 0;
-          flash = 0;
-          flicker = 0;
-          lane = 0;
-          laneAnim = 0;
-          obstacles = [];
-          particles = [];
-          popups = [];
-          spawnAcc = 0;
-          patternQueue = [];
-          laneArrivalGuard = [0, 0];
-          nextPatternAt = 0.78;
-        }
-
-        function startGame() {
-          resetGame();
-          state = "playing";
-          setOverlayVisible(false);
-          // micro dopamine: start tick
-          beep({ freq: 660, dur: 0.055, type: "square", gain: 0.10, slideTo: 990 });
-        }
-
-        function gameOver() {
-          if (state !== "playing") return;
-          state = "over";
-          saveBestIfNeeded();
-          setOverlayModeGameOver();
-          setOverlayVisible(true);
-          // death fx
-          shake = 1;
-          flash = 1;
-          addParticlesBurst(playerPos().x, PLAYER_Y, 56, "#ff2bd6", 520, 760, false);
-          addParticlesBurst(playerPos().x, PLAYER_Y, 26, "#38eaff", 420, 620, false);
-          beep({ freq: 220, dur: 0.18, type: "sawtooth", gain: 0.12, slideTo: 90 });
-        }
-
-        // ===== Input =====
-        let inputLocked = false;
-        function doToggleOrStart() {
-          ensureAudio();
-          if (state === "start") {
-            startGame();
-            return;
-          }
-          if (state === "over") {
-            startGame();
-            return;
-          }
-          if (state !== "playing") return;
-          if (inputLocked) return;
-          inputLocked = true;
-          setTimeout(() => (inputLocked = false), 28);
-
-          lane = 1 - lane;
-          beep({ freq: lane ? 520 : 440, dur: 0.045, type: "square", gain: 0.08, slideTo: lane ? 820 : 700 });
-        }
-
-        function onPointerDown(e) {
-          e.preventDefault();
-          doToggleOrStart();
-        }
-
-        function onKeyDown(e) {
-          if (e.code === "Space") {
-            e.preventDefault();
-            doToggleOrStart();
-          }
-        }
-
-        canvas.addEventListener("pointerdown", onPointerDown, { passive: false });
-        overlay.addEventListener("pointerdown", onPointerDown, { passive: false });
-        window.addEventListener("keydown", onKeyDown, { passive: false });
-
-        soundBtn.addEventListener("click", (e) => {
-          e.stopPropagation();
-          ensureAudio();
-          soundOn = !soundOn;
-          if (master) master.gain.value = soundOn ? 0.6 : 0.0001;
-          saveSoundPref();
-          applySoundUI();
-          beep({ freq: soundOn ? 880 : 220, dur: 0.06, type: "square", gain: 0.10 });
-        });
-
-        playBtn.addEventListener("click", (e) => {
-          e.stopPropagation();
-          doToggleOrStart();
-        });
-
-        function readDailyPrefFromURLOrStorage() {
-          const url = new URL(window.location.href);
-          const dailyParam = url.searchParams.get("daily");
-          if (dailyParam === "1") return true;
-          const raw = localStorage.getItem(DAILY_KEY);
-          return raw === "1";
-        }
-
-        function setDailyEnabled(v) {
-          dailyEnabled = !!v;
-          localStorage.setItem(DAILY_KEY, dailyEnabled ? "1" : "0");
-          dailyBtn.textContent = dailyEnabled ? "DAILY: ON" : "DAILY: OFF";
-          seedLine.hidden = !dailyEnabled;
-          if (dailyEnabled) {
-            dailySeedStr = yyyyMMdd();
-            seedText.textContent = dailySeedStr;
-            rng = mulberry32(seedFromYYYYMMDD(dailySeedStr));
-          } else {
-            rng = Math.random;
-          }
-        }
-
-        dailyBtn.addEventListener("click", (e) => {
-          e.stopPropagation();
-          ensureAudio();
-          setDailyEnabled(!dailyEnabled);
-          beep({ freq: dailyEnabled ? 740 : 320, dur: 0.07, type: "triangle", gain: 0.10 });
-        });
-
-        // ===== Rendering =====
-        function drawGlowCircle(x, y, r, coreColor, glowColor, blur) {
-          ctx.save();
-          ctx.shadowColor = glowColor;
-          ctx.shadowBlur = blur;
-          ctx.fillStyle = coreColor;
-          ctx.beginPath();
-          ctx.arc(x, y, r, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.restore();
-        }
-
-        function drawGlowRect(x, y, w, h, rot, coreColor, glowColor, blur) {
-          ctx.save();
-          ctx.translate(x, y);
-          ctx.rotate(rot);
-          ctx.shadowColor = glowColor;
-          ctx.shadowBlur = blur;
-          ctx.fillStyle = coreColor;
-          ctx.fillRect(-w / 2, -h / 2, w, h);
-          ctx.restore();
-        }
-
-        function drawBackground(t) {
-          // base gradient
-          const g = ctx.createLinearGradient(0, 0, 0, LOG_H);
-          g.addColorStop(0, "#06041a");
-          g.addColorStop(0.45, "#08072a");
-          g.addColorStop(1, "#02010a");
-          ctx.fillStyle = g;
-          ctx.fillRect(0, 0, LOG_W, LOG_H);
-
-          // subtle moving grid
-          const speed = 46;
-          const offset = (t * speed) % 64;
-          ctx.save();
-          ctx.globalAlpha = 0.22;
-          ctx.strokeStyle = "rgba(56,234,255,0.18)";
-          ctx.lineWidth = 1;
-          for (let y = -64; y < LOG_H + 64; y += 64) {
-            const yy = y + offset;
-            ctx.beginPath();
-            ctx.moveTo(0, yy);
-            ctx.lineTo(LOG_W, yy);
-            ctx.stroke();
-          }
-          ctx.strokeStyle = "rgba(255,43,214,0.14)";
-          for (let x = 0; x <= LOG_W; x += 72) {
-            const wob = Math.sin(t * 0.8 + x * 0.01) * 6;
-            ctx.beginPath();
-            ctx.moveTo(x + wob, 0);
-            ctx.lineTo(x - wob, LOG_H);
-            ctx.stroke();
-          }
-          ctx.restore();
-
-          // scanline sweep
-          const sweepY = (t * 220) % (LOG_H + 240) - 240;
-          const sweep = ctx.createLinearGradient(0, sweepY, 0, sweepY + 220);
-          sweep.addColorStop(0, "rgba(255,255,255,0)");
-          sweep.addColorStop(0.5, "rgba(255,255,255,0.06)");
-          sweep.addColorStop(1, "rgba(255,255,255,0)");
-          ctx.fillStyle = sweep;
-          ctx.fillRect(0, sweepY, LOG_W, 220);
-        }
-
-        function drawLanes(t) {
-          const midY0 = 100;
-          const midY1 = LOG_H - 120;
-          const pulse = 0.5 + 0.5 * Math.sin(t * 3.2);
-
-          // lane rails
-          ctx.save();
-          ctx.globalAlpha = 0.95;
-          ctx.lineWidth = 5;
-          ctx.shadowBlur = 14;
-          ctx.shadowColor = "rgba(56,234,255,0.55)";
-          ctx.strokeStyle = "rgba(56,234,255,0.38)";
-          for (const lx of LANE_X) {
-            ctx.beginPath();
-            ctx.moveTo(lx, midY0);
-            ctx.lineTo(lx, midY1);
-            ctx.stroke();
-          }
-          ctx.restore();
-
-          // subtle center divider glow
-          ctx.save();
-          ctx.globalAlpha = 0.16;
-          ctx.strokeStyle = "rgba(255,43,214,0.25)";
-          ctx.lineWidth = 2;
-          ctx.setLineDash([10, 14]);
-          ctx.lineDashOffset = -t * 60;
-          ctx.beginPath();
-          ctx.moveTo(LOG_W / 2, 120);
-          ctx.lineTo(LOG_W / 2, LOG_H - 180);
-          ctx.stroke();
-          ctx.restore();
-
-          // pulsing hit zone
-          const px = playerPos().x;
-          const py = PLAYER_Y;
-          ctx.save();
-          ctx.globalAlpha = 0.75;
-          ctx.strokeStyle = `rgba(56,234,255,${0.18 + pulse * 0.14})`;
-          ctx.lineWidth = 3;
-          ctx.shadowColor = "rgba(56,234,255,0.55)";
-          ctx.shadowBlur = 16;
-          ctx.beginPath();
-          ctx.arc(px, py, 54 + pulse * 8, 0, Math.PI * 2);
-          ctx.stroke();
-          ctx.restore();
-        }
-
-        function drawPlayer(t) {
-          const { x: px, y: py } = playerPos();
-          const pulse = 0.5 + 0.5 * Math.sin(t * 8.5);
-
-          // trail smear (tiny)
-          ctx.save();
-          ctx.globalAlpha = 0.25;
-          ctx.shadowColor = "rgba(56,234,255,0.8)";
-          ctx.shadowBlur = 10;
-          ctx.fillStyle = "rgba(56,234,255,0.55)";
-          ctx.beginPath();
-          ctx.arc(px, py + 18, 10 + pulse * 2, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.restore();
-
-          // core dot/ship
-          drawGlowCircle(px, py, 18, "#eaffff", "rgba(56,234,255,0.95)", 18);
-          drawGlowCircle(px, py, 10, "#38eaff", "rgba(255,43,214,0.75)", 12);
-        }
-
-        function drawObstacles() {
-          for (const o of obstacles) {
-            if (!o.alive) continue;
-            if (o.shape === "circle") {
-              drawGlowCircle(o.x, o.y, o.r, o.color, o.glow, 12);
-              // inner core (no blur for performance)
-              ctx.save();
-              ctx.shadowBlur = 0;
-              ctx.fillStyle = "#eaffff";
-              ctx.beginPath();
-              ctx.arc(o.x, o.y, Math.max(4, o.r * 0.38), 0, Math.PI * 2);
-              ctx.fill();
-              ctx.restore();
-            } else {
-              drawGlowRect(o.x, o.y, o.w, o.h, o.rot, o.color, o.glow, 12);
-              // inner core (no blur for performance)
-              ctx.save();
-              ctx.translate(o.x, o.y);
-              ctx.rotate(o.rot);
-              ctx.shadowBlur = 0;
-              ctx.fillStyle = "#eaffff";
-              ctx.fillRect(-(o.w * 0.28) / 2, -(o.h * 0.28) / 2, o.w * 0.28, o.h * 0.28);
-              ctx.restore();
-            }
-          }
-        }
-
-        function drawParticles(dt) {
-          if (particles.length === 0) return;
-          ctx.save();
-          for (const p of particles) {
-            const t = 1 - p.life / p.max;
-            const a = (1 - t) * 0.95;
-            ctx.globalAlpha = a;
-            ctx.fillStyle = p.color;
-            if (p.glow) {
-              ctx.shadowBlur = 10;
-              ctx.shadowColor = p.color;
-            } else {
-              ctx.shadowBlur = 0;
-            }
-            ctx.beginPath();
-            ctx.arc(p.x, p.y, p.size * (0.85 + 0.25 * (1 - t)), 0, Math.PI * 2);
-            ctx.fill();
-          }
-          ctx.restore();
-        }
-
-        function drawPopups() {
-          if (popups.length === 0) return;
-          ctx.save();
-          ctx.textAlign = "center";
-          ctx.textBaseline = "middle";
-          ctx.font = "900 40px system-ui, -apple-system, Segoe UI, Roboto";
-          for (const p of popups) {
-            const k = p.life / p.max;
-            const a = clamp(k * 1.1, 0, 1);
-            ctx.globalAlpha = a;
-            ctx.fillStyle = p.color;
-            ctx.shadowColor = p.color;
-            ctx.shadowBlur = 14;
-            ctx.fillText(p.text, p.x, p.y);
-          }
-          ctx.restore();
-        }
-
-        function drawVignetteAndFlicker() {
-          // a little per-frame flicker keeps it alive
-          flicker += (rng() - 0.5) * 0.12;
-          flicker = clamp(flicker, -0.22, 0.22);
-
-          ctx.save();
-          ctx.globalAlpha = 0.10 + Math.abs(flicker) * 0.10;
-          ctx.fillStyle = "rgba(255,255,255,1)";
-          ctx.fillRect(0, 0, LOG_W, LOG_H);
-          ctx.restore();
-
-          // vignette
-          const vg = ctx.createRadialGradient(LOG_W / 2, LOG_H * 0.55, LOG_W * 0.2, LOG_W / 2, LOG_H * 0.55, LOG_W * 0.9);
-          vg.addColorStop(0, "rgba(0,0,0,0)");
-          vg.addColorStop(1, "rgba(0,0,0,0.55)");
-          ctx.fillStyle = vg;
-          ctx.fillRect(0, 0, LOG_W, LOG_H);
-
-          // flash on near-miss / death
-          if (flash > 0.001) {
-            ctx.save();
-            ctx.globalAlpha = clamp(flash, 0, 1) * 0.20;
-            ctx.fillStyle = "rgba(56,234,255,1)";
-            ctx.fillRect(0, 0, LOG_W, LOG_H);
-            ctx.restore();
-          }
-        }
-
-        // ===== Update loop =====
-        function update(dtMs) {
-          const dt = clamp(dtMs / 1000, 0, 0.033);
-
-          // smooth lane anim
-          const target = lane ? 1 : 0;
-          laneAnim += (target - laneAnim) * (1 - Math.pow(0.001, dt * 60));
-
-          // decay flash/shake
-          flash = Math.max(0, flash - dt * 2.6);
-          shake = Math.max(0, shake - dt * 1.7);
-
-          if (state === "playing") {
-            tGame += dt;
-
-            // base score = time survived (snappy points)
-            score = Math.max(score, Math.floor(tGame * 100));
-
-            // decay streak if no near-miss recently
-            if (streak > 0 && (nowMs() - lastNearMissAt) > STREAK_DECAY_MS) streak = 0;
-
-            // schedule patterns
-            spawnAcc += dt;
-            if (tGame >= nextPatternAt) {
-              const next = enqueuePattern();
-              // small randomness so it doesn't lock into a metronome
-              nextPatternAt = tGame + next * (0.88 + rng() * 0.24);
-            }
-
-            // consume queued spawns
-            for (let i = 0; i < patternQueue.length; i++) patternQueue[i].in -= dt;
-            while (patternQueue.length && patternQueue[0].in <= 0) {
-              patternQueue.shift();
-              spawnOne();
-            }
-
-            // update obstacles
-            const { x: px, y: py } = playerPos();
-            for (const o of obstacles) {
-              if (!o.alive) continue;
-              o.y += o.vy * dt;
-              o.x += o.vx * dt;
-              o.rot += o.spin * dt;
-
-              // gentle drift toward lanes to keep it readable
-              const laneCenter = (o.x < LOG_W / 2) ? LANE_X[0] : LANE_X[1];
-              o.x += (laneCenter - o.x) * dt * 0.25;
-              o.x = clamp(o.x, 80, LOG_W - 80);
-
-              // collision
-              if (collidePlayer(o, px, py)) {
-                gameOver();
-                break;
-              }
-
-              // near miss (when crossing player's y)
-              tryNearMiss(o, px, py);
-
-              // cleanup
-              if (o.y > LOG_H + 140) o.alive = false;
-            }
-            obstacles = obstacles.filter((o) => o.alive);
-          }
-
-          // update particles
-          if (particles.length) {
-            for (const p of particles) {
-              p.x += p.vx * dt;
-              p.y += p.vy * dt;
-              p.vy += 820 * dt; // gravity-ish
-              p.vx *= 0.985;
-              p.vy *= 0.985;
-              p.life -= dtMs;
-            }
-            particles = particles.filter((p) => p.life > 0);
-          }
-
-          // update popups
-          if (popups.length) {
-            for (const p of popups) {
-              p.y += p.vy * dt;
-              p.life -= dtMs;
-            }
-            popups = popups.filter((p) => p.life > 0);
-          }
-
-          // HUD
-          scoreText.textContent = fmtInt(score);
-          bestText.textContent = fmtInt(best);
-          streakText.textContent = fmtInt(streak);
-        }
-
-        function render() {
-          const t = tGame;
-
-          // camera shake (small, quick)
-          let sx = 0, sy = 0;
-          if (shake > 0.001) {
-            const mag = shake * 8;
-            sx = (rng() - 0.5) * mag;
-            sy = (rng() - 0.5) * mag;
-          }
-
-          ctx.save();
-          ctx.translate(sx, sy);
-
-          drawBackground(t);
-          drawLanes(t);
-          drawObstacles();
-          drawParticles();
-          drawPlayer(t);
-          drawPopups();
-
-          ctx.restore();
-
-          drawVignetteAndFlicker();
-        }
-
-        function tick() {
-          const t = nowMs();
-          const dt = t - lastT;
-          lastT = t;
-
-          update(dt);
-          render();
-          requestAnimationFrame(tick);
-        }
-
-        // ===== Init =====
-        function init() {
-          resizeCanvas();
-          window.addEventListener("resize", resizeCanvas);
-          window.addEventListener("orientationchange", () => setTimeout(resizeCanvas, 120));
-
-          loadBest();
-          loadSoundPref();
-          applySoundUI();
-
-          setDailyEnabled(readDailyPrefFromURLOrStorage());
-
-          // show start overlay
-          state = "start";
-          setOverlayModeStart();
-          setOverlayVisible(true);
-
-          requestAnimationFrame(() => {
-            lastT = nowMs();
-            tick();
-          });
-        }
-
-        init();
-      })();
+        return null;
+      }
+
+      document.querySelectorAll(".retro-btn").forEach(btn => {
+        const id = btn.dataset.id;
+        const key = btn.dataset.bestKey;
+        const target = btn.querySelector("[data-best-for]");
+        const best = findBest(id, key);
+        if (best != null) target.textContent = best;
+      });
     </script>
   </body>
 </html>

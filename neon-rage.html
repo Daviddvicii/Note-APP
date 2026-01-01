@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Neon Rage Dodge</title>
+    <!--
+    GITHUB PAGES DEPLOY INSTRUCTIONS:
+    1. Commit this file as 'index.html' or 'neon-rage.html' along with 'neon-rage.js'.
+    2. Go to your GitHub repository settings.
+    3. Navigate to the "Pages" section.
+    4. Select the branch (e.g., 'main') and folder (e.g., '/') to deploy from.
+    5. Save. Your game will be live at https://<username>.github.io/<repo-name>/
+    -->
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #050510;
+            overflow: hidden;
+            font-family: 'Courier New', Courier, monospace; /* Cyber-ish font */
+            touch-action: none; /* Prevent zoom/scroll on mobile */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            color: #fff;
+        }
+
+        #game-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            max-width: 100%;
+            max-height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 0 50px rgba(0, 255, 255, 0.1);
+        }
+
+        canvas {
+            display: block;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Scanline effect overlay */
+        .scanlines {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                to bottom,
+                rgba(255, 255, 255, 0),
+                rgba(255, 255, 255, 0) 50%,
+                rgba(0, 0, 0, 0.2) 50%,
+                rgba(0, 0, 0, 0.2)
+            );
+            background-size: 100% 4px;
+            pointer-events: none;
+            z-index: 10;
+        }
+        
+        /* CRT flicker */
+        @keyframes flicker {
+            0% { opacity: 0.97; }
+            5% { opacity: 0.95; }
+            10% { opacity: 0.9; }
+            15% { opacity: 0.95; }
+            20% { opacity: 0.99; }
+            50% { opacity: 0.95; }
+            80% { opacity: 0.9; }
+            100% { opacity: 0.97; }
+        }
+
+        .crt-flicker {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(18, 16, 16, 0.1);
+            opacity: 0;
+            z-index: 10;
+            pointer-events: none;
+            animation: flicker 0.15s infinite;
+        }
+
+        /* HUD and Overlays are drawn on Canvas or HTML? 
+           HTML overlays are easier for responsive text. 
+        */
+        #ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 20;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .hud-top {
+            display: flex;
+            justify-content: space-between;
+            padding: 20px;
+            font-size: 20px;
+            font-weight: bold;
+            text-shadow: 0 0 5px #0ff;
+        }
+
+        .hud-score { color: #0ff; }
+        .hud-best { color: #f0f; }
+
+        #start-screen, #game-over-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 30;
+            pointer-events: auto; /* Enable clicks */
+            backdrop-filter: blur(5px);
+            transition: opacity 0.3s;
+        }
+
+        .hidden {
+            opacity: 0;
+            pointer-events: none !important;
+        }
+
+        h1 {
+            font-size: 48px;
+            margin: 0 0 20px 0;
+            background: linear-gradient(45deg, #0ff, #f0f);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+            text-transform: uppercase;
+            text-align: center;
+            letter-spacing: 4px;
+        }
+
+        p {
+            font-size: 18px;
+            color: #ddd;
+            margin: 10px 0;
+            text-align: center;
+            text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+        }
+
+        .btn {
+            margin-top: 30px;
+            padding: 15px 40px;
+            font-size: 24px;
+            background: transparent;
+            border: 2px solid #0ff;
+            color: #0ff;
+            font-family: inherit;
+            cursor: pointer;
+            text-transform: uppercase;
+            box-shadow: 0 0 10px #0ff, inset 0 0 10px #0ff;
+            transition: all 0.2s;
+            animation: pulse 1.5s infinite;
+        }
+
+        .btn:hover {
+            background: #0ff;
+            color: #000;
+            box-shadow: 0 0 20px #0ff, inset 0 0 20px #0ff;
+        }
+
+        .sound-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 24px;
+            cursor: pointer;
+            z-index: 40;
+            color: #0ff;
+            opacity: 0.7;
+            pointer-events: auto;
+            user-select: none;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); box-shadow: 0 0 10px #0ff; }
+            50% { transform: scale(1.05); box-shadow: 0 0 20px #0ff; }
+            100% { transform: scale(1); box-shadow: 0 0 10px #0ff; }
+        }
+
+        .taunt {
+            color: #f0f;
+            font-style: italic;
+            font-size: 24px;
+            margin-top: 10px;
+            text-shadow: 0 0 10px #f0f;
+            min-height: 1.2em;
+        }
+
+        .daily-seed {
+            position: absolute;
+            bottom: 10px;
+            font-size: 12px;
+            color: #555;
+            width: 100%;
+            text-align: center;
+        }
+
+        /* Floating text for bonuses */
+        .float-text {
+            position: absolute;
+            font-weight: bold;
+            font-size: 32px;
+            color: #ff0;
+            text-shadow: 0 0 10px orange;
+            pointer-events: none;
+            animation: floatUp 1s forwards;
+        }
+
+        @keyframes floatUp {
+            0% { transform: translateY(0) scale(1); opacity: 1; }
+            100% { transform: translateY(-50px) scale(1.5); opacity: 0; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <canvas id="gameCanvas"></canvas>
+        <div class="scanlines"></div>
+        <div class="crt-flicker"></div>
+        
+        <div id="ui-layer">
+            <div class="hud-top">
+                <div id="score-display">0.00s</div>
+                <div id="best-display">BEST: 0.00s</div>
+            </div>
+            <!-- Dynamic elements like floating text will be appended here -->
+        </div>
+
+        <div id="start-screen">
+            <h1>Neon Rage<br>Dodge</h1>
+            <p>Tap / Space to Toggle Lane</p>
+            <p>Dodge the falling blocks.</p>
+            <button class="btn" id="start-btn">TAP TO PLAY</button>
+            <div class="daily-seed" id="daily-seed-start"></div>
+        </div>
+
+        <div id="game-over-screen" class="hidden">
+            <h1>GAME OVER</h1>
+            <div class="taunt" id="taunt-msg"></div>
+            <p>Score: <span id="final-score">0.00s</span></p>
+            <p>Best: <span id="final-best">0.00s</span></p>
+            <button class="btn" id="restart-btn">PLAY AGAIN</button>
+        </div>
+
+        <div class="sound-toggle" id="sound-btn">🔊</div>
+    </div>
+
+    <script src="neon-rage.js"></script>
+</body>
+</html>

@@ -185,6 +185,35 @@
         box-shadow: 0 0 18px rgba(255, 43, 214, 0.14);
       }
 
+      .seg {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin: 10px 0 6px;
+      }
+      .segBtn {
+        appearance: none;
+        border: 1px solid rgba(0, 255, 102, 0.25);
+        border-radius: 999px;
+        padding: 10px 12px;
+        background: rgba(0, 0, 0, 0.22);
+        color: var(--fg);
+        font: inherit;
+        cursor: pointer;
+        box-shadow: 0 0 14px rgba(0, 255, 102, 0.10);
+        transition: transform 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease, color 0.12s ease;
+      }
+      .segBtn:hover {
+        transform: translateY(-1px);
+        border-color: rgba(0, 255, 170, 0.45);
+        box-shadow: 0 0 18px rgba(0, 255, 170, 0.16);
+      }
+      .segBtn.active {
+        border-color: rgba(255, 204, 51, 0.55);
+        color: rgba(255, 204, 51, 0.95);
+        box-shadow: 0 0 22px rgba(255, 204, 51, 0.14);
+      }
+
       .small {
         font-size: 12px;
         opacity: 0.85;
@@ -427,12 +456,19 @@
         <div class="panel">
           <div class="title">Neon Arena Shooter:<br />TOXIC EDITION</div>
           <div class="subtitle">
-            Mobile portrait first + desktop. Auto-shoots the nearest enemy. THREAT escalates. Boss every 60s.
+            Mobile portrait first + desktop. Auto-shoots the nearest enemy. THREAT escalates. Boss every 90s.
             <br />
             <span class="small">Desktop: WASD/Arrows move · Space dash</span>
             <br />
             <span class="small">Mobile: left joystick · double-tap joystick to dash</span>
           </div>
+          <div class="small" style="opacity: 0.85; margin-top: 4px">Difficulty</div>
+          <div class="seg" id="diffSeg">
+            <button class="segBtn" type="button" data-diff="easy">EASY</button>
+            <button class="segBtn" type="button" data-diff="normal">NORMAL</button>
+            <button class="segBtn" type="button" data-diff="hard">HARD</button>
+          </div>
+          <div class="small" id="diffHint" style="opacity: 0.75; line-height: 1.45"></div>
           <div class="row">
             <button class="btn primary" id="startBtn" type="button">Tap to Play</button>
             <button class="btn" id="startSoundBtn" type="button">Sound: ON</button>
@@ -520,6 +556,67 @@
         const META_RUNS_KEY = "neon-arena-total-runs";
         const META_KILLS_KEY = "neon-arena-total-kills";
         const META_BEST_TIME_KEY = "neon-arena-best-time";
+        const DIFF_KEY = "neon-arena-difficulty";
+
+        const DIFFS = {
+          easy: {
+            id: "easy",
+            label: "EASY",
+            hint: "More XP, slower THREAT, fewer hazards. Great for chill builds.",
+            tuning: {
+              spawnBaseMs: 1450,
+              spawnMinMs: 520,
+              threatPerSec: 0.12,
+              threatPerKill: 0.25,
+              threatTierStep: 60,
+              hazardBaseMs: 22000,
+              hitIFrames: 0.85,
+            },
+            mul: { enemyHp: 0.80, enemyDmg: 0.62, enemySpd: 0.88, xp: 1.7, score: 1.0 },
+          },
+          normal: {
+            id: "normal",
+            label: "NORMAL",
+            hint: "Balanced. Still tough, but upgrades should carry you.",
+            tuning: {
+              spawnBaseMs: 1220,
+              spawnMinMs: 420,
+              threatPerSec: 0.18,
+              threatPerKill: 0.38,
+              threatTierStep: 48,
+              hazardBaseMs: 18000,
+              hitIFrames: 0.78,
+            },
+            mul: { enemyHp: 0.95, enemyDmg: 0.88, enemySpd: 0.95, xp: 1.4, score: 1.0 },
+          },
+          hard: {
+            id: "hard",
+            label: "HARD",
+            hint: "Faster spawns, faster THREAT. Builds matter a lot.",
+            tuning: {
+              spawnBaseMs: 980,
+              spawnMinMs: 340,
+              threatPerSec: 0.26,
+              threatPerKill: 0.55,
+              threatTierStep: 38,
+              hazardBaseMs: 15000,
+              hitIFrames: 0.72,
+            },
+            mul: { enemyHp: 1.05, enemyDmg: 1.02, enemySpd: 1.02, xp: 1.15, score: 1.0 },
+          },
+        };
+
+        let difficultyId = (() => {
+          try {
+            return localStorage.getItem(DIFF_KEY) || "easy";
+          } catch {
+            return "easy";
+          }
+        })();
+        if (!DIFFS[difficultyId]) difficultyId = "easy";
+        let diffMul = { enemyHp: 1, enemyDmg: 1, enemySpd: 1, xp: 1, score: 1 };
+
+        const BOSS_INTERVAL_S = 90;
 
         function lsGetInt(key, fallback = 0) {
           try {
@@ -559,6 +656,8 @@
         const runSummaryEl = document.getElementById("runSummary");
         const finalLineEl = document.getElementById("finalLine");
         const soundBtn = document.getElementById("soundBtn");
+        const diffSeg = document.getElementById("diffSeg");
+        const diffHint = document.getElementById("diffHint");
 
         // ===== RNG =====
         function rand() {
@@ -873,14 +972,14 @@
           // spawn / difficulty
           spawnT: 0,
           hazardT: 0,
-          bossNextT: 60,
+          bossNextT: BOSS_INTERVAL_S,
           bossCount: 0,
           bossAlive: false,
 
           // upgrades
           level: 1,
           xp: 0,
-          xpNeed: 18,
+          xpNeed: 14,
           upgradePicks: 0,
           legendaryPending: false,
 
@@ -908,7 +1007,7 @@
         const player = {
           x: W / 2,
           y: H / 2 + 160,
-          r: 16,
+          r: 19,
           hp: 100,
           maxHp: 100,
           dmg: 14,
@@ -925,6 +1024,8 @@
           dashQueued: false,
           // weapons
           chain: 0,
+          pierce: 0,
+          twin: 0,
           explosiveR: 0,
           railgun: false,
           railT: 0,
@@ -966,99 +1067,115 @@
           pool.push({
             id: "dmg1",
             name: "Hot Rounds",
-            desc: "+15% Damage.",
+            desc: "+25% Damage.",
             tags: ["GUN"],
             rarity: "common",
-            apply: () => (player.dmg = Math.round(player.dmg * 1.15)),
+            apply: () => (player.dmg = Math.round(player.dmg * 1.25)),
           });
           pool.push({
             id: "firerate1",
             name: "Trigger Grease",
-            desc: "Faster auto-shoot. (-12ms)",
+            desc: "Faster auto-shoot. (-18ms)",
             tags: ["GUN", "TECH"],
             rarity: "common",
-            apply: () => (player.fireMs = Math.max(45, player.fireMs - 12)),
+            apply: () => (player.fireMs = Math.max(42, player.fireMs - 18)),
           });
           pool.push({
             id: "bulletspd1",
             name: "HV Capacitors",
-            desc: "+18% Bullet speed.",
+            desc: "+28% Bullet speed.",
             tags: ["GUN", "TECH"],
             rarity: "common",
-            apply: () => (player.bulletSpd = Math.round(player.bulletSpd * 1.18)),
+            apply: () => (player.bulletSpd = Math.round(player.bulletSpd * 1.28)),
+          });
+          pool.push({
+            id: "twinshot1",
+            name: "Twin Shot",
+            desc: "Each shot fires +1 extra bullet.",
+            tags: ["GUN"],
+            rarity: "rare",
+            apply: () => (player.twin = clamp(player.twin + 1, 0, 2)),
           });
           pool.push({
             id: "dmg2",
             name: "Toxic Payload",
-            desc: "+30% Damage.",
+            desc: "+45% Damage.",
             tags: ["GUN"],
             rarity: "rare",
-            apply: () => (player.dmg = Math.round(player.dmg * 1.3)),
+            apply: () => (player.dmg = Math.round(player.dmg * 1.45)),
           });
           pool.push({
             id: "firerate2",
             name: "Overclocked Servo",
-            desc: "Much faster auto-shoot. (-25ms)",
+            desc: "Much faster auto-shoot. (-40ms)",
             tags: ["GUN", "TECH"],
             rarity: "rare",
-            apply: () => (player.fireMs = Math.max(40, player.fireMs - 25)),
+            apply: () => (player.fireMs = Math.max(38, player.fireMs - 40)),
+          });
+          pool.push({
+            id: "pierce1",
+            name: "Piercing Tips",
+            desc: "Bullets pierce 1 enemy.",
+            tags: ["GUN"],
+            rarity: "epic",
+            apply: () => (player.pierce = Math.max(player.pierce, 1)),
           });
 
           // MOVE
           pool.push({
             id: "movespd1",
             name: "Neon Greaves",
-            desc: "+10% Move speed.",
+            desc: "+14% Move speed.",
             tags: ["MOVE"],
             rarity: "common",
-            apply: () => (player.moveSpd = Math.round(player.moveSpd * 1.1)),
+            apply: () => (player.moveSpd = Math.round(player.moveSpd * 1.14)),
           });
           pool.push({
             id: "dashcd1",
             name: "Blink Coolant",
-            desc: "Dash cooldown -12%.",
+            desc: "Dash cooldown -18%.",
             tags: ["MOVE", "TECH"],
             rarity: "common",
-            apply: () => (player.dashCd = Math.max(0.7, player.dashCd * 0.88)),
+            apply: () => (player.dashCd = Math.max(0.65, player.dashCd * 0.82)),
           });
           pool.push({
             id: "movespd2",
             name: "Slide Vectoring",
-            desc: "+18% Move speed.",
+            desc: "+24% Move speed.",
             tags: ["MOVE"],
             rarity: "rare",
-            apply: () => (player.moveSpd = Math.round(player.moveSpd * 1.18)),
+            apply: () => (player.moveSpd = Math.round(player.moveSpd * 1.24)),
           });
 
           // SURVIVE
           pool.push({
             id: "hp1",
             name: "Reinforced Plating",
-            desc: "+20 Max HP, heal +10.",
+            desc: "+25 Max HP, heal +15.",
             tags: ["SURVIVE"],
             rarity: "common",
             apply: () => {
-              player.maxHp += 20;
-              player.hp = Math.min(player.maxHp, player.hp + 10);
+              player.maxHp += 25;
+              player.hp = Math.min(player.maxHp, player.hp + 15);
             },
           });
           pool.push({
             id: "heal1",
             name: "Nanite Patch",
-            desc: "Heal +20 immediately.",
+            desc: "Heal +30 immediately.",
             tags: ["SURVIVE", "TECH"],
             rarity: "common",
-            apply: () => (player.hp = Math.min(player.maxHp, player.hp + 20)),
+            apply: () => (player.hp = Math.min(player.maxHp, player.hp + 30)),
           });
           pool.push({
             id: "hp2",
             name: "Spare Core",
-            desc: "+35 Max HP, heal +15.",
+            desc: "+45 Max HP, heal +25.",
             tags: ["SURVIVE"],
             rarity: "rare",
             apply: () => {
-              player.maxHp += 35;
-              player.hp = Math.min(player.maxHp, player.hp + 15);
+              player.maxHp += 45;
+              player.hp = Math.min(player.maxHp, player.hp + 25);
             },
           });
 
@@ -1066,10 +1183,10 @@
           pool.push({
             id: "mag1",
             name: "Magnet Coil",
-            desc: "+30 Magnet radius.",
+            desc: "+45 Magnet radius.",
             tags: ["TECH"],
             rarity: "common",
-            apply: () => (player.magnet = Math.min(260, player.magnet + 30)),
+            apply: () => (player.magnet = Math.min(320, player.magnet + 45)),
           });
           pool.push({
             id: "iframes1",
@@ -1084,18 +1201,18 @@
           pool.push({
             id: "aoe1",
             name: "Arc Splash",
-            desc: "Small splash on hit (+Explode radius 18).",
+            desc: "Splash on hit (+Explode radius 26).",
             tags: ["AOE", "GUN"],
             rarity: "rare",
-            apply: () => (player.explosiveR = Math.max(player.explosiveR, 18)),
+            apply: () => (player.explosiveR = Math.max(player.explosiveR, 26)),
           });
           pool.push({
             id: "aoe2",
             name: "Impact Bloom",
-            desc: "Bigger splash on hit (+Explode radius 32).",
+            desc: "Big splash on hit (+Explode radius 42).",
             tags: ["AOE", "GUN"],
             rarity: "epic",
-            apply: () => (player.explosiveR = Math.max(player.explosiveR, 32)),
+            apply: () => (player.explosiveR = Math.max(player.explosiveR, 42)),
           });
 
           return pool;
@@ -1108,21 +1225,21 @@
           {
             id: "leg_rail",
             name: "Railgun",
-            desc: "Periodic piercing beam. (Game-changing)",
+            desc: "More frequent piercing beam. (Game-changing)",
             tags: ["GUN", "TECH"],
             rarity: "legendary",
             apply: () => {
               player.railgun = true;
-              player.railCd = Math.max(1.6, player.railCd * 0.9);
+              player.railCd = Math.max(1.35, player.railCd * 0.78);
             },
           },
           {
             id: "leg_chain",
             name: "Chain Lightning",
-            desc: "Bullets jump targets (2 bounces).",
+            desc: "Bullets jump targets (3 bounces).",
             tags: ["GUN", "TECH"],
             rarity: "legendary",
-            apply: () => (player.chain = Math.max(player.chain, 2)),
+            apply: () => (player.chain = Math.max(player.chain, 3)),
           },
           {
             id: "leg_blades",
@@ -1130,7 +1247,7 @@
             desc: "Rotating blades shred nearby enemies.",
             tags: ["AOE", "SURVIVE"],
             rarity: "legendary",
-            apply: () => setBlades(Math.max(player.blades, 3)),
+            apply: () => setBlades(Math.max(player.blades, 4)),
           },
           {
             id: "leg_explosive",
@@ -1138,7 +1255,7 @@
             desc: "Impact AOE. Bigger = louder.",
             tags: ["AOE", "GUN"],
             rarity: "legendary",
-            apply: () => (player.explosiveR = Math.max(player.explosiveR, 44)),
+            apply: () => (player.explosiveR = Math.max(player.explosiveR, 60)),
           },
           {
             id: "leg_drones",
@@ -1146,23 +1263,26 @@
             desc: "2 orbit drones that fire.",
             tags: ["TECH", "GUN"],
             rarity: "legendary",
-            apply: () => setDrones(player.drones + 2),
+            apply: () => setDrones(Math.min(4, player.drones + 2)),
           },
           {
             id: "leg_timewarp",
             name: "Time Warp",
-            desc: "When HP is low, slows enemies briefly.",
+            desc: "When HP is low, slows enemies longer.",
             tags: ["TECH", "SURVIVE"],
             rarity: "legendary",
-            apply: () => (player.timeWarp = true),
+            apply: () => {
+              player.timeWarp = true;
+              player.timeWarpCd = Math.max(6.5, player.timeWarpCd * 0.85);
+            },
           },
           {
             id: "leg_vamp",
             name: "Vampiric Circuit",
-            desc: "Heal on kill. (+2 HP per kill)",
+            desc: "Heal on kill. (+3 HP per kill)",
             tags: ["SURVIVE", "TECH"],
             rarity: "legendary",
-            apply: () => (player.vamp = Math.max(player.vamp, 2)),
+            apply: () => (player.vamp = Math.max(player.vamp, 3)),
           },
           {
             id: "leg_barrage",
@@ -1174,20 +1294,48 @@
           },
         ];
 
+        const PLAYER_COLOR = "rgba(255,40,80,0.98)";
+        const PLAYER_GLOW = "rgba(255,40,80,0.28)";
+
         // ===== Tuning knobs =====
         const tuning = {
-          hitIFrames: 0.55,
-          baseEnemyHp: 28,
+          hitIFrames: 0.78,
+          baseEnemyHp: 22,
           scoreKill: 12,
           scorePerSec: 1,
-          spawnBaseMs: 780,
-          spawnMinMs: 170,
-          threatPerSec: 0.72,
-          threatPerKill: 1.35,
-          threatTierStep: 22,
-          hazardBaseMs: 9500,
+          spawnBaseMs: 1220,
+          spawnMinMs: 420,
+          threatPerSec: 0.18,
+          threatPerKill: 0.38,
+          threatTierStep: 48,
+          hazardBaseMs: 18000,
           barrage: false,
         };
+
+        function applyDifficulty(id) {
+          const d = DIFFS[id] || DIFFS.normal;
+          difficultyId = d.id;
+          diffMul = { ...d.mul };
+          // overwrite tuning values (safe to mutate)
+          tuning.spawnBaseMs = d.tuning.spawnBaseMs;
+          tuning.spawnMinMs = d.tuning.spawnMinMs;
+          tuning.threatPerSec = d.tuning.threatPerSec;
+          tuning.threatPerKill = d.tuning.threatPerKill;
+          tuning.threatTierStep = d.tuning.threatTierStep;
+          tuning.hazardBaseMs = d.tuning.hazardBaseMs;
+          tuning.hitIFrames = d.tuning.hitIFrames;
+          try {
+            localStorage.setItem(DIFF_KEY, difficultyId);
+          } catch {
+            // ignore
+          }
+          if (diffSeg) {
+            diffSeg.querySelectorAll(".segBtn").forEach((btn) => {
+              btn.classList.toggle("active", btn.dataset.diff === difficultyId);
+            });
+          }
+          if (diffHint) diffHint.textContent = d.hint;
+        }
 
         // ===== Helpers: visuals =====
         function addParticles(x, y, count, color, spd = 280, life = 0.7) {
@@ -1274,14 +1422,14 @@
           return false;
         }
 
-        function spawnOrb(x, y, value = 1) {
+        function spawnOrb(x, y, value = 2) {
           if (orbs.length >= CAP.orbs) return;
           orbs.push({
             x,
             y,
             vx: randRange(-60, 60),
             vy: randRange(-80, 20),
-            r: 6,
+            r: 9,
             value,
             life: 18,
           });
@@ -1327,39 +1475,51 @@
           const baseHp = tuning.baseEnemyHp * hpScale * (1 + (tier - 1) * 0.10);
 
           let r = 13;
-          let spd = 118 + tier * 10;
+          let spd = 98 + tier * 7;
           let hp = baseHp;
           let color = "rgba(0,255,102,0.95)";
-          let dmg = 10;
+          let dmg = 7;
           let score = tuning.scoreKill;
-          let xp = 1;
+          let xp = 2;
           let behavior = kind;
 
           if (kind === "sprinter") {
-            r = 11;
-            spd *= 1.55;
-            hp *= 0.75;
+            r = 9;
+            spd *= 1.75;
+            hp *= 0.70;
             color = "rgba(0,229,255,0.95)";
-            dmg = 9;
+            dmg = 6;
             score = tuning.scoreKill + 2;
-            xp = 1;
+            xp = 2;
           } else if (kind === "tank") {
-            r = 18;
-            spd *= 0.82;
-            hp *= 2.3;
+            r = 24;
+            spd *= 0.70;
+            hp *= 2.0;
             color = "rgba(255,43,214,0.95)";
-            dmg = 14;
+            dmg = 10;
             score = tuning.scoreKill + 6;
-            xp = 2;
+            xp = 3;
           } else if (kind === "stalker") {
-            r = 13;
-            spd *= 1.05;
-            hp *= 1.2;
+            r = 14;
+            spd *= 0.95;
+            hp *= 1.15;
             color = "rgba(139,92,255,0.95)";
-            dmg = 12;
+            dmg = 8;
             score = tuning.scoreKill + 4;
-            xp = 2;
+            xp = 3;
           }
+
+          // Extra variety: slight random size/speed (more big/small feel)
+          const sizeJitter = randRange(0.85, 1.18);
+          const spdJitter = randRange(0.88, 1.12);
+          r = clamp(r * sizeJitter, 7, 28);
+          spd *= spdJitter;
+
+          // Difficulty scaling
+          hp *= diffMul.enemyHp;
+          spd *= diffMul.enemySpd;
+          dmg *= diffMul.enemyDmg;
+          xp = Math.max(1, Math.round(xp * diffMul.xp));
 
           enemies.push({
             kind: "enemy",
@@ -1387,8 +1547,8 @@
           const t = state.bossCount % 3;
           const type = t === 1 ? "sniper" : t === 2 ? "swarm" : "brute";
 
-          const hpScale = 1 + state.timeSurvived / 90;
-          const base = 900 * hpScale;
+          const hpScale = 1 + state.timeSurvived / 120;
+          const base = 760 * hpScale;
           let boss = null;
 
           if (type === "brute") {
@@ -1398,15 +1558,15 @@
               x: W / 2,
               y: -90,
               r: 42,
-              hp: base * 1.1,
-              maxHp: base * 1.1,
-              spd: 86 + state.threatTier * 5,
+              hp: base * 0.95,
+              maxHp: base * 0.95,
+              spd: 78 + state.threatTier * 4,
               color: "rgba(255,43,214,0.95)",
               phase: "enter",
               atkT: 0,
               slamWind: 0,
               shock: null, // {x,y,t}
-              dmg: 20,
+              dmg: 16,
             };
           } else if (type === "sniper") {
             boss = {
@@ -1415,15 +1575,15 @@
               x: W / 2,
               y: -90,
               r: 34,
-              hp: base * 0.9,
-              maxHp: base * 0.9,
-              spd: 130 + state.threatTier * 7,
+              hp: base * 0.82,
+              maxHp: base * 0.82,
+              spd: 118 + state.threatTier * 6,
               color: "rgba(0,229,255,0.95)",
               phase: "enter",
               atkT: 0,
               beamWind: 0,
               beam: null, // {x1,y1,x2,y2,wind,fire}
-              dmg: 18,
+              dmg: 14,
             };
           } else {
             boss = {
@@ -1432,18 +1592,24 @@
               x: W / 2,
               y: -90,
               r: 48,
-              hp: base * 1.2,
-              maxHp: base * 1.2,
-              spd: 70 + state.threatTier * 4,
+              hp: base * 1.0,
+              maxHp: base * 1.0,
+              spd: 64 + state.threatTier * 3,
               color: "rgba(255,204,51,0.95)",
               phase: "enter",
               atkT: 0,
               shield: 1, // invulnerable unless vulnerable window
               vulT: 0,
               spawnT: 0,
-              dmg: 16,
+              dmg: 13,
             };
           }
+
+          // Difficulty scaling
+          boss.hp *= diffMul.enemyHp;
+          boss.maxHp *= diffMul.enemyHp;
+          boss.spd *= diffMul.enemySpd;
+          boss.dmg *= diffMul.enemyDmg;
 
           bosses.push(boss);
           addTextBanner("BOSS INCOMING", "rgba(255,43,214,0.85)");
@@ -1454,7 +1620,7 @@
           sfx("bossWarn");
         }
 
-        // ===== Hazards (Tier 4+) =====
+        // ===== Hazards (Tier 5+) =====
         function spawnHazard() {
           if (hazards.length >= CAP.hazards) return;
           const pick = rand();
@@ -1482,7 +1648,7 @@
         }
 
         function spawnMineDrop() {
-          const count = 3 + ((state.threatTier - 4) / 2) | 0;
+          const count = 2 + ((state.threatTier - 5) / 3) | 0;
           for (let i = 0; i < count; i++) {
             if (hazards.length >= CAP.hazards) break;
             hazards.push({
@@ -1494,7 +1660,7 @@
               arm: randRange(1.25, 1.75),
               boom: 0,
               life: 9,
-              dmg: 22,
+              dmg: 16,
             });
           }
         }
@@ -1507,7 +1673,7 @@
             r: randRange(92, 140),
             tele: 1.0,
             life: 10.5,
-            slow: 0.42,
+            slow: 0.32,
             t: 0,
           });
         }
@@ -1546,15 +1712,33 @@
         function onPickUpgrade(upg) {
           upg.apply();
           state.upgradePicks++;
+          // Make power-ups feel obvious immediately
+          const rarColor =
+            upg.rarity === "legendary"
+              ? "rgba(255,204,51,0.85)"
+              : upg.rarity === "epic"
+                ? "rgba(255,43,214,0.75)"
+                : upg.rarity === "rare"
+                  ? "rgba(0,229,255,0.75)"
+                  : "rgba(0,255,102,0.65)";
+          addTextBanner(`${upg.name}`, rarColor);
+          const ringColor =
+            upg.rarity === "legendary"
+              ? "rgba(255,204,51,0.45)"
+              : upg.rarity === "epic"
+                ? "rgba(255,43,214,0.40)"
+                : upg.rarity === "rare"
+                  ? "rgba(0,229,255,0.40)"
+                  : "rgba(0,255,102,0.35)";
+          state.shockwaves.push({ x: player.x, y: player.y, r: 10, dr: 940, a: 0.7, color: ringColor });
+          addParticles(player.x, player.y, upg.rarity === "legendary" ? 38 : upg.rarity === "epic" ? 30 : 22, rarColor, 680, 0.75);
+          state.tintA = Math.max(state.tintA, upg.rarity === "legendary" ? 0.35 : 0.22);
+          state.tintColor = upg.rarity === "legendary" ? "rgba(255,204,51,0.10)" : upg.rarity === "epic" ? "rgba(255,43,214,0.08)" : "rgba(0,229,255,0.06)";
           for (const tag of upg.tags) {
             if (!state.tagCount[tag]) state.tagCount[tag] = 0;
             state.tagCount[tag]++;
             if (state.tagCount[tag] === 3) tryUnlockSynergy(tag);
           }
-          // feedback
-          if (upg.rarity === "rare") addTextBanner("RARE PICK", "rgba(0,229,255,0.75)");
-          if (upg.rarity === "epic") addTextBanner("EPIC PICK", "rgba(255,43,214,0.75)");
-          if (upg.rarity === "legendary") addTextBanner("LEGENDARY ONLINE", "rgba(255,204,51,0.85)");
         }
 
         // ===== Blades / Drones =====
@@ -1562,7 +1746,7 @@
           player.blades = n | 0;
           blades.length = 0;
           const count = clamp(player.blades, 0, 6);
-          for (let i = 0; i < count; i++) blades.push({ a: (i / count) * Math.PI * 2, r: 56, dmg: 9 });
+          for (let i = 0; i < count; i++) blades.push({ a: (i / count) * Math.PI * 2, r: 58, dmg: 12 });
         }
 
         function setDrones(n) {
@@ -1578,7 +1762,7 @@
           while (state.xp >= state.xpNeed) {
             state.xp -= state.xpNeed;
             state.level++;
-            state.xpNeed = Math.floor(18 + state.level * 8 + Math.pow(state.level, 1.25));
+            state.xpNeed = Math.floor(14 + state.level * 5 + Math.pow(state.level, 1.15));
             triggerLevelUp();
             // pause chain: stop after one level to avoid stacking UI
             break;
@@ -1729,14 +1913,14 @@
           state.pulseT = 0;
           state.spawnT = 0;
           state.hazardT = 0;
-          state.bossNextT = 60;
+          state.bossNextT = BOSS_INTERVAL_S;
           state.bossCount = 0;
           state.bossAlive = false;
           state.legendaryPending = false;
 
           state.level = 1;
           state.xp = 0;
-          state.xpNeed = 18;
+          state.xpNeed = 14;
           state.upgradePicks = 0;
 
           state.tagCount = { GUN: 0, MOVE: 0, SURVIVE: 0, TECH: 0, AOE: 0 };
@@ -1764,14 +1948,14 @@
 
           player.x = W / 2;
           player.y = H / 2 + 170;
-          player.maxHp = 100;
-          player.hp = 100;
-          player.dmg = 14;
+          player.maxHp = 150;
+          player.hp = 150;
+          player.dmg = 16;
           player.fireMs = 120;
-          player.bulletSpd = 820;
-          player.magnet = 120;
-          player.dashCd = 1.8;
-          player.moveSpd = 360;
+          player.bulletSpd = 860;
+          player.magnet = 150;
+          player.dashCd = 1.6;
+          player.moveSpd = 370;
           player.iFrames = 0;
           player.dashT = 0;
           player.dashCdT = 0;
@@ -1780,6 +1964,8 @@
           player.dashQueued = false;
 
           player.chain = 0;
+          player.pierce = 0;
+          player.twin = 0;
           player.explosiveR = 0;
           player.railgun = false;
           player.railT = 0;
@@ -1801,6 +1987,7 @@
           gameOverOverlay.classList.remove("show");
           upgradeOverlay.classList.remove("show");
           state.mode = "running";
+          applyDifficulty(difficultyId);
           resetRun();
           // meta: runs++
           state.totalRuns = lsGetInt(META_RUNS_KEY, 0) + 1;
@@ -1857,7 +2044,7 @@
             showUpgradeCards(true);
           } else {
             addParticles(e.x, e.y, 26, e.color, 620, 0.85);
-            for (let i = 0; i < e.xp; i++) spawnOrb(e.x + randRange(-12, 12), e.y + randRange(-12, 12), 1);
+            for (let i = 0; i < e.xp; i++) spawnOrb(e.x + randRange(-12, 12), e.y + randRange(-12, 12));
             state.kills++;
             addScore(e.score);
             state.threat += tuning.threatPerKill;
@@ -1881,25 +2068,36 @@
           shootT = 0;
           const target = nearestEnemy();
           if (!target) return;
-          spawnBulletAt(target.x, target.y, false);
+          spawnBulletAt(target.x, target.y, false, 0);
+          // Power-up: Twin Shot (very noticeable)
+          if (player.twin > 0) {
+            for (let k = 0; k < player.twin; k++) {
+              const a = (k % 2 === 0 ? 0.14 : -0.14) * (1 + ((k / 2) | 0));
+              spawnBulletAt(target.x, target.y, false, a);
+            }
+          }
           sfx("shoot");
           // Legendary Barrage Protocol
           if (tuning.barrage && rand() < 0.18) {
             for (let i = -1; i <= 1; i++) {
-              spawnBulletAt(target.x + i * 28, target.y + i * 18, true);
+              spawnBulletAt(target.x + i * 28, target.y + i * 18, true, 0);
             }
           }
         }
 
-        function spawnBulletAt(tx, ty, isSpread) {
+        function spawnBulletAt(tx, ty, isSpread, angleOffset) {
           if (bullets.length >= CAP.bullets) return;
           const dx = tx - player.x;
           const dy = ty - player.y;
           const n = norm(dx, dy);
           let vx = n.x * player.bulletSpd;
           let vy = n.y * player.bulletSpd;
+          let rot = 0;
           if (isSpread) {
-            const rot = randRange(-0.18, 0.18);
+            rot += randRange(-0.18, 0.18);
+          }
+          if (angleOffset) rot += angleOffset;
+          if (rot !== 0) {
             const c = Math.cos(rot),
               s = Math.sin(rot);
             const rvx = vx * c - vy * s;
@@ -1915,7 +2113,8 @@
             r: 4,
             life: 1.7,
             dmg: player.dmg,
-            pierce: player.railgun ? 0 : 0,
+            pierce: Math.max(0, player.pierce | 0),
+            noHitT: 0,
             color: "rgba(255,255,255,0.95)",
           });
         }
@@ -2022,14 +2221,14 @@
           if (state.timeSurvived >= state.bossNextT) {
             if (!state.bossAlive) {
               spawnBoss();
-              state.bossNextT += 60;
+              state.bossNextT += BOSS_INTERVAL_S;
             }
           }
 
-          // hazard schedule (tier 4+)
-          if (state.threatTier >= 4) {
+          // hazard schedule (tier 6+) - friendlier
+          if (state.threatTier >= 6) {
             state.hazardT += dt * 1000;
-            const hazardMs = Math.max(3200, tuning.hazardBaseMs - state.threatTier * 700);
+            const hazardMs = Math.max(8200, tuning.hazardBaseMs - state.threatTier * 520);
             if (state.hazardT >= hazardMs) {
               state.hazardT = 0;
               spawnHazard();
@@ -2047,9 +2246,9 @@
             const spike = state.pulseT > 0 ? 1 : 0;
             const tier = state.threatTier;
             const r = rand();
-            if (tier >= 8 && r < 0.25 + spike * 0.12) spawnEnemy("tank");
-            else if (tier >= 5 && r < 0.40 + spike * 0.10) spawnEnemy("sprinter");
-            else if (tier >= 6 && r < 0.52) spawnEnemy("stalker");
+            if (tier >= 9 && r < 0.18 + spike * 0.08) spawnEnemy("tank");
+            else if (tier >= 6 && r < 0.30 + spike * 0.08) spawnEnemy("sprinter");
+            else if (tier >= 7 && r < 0.38) spawnEnemy("stalker");
             else spawnEnemy("chaser");
             // soft cap (performance)
             if (enemies.length > CAP.enemies * 0.92) enemies.splice(0, Math.max(0, enemies.length - CAP.enemies));
@@ -2120,12 +2319,13 @@
 
           // synergy: Overclock bursts
           state.synergyTimers.overclockT += dt;
-          if (hasSynergy("GUN") && state.synergyTimers.overclockT >= 2.6) {
+          if (hasSynergy("GUN") && state.synergyTimers.overclockT >= 2.2) {
             state.synergyTimers.overclockT = 0;
-            if (rand() < 0.36) {
+            if (rand() < 0.45) {
               const target = nearestEnemy();
               if (target) {
-                for (let i = 0; i < 4; i++) spawnBulletAt(target.x + randRange(-18, 18), target.y + randRange(-18, 18), true);
+                for (let i = 0; i < 5; i++)
+                  spawnBulletAt(target.x + randRange(-18, 18), target.y + randRange(-18, 18), true);
                 addTextBanner("OVERCLOCK", "rgba(0,229,255,0.75)");
                 sfx("shoot");
               }
@@ -2134,10 +2334,10 @@
 
           // synergy: Second Wind (once per minute)
           state.synergyTimers.secondWindT += dt;
-          if (hasSynergy("SURVIVE") && state.synergyTimers.secondWindT >= 60) {
+          if (hasSynergy("SURVIVE") && state.synergyTimers.secondWindT >= 45) {
             if (player.hp / player.maxHp <= 0.35) {
               state.synergyTimers.secondWindT = 0;
-              const heal = Math.ceil(player.maxHp * 0.28);
+              const heal = Math.ceil(player.maxHp * 0.35);
               player.hp = Math.min(player.maxHp, player.hp + heal);
               addTextBanner("SECOND WIND", "rgba(255,204,51,0.85)");
               state.shockwaves.push({ x: player.x, y: player.y, r: 10, dr: 980, a: 0.8, color: "rgba(255,204,51,0.45)" });
@@ -2147,7 +2347,7 @@
 
           // synergy: Nova
           state.synergyTimers.novaT += dt;
-          if (hasSynergy("AOE") && state.synergyTimers.novaT >= 9.2) {
+          if (hasSynergy("AOE") && state.synergyTimers.novaT >= 7.2) {
             state.synergyTimers.novaT = 0;
             doNovaBlast();
           }
@@ -2156,9 +2356,9 @@
           if (player.timeWarp) {
             player.timeWarpT = Math.max(0, player.timeWarpT - dt);
             player.timeWarpSlowT = Math.max(0, player.timeWarpSlowT - dt);
-            if (player.hp / player.maxHp <= 0.30 && player.timeWarpT <= 0) {
+            if (player.hp / player.maxHp <= 0.34 && player.timeWarpT <= 0) {
               player.timeWarpT = player.timeWarpCd;
-              player.timeWarpSlowT = 2.2;
+              player.timeWarpSlowT = 2.6;
               addTextBanner("TIME WARP", "rgba(139,92,255,0.85)");
               state.tintA = Math.max(state.tintA, 0.35);
               state.tintColor = "rgba(139,92,255,0.14)";
@@ -2201,10 +2401,12 @@
             b.x += b.vx * dt;
             b.y += b.vy * dt;
             b.life -= dt;
+            b.noHitT = Math.max(0, (b.noHitT || 0) - dt);
             if (b.life <= 0 || b.x < -60 || b.x > W + 60 || b.y < -60 || b.y > H + 60) {
               bullets.splice(i, 1);
               continue;
             }
+            if (b.noHitT > 0) continue;
 
             // collision with enemies/bosses
             let hit = null;
@@ -2234,7 +2436,15 @@
               // chain lightning
               if (player.chain > 0 && !dead) chainZap(hit, b.dmg * 0.7, player.chain);
 
-              bullets.splice(i, 1);
+              if (b.pierce > 0) {
+                b.pierce--;
+                b.dmg *= 0.78;
+                b.noHitT = 0.03;
+                b.x += b.vx * 0.02;
+                b.y += b.vy * 0.02;
+              } else {
+                bullets.splice(i, 1);
+              }
             }
           }
 
@@ -2327,10 +2537,10 @@
                 // damage if player intersects line
                 if (hz.vertical) {
                   const d = Math.abs(player.x - hz.pos);
-                  if (d < hz.w + player.r) damagePlayer(14, "rgba(255,43,214,0.9)");
+                  if (d < hz.w + player.r) damagePlayer(10, "rgba(255,43,214,0.9)");
                 } else {
                   const d = Math.abs(player.y - hz.pos);
-                  if (d < hz.w + player.r) damagePlayer(14, "rgba(255,43,214,0.9)");
+                  if (d < hz.w + player.r) damagePlayer(10, "rgba(255,43,214,0.9)");
                 }
               }
             } else if (hz.kind === "mine") {
@@ -2368,7 +2578,7 @@
             o.vx *= Math.pow(0.88, dt * 60);
             o.vy *= Math.pow(0.88, dt * 60);
             if (d < player.r + o.r + 6) {
-              gainXP(o.value);
+              gainXP(o.value * diffMul.xp * 1.15);
               addParticles(o.x, o.y, 8, "rgba(0,229,255,0.9)", 260, 0.45);
               sfx("pickup");
               orbs.splice(i, 1);
@@ -2477,10 +2687,10 @@
           sfx("slam");
           shake(0.45);
           // damage around
-          const r = 130 + state.threatTier * 4;
+          const r = 150 + state.threatTier * 4;
           for (const e of enemies) {
             const d = Math.hypot(e.x - player.x, e.y - player.y);
-            if (d < r + e.r) hitEnemy(e, Math.round(player.dmg * 1.1), e.x, e.y, "rgba(255,204,51,0.9)");
+            if (d < r + e.r) hitEnemy(e, Math.round(player.dmg * 1.25), e.x, e.y, "rgba(255,204,51,0.9)");
           }
         }
 
@@ -2499,9 +2709,9 @@
             b.x += toP.x * b.spd * enemySlow * dt;
             b.y += toP.y * b.spd * enemySlow * dt;
             // slam cycle
-            if (!b.shock && b.atkT >= 4.0 - state.threatTier * 0.12) {
+            if (!b.shock && b.atkT >= 4.8 - state.threatTier * 0.10) {
               b.atkT = 0;
-              b.slamWind = 0.95;
+              b.slamWind = 1.05;
               b.shock = { x: b.x, y: b.y, t: 0 };
               addTextBanner("SLAM!", "rgba(255,43,214,0.85)");
               sfx("bossWarn");
@@ -2518,7 +2728,7 @@
                 state.shockwaves.push({ x: cx, y: cy, r: 20, dr: 1280, a: 0.9, color: "rgba(255,43,214,0.40)" });
                 // damage if within immediate radius (fair: player had windup)
                 const dist = Math.hypot(player.x - cx, player.y - cy);
-                if (dist < 140) damagePlayer(b.dmg, b.color);
+                if (dist < 130) damagePlayer(b.dmg, b.color);
                 b.shock = null;
               }
             }
@@ -2537,12 +2747,12 @@
             b.x = clamp(b.x, 60, W - 60);
             b.y = clamp(b.y, 120, H - 120);
 
-            if (!b.beam && b.atkT >= 3.1 - state.threatTier * 0.08) {
+            if (!b.beam && b.atkT >= 3.5 - state.threatTier * 0.06) {
               b.atkT = 0;
               const aim = norm(player.x - b.x, player.y - b.y);
               const x2 = b.x + aim.x * 1600;
               const y2 = b.y + aim.y * 1600;
-              b.beam = { x1: b.x, y1: b.y, x2, y2, wind: 0.85, fire: 0.18 };
+              b.beam = { x1: b.x, y1: b.y, x2, y2, wind: 1.0, fire: 0.16 };
               addTextBanner("BEAM LOCK", "rgba(0,229,255,0.75)");
               sfx("bossWarn");
             }
@@ -2587,9 +2797,9 @@
 
             // vulnerability cycle
             b.vulT -= dt;
-            if (b.vulT <= -7.5) {
+            if (b.vulT <= -8.5) {
               // telegraph to become vulnerable soon
-              b.vulT = 3.2;
+              b.vulT = 3.8;
               b.shield = 0;
               addTextBanner("CORE EXPOSED", "rgba(255,204,51,0.85)");
               state.tintA = Math.max(state.tintA, 0.25);
@@ -2606,7 +2816,7 @@
             }
 
             // spawn minions (telegraphed by swirl particles)
-            const spawnEvery = Math.max(0.95, 1.55 - state.threatTier * 0.06);
+            const spawnEvery = Math.max(1.15, 1.75 - state.threatTier * 0.05);
             if (b.spawnT >= spawnEvery) {
               b.spawnT = 0;
               if (enemies.length < CAP.enemies) {
@@ -2618,7 +2828,7 @@
 
           // boss contact damage (telegraphed by size; still avoid unfairness via i-frames/dash)
           const d = Math.hypot(b.x - player.x, b.y - player.y);
-          if (d < b.r + player.r + 2) damagePlayer(14, b.color);
+          if (d < b.r + player.r + 2) damagePlayer(10, b.color);
 
           // boss death
           if (b.hp <= 0) killEnemy(b);
@@ -2707,14 +2917,15 @@
         function drawPlayer() {
           // i-frame flicker
           const inv = player.iFrames > 0 ? 0.55 + 0.45 * Math.sin(state.time * 40) : 1;
-          glowCircle(player.x, player.y, player.r + 6, "rgba(0,255,102,0.22)", 20, inv * 0.9);
-          glowCircle(player.x, player.y, player.r, "rgba(0,255,102,0.95)", 18, inv);
+          glowCircle(player.x, player.y, player.r + 14, PLAYER_GLOW, 28, inv * 0.95);
+          glowCircle(player.x, player.y, player.r + 3, "rgba(255,255,255,0.18)", 8, inv * 0.75);
+          glowCircle(player.x, player.y, player.r, PLAYER_COLOR, 24, inv);
 
           // direction nib
           ctx.save();
           ctx.globalAlpha = 0.9 * inv;
-          ctx.strokeStyle = "rgba(255,255,255,0.75)";
-          ctx.lineWidth = 2;
+          ctx.strokeStyle = "rgba(255,255,255,0.85)";
+          ctx.lineWidth = 3;
           ctx.beginPath();
           ctx.moveTo(player.x, player.y);
           ctx.lineTo(player.x, player.y - 22);
@@ -2813,7 +3024,8 @@
 
         function drawOrbs() {
           for (const o of orbs) {
-            glowCircle(o.x, o.y, o.r, "rgba(0,229,255,0.9)", 14, 0.95);
+            glowCircle(o.x, o.y, o.r + 6, "rgba(0,229,255,0.18)", 0, 1);
+            glowCircle(o.x, o.y, o.r, "rgba(0,229,255,0.95)", 22, 0.98);
           }
         }
 
@@ -3003,6 +3215,20 @@
           quickBeep({ freq: soundOn ? 880 : 220, dur: 0.09, type: "square", gain: 0.1 });
         });
 
+        // Difficulty selector (persisted)
+        if (diffSeg) {
+          diffSeg.addEventListener("click", (e) => {
+            const btn = e.target && e.target.closest ? e.target.closest(".segBtn") : null;
+            if (!btn) return;
+            const id = btn.dataset.diff;
+            if (!id) return;
+            ensureAudio();
+            applyDifficulty(id);
+            quickBeep({ freq: id === "easy" ? 660 : id === "hard" ? 220 : 440, dur: 0.08, type: "square", gain: 0.09 });
+          });
+        }
+        applyDifficulty(difficultyId);
+
         // Close upgrade overlay with Esc (desktop)
         window.addEventListener("keydown", (e) => {
           if (e.code === "Escape" && state.mode === "levelup") {
@@ -3065,4 +3291,3 @@
     </script>
   </body>
 </html>
-

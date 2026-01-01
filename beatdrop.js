@@ -35,13 +35,14 @@
   const SONGS = {
   golden: {
     displayName: "Demon Hunter - Golden",
-    audioCandidates: ["/Note-APP/assets/golden.ogg", "/Note-APP/assets/golden.mp3"],
+    // Use relative paths so this works on GitHub Pages, subpaths, and local file servers.
+    audioCandidates: ["assets/golden.mp3", "assets/golden.ogg"],
     bpm: 140,
     offsetMs: 0,
   },
   sodapop: {
     displayName: "Soda Pop",
-    audioCandidates: ["/Note-APP/assets/sodapop.ogg", "/Note-APP/assets/sodapop.mp3"],
+    audioCandidates: ["assets/sodapop.mp3", "assets/sodapop.ogg"],
     bpm: 128,
     offsetMs: 0,
   },
@@ -186,6 +187,66 @@
     return candidates[0];
   }
 
+  function orderCandidatesBySupport(audioEl, candidates) {
+    const list = Array.from(new Set(candidates.filter(Boolean)));
+    if (list.length <= 1) return list;
+
+    const preferred = pickPlayableSrc(audioEl, list);
+    if (!preferred) return list;
+    return [preferred, ...list.filter((c) => c !== preferred)];
+  }
+
+  function tryLoadAudioSrc(audioEl, src, timeoutMs = 1200) {
+    return new Promise((resolve, reject) => {
+      let settled = false;
+
+      const cleanup = () => {
+        audioEl.onloadedmetadata = null;
+        audioEl.oncanplaythrough = null;
+        audioEl.onerror = null;
+      };
+
+      const ok = () => {
+        if (settled) return;
+        settled = true;
+        cleanup();
+        resolve();
+      };
+
+      const bad = () => {
+        if (settled) return;
+        settled = true;
+        cleanup();
+        reject(new Error(`Failed to load audio: ${src}`));
+      };
+
+      audioEl.onloadedmetadata = ok;
+      audioEl.oncanplaythrough = ok;
+      audioEl.onerror = bad;
+
+      // Setting src after handlers ensures we catch fast failures.
+      audioEl.src = src;
+      try {
+        audioEl.load();
+      } catch (_) {
+        // Some browsers ignore; that's okay.
+      }
+
+      setTimeout(() => {
+        if (settled) return;
+        settled = true;
+        cleanup();
+
+        // If it silently loaded, accept; otherwise treat as failure so we can fall back.
+        if (audioEl.readyState >= 2) {
+          resolve();
+        } else {
+          reject(new Error(`Timed out loading audio: ${src}`));
+        }
+      }, timeoutMs);
+    });
+  }
+
   async function prepareAudioForSong(song) {
     // Stop prior audio if any
     if (state.audio) {
@@ -202,9 +263,6 @@
     audio.loop = false;
     audio.crossOrigin = "anonymous"; // safe even for local; avoids some platform quirks
 
-    const src = pickPlayableSrc(audio, song.audioCandidates);
-    audio.src = src;
-
     state.audio = audio;
 
     // Wire events
@@ -214,34 +272,31 @@
       }
     };
 
-    audio.onerror = () => {
+    const ordered = orderCandidatesBySupport(audio, song.audioCandidates);
+    let loaded = false;
+    for (const src of ordered) {
+      try {
+        // Clear any prior source to avoid some browser caching quirks when retrying.
+        audio.removeAttribute("src");
+        await tryLoadAudioSrc(audio, src, 1400);
+        loaded = true;
+        break;
+      } catch (_) {
+        // Try next candidate
+      }
+    }
+
+    if (!loaded) {
       state.audioErrored = true;
       state.audioReady = false;
       setOverlayMessage(
-        `Couldn't load audio. Put a local file at "${song.audioCandidates.join('" or "')}".`
+        `Couldn't load audio. Put a local file at "${ordered.join('" or "')}".`
       );
-    };
-
-    // Try to load metadata so duration/time works and play is more reliable after tap
-    await new Promise((resolve) => {
-      const done = () => resolve();
-      audio.onloadedmetadata = done;
-      audio.oncanplaythrough = done;
-      // Trigger load
-      try {
-        audio.load();
-      } catch (_) {
-        // Some browsers ignore; that's okay.
-      }
-      // Hard timeout so we don't hang the UI
-      setTimeout(done, 1200);
-    });
-
-    // If error fired, keep message.
-    if (!state.audioErrored) {
-      state.audioReady = true;
-      setOverlayMessage("");
+      return;
     }
+
+    state.audioReady = true;
+    setOverlayMessage("");
   }
 
   function nowSongMs() {

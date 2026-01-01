@@ -564,56 +564,56 @@
             label: "EASY",
             hint: "More XP, slower THREAT, fewer hazards. Great for chill builds.",
             tuning: {
-              spawnBaseMs: 1120,
-              spawnMinMs: 380,
-              threatPerSec: 0.24,
-              threatPerKill: 0.45,
-              threatTierStep: 40,
-              hazardBaseMs: 16500,
-              hitIFrames: 0.78,
+              spawnBaseMs: 1450,
+              spawnMinMs: 520,
+              threatPerSec: 0.12,
+              threatPerKill: 0.25,
+              threatTierStep: 60,
+              hazardBaseMs: 22000,
+              hitIFrames: 0.85,
             },
-            mul: { enemyHp: 0.86, enemyDmg: 0.75, enemySpd: 0.92, xp: 1.35, score: 1.0 },
+            mul: { enemyHp: 0.80, enemyDmg: 0.62, enemySpd: 0.88, xp: 1.7, score: 1.0 },
           },
           normal: {
             id: "normal",
             label: "NORMAL",
             hint: "Balanced. Still tough, but upgrades should carry you.",
             tuning: {
-              spawnBaseMs: 1020,
-              spawnMinMs: 310,
-              threatPerSec: 0.30,
-              threatPerKill: 0.58,
-              threatTierStep: 36,
-              hazardBaseMs: 14500,
-              hitIFrames: 0.72,
+              spawnBaseMs: 1220,
+              spawnMinMs: 420,
+              threatPerSec: 0.18,
+              threatPerKill: 0.38,
+              threatTierStep: 48,
+              hazardBaseMs: 18000,
+              hitIFrames: 0.78,
             },
-            mul: { enemyHp: 1.0, enemyDmg: 1.0, enemySpd: 1.0, xp: 1.2, score: 1.0 },
+            mul: { enemyHp: 0.95, enemyDmg: 0.88, enemySpd: 0.95, xp: 1.4, score: 1.0 },
           },
           hard: {
             id: "hard",
             label: "HARD",
             hint: "Faster spawns, faster THREAT. Builds matter a lot.",
             tuning: {
-              spawnBaseMs: 920,
-              spawnMinMs: 260,
-              threatPerSec: 0.38,
-              threatPerKill: 0.75,
-              threatTierStep: 32,
-              hazardBaseMs: 13000,
-              hitIFrames: 0.68,
+              spawnBaseMs: 980,
+              spawnMinMs: 340,
+              threatPerSec: 0.26,
+              threatPerKill: 0.55,
+              threatTierStep: 38,
+              hazardBaseMs: 15000,
+              hitIFrames: 0.72,
             },
-            mul: { enemyHp: 1.12, enemyDmg: 1.08, enemySpd: 1.05, xp: 1.05, score: 1.0 },
+            mul: { enemyHp: 1.05, enemyDmg: 1.02, enemySpd: 1.02, xp: 1.15, score: 1.0 },
           },
         };
 
         let difficultyId = (() => {
           try {
-            return localStorage.getItem(DIFF_KEY) || "normal";
+            return localStorage.getItem(DIFF_KEY) || "easy";
           } catch {
-            return "normal";
+            return "easy";
           }
         })();
-        if (!DIFFS[difficultyId]) difficultyId = "normal";
+        if (!DIFFS[difficultyId]) difficultyId = "easy";
         let diffMul = { enemyHp: 1, enemyDmg: 1, enemySpd: 1, xp: 1, score: 1 };
 
         const BOSS_INTERVAL_S = 90;
@@ -1007,7 +1007,7 @@
         const player = {
           x: W / 2,
           y: H / 2 + 160,
-          r: 16,
+          r: 19,
           hp: 100,
           maxHp: 100,
           dmg: 14,
@@ -1294,18 +1294,21 @@
           },
         ];
 
+        const PLAYER_COLOR = "rgba(255,40,80,0.98)";
+        const PLAYER_GLOW = "rgba(255,40,80,0.28)";
+
         // ===== Tuning knobs =====
         const tuning = {
-          hitIFrames: 0.72,
-          baseEnemyHp: 24,
+          hitIFrames: 0.78,
+          baseEnemyHp: 22,
           scoreKill: 12,
           scorePerSec: 1,
-          spawnBaseMs: 980,
-          spawnMinMs: 280,
-          threatPerSec: 0.42,
-          threatPerKill: 0.85,
-          threatTierStep: 30,
-          hazardBaseMs: 13500,
+          spawnBaseMs: 1220,
+          spawnMinMs: 420,
+          threatPerSec: 0.18,
+          threatPerKill: 0.38,
+          threatTierStep: 48,
+          hazardBaseMs: 18000,
           barrage: false,
         };
 
@@ -1419,14 +1422,14 @@
           return false;
         }
 
-        function spawnOrb(x, y, value = 1) {
+        function spawnOrb(x, y, value = 2) {
           if (orbs.length >= CAP.orbs) return;
           orbs.push({
             x,
             y,
             vx: randRange(-60, 60),
             vy: randRange(-80, 20),
-            r: 6,
+            r: 9,
             value,
             life: 18,
           });
@@ -1945,8 +1948,8 @@
 
           player.x = W / 2;
           player.y = H / 2 + 170;
-          player.maxHp = 120;
-          player.hp = 120;
+          player.maxHp = 150;
+          player.hp = 150;
           player.dmg = 16;
           player.fireMs = 120;
           player.bulletSpd = 860;
@@ -2041,7 +2044,7 @@
             showUpgradeCards(true);
           } else {
             addParticles(e.x, e.y, 26, e.color, 620, 0.85);
-            for (let i = 0; i < e.xp; i++) spawnOrb(e.x + randRange(-12, 12), e.y + randRange(-12, 12), 1);
+            for (let i = 0; i < e.xp; i++) spawnOrb(e.x + randRange(-12, 12), e.y + randRange(-12, 12));
             state.kills++;
             addScore(e.score);
             state.threat += tuning.threatPerKill;
@@ -2222,10 +2225,10 @@
             }
           }
 
-          // hazard schedule (tier 5+)
-          if (state.threatTier >= 5) {
+          // hazard schedule (tier 6+) - friendlier
+          if (state.threatTier >= 6) {
             state.hazardT += dt * 1000;
-            const hazardMs = Math.max(5200, tuning.hazardBaseMs - state.threatTier * 550);
+            const hazardMs = Math.max(8200, tuning.hazardBaseMs - state.threatTier * 520);
             if (state.hazardT >= hazardMs) {
               state.hazardT = 0;
               spawnHazard();
@@ -2243,9 +2246,9 @@
             const spike = state.pulseT > 0 ? 1 : 0;
             const tier = state.threatTier;
             const r = rand();
-            if (tier >= 8 && r < 0.25 + spike * 0.12) spawnEnemy("tank");
-            else if (tier >= 5 && r < 0.40 + spike * 0.10) spawnEnemy("sprinter");
-            else if (tier >= 6 && r < 0.52) spawnEnemy("stalker");
+            if (tier >= 9 && r < 0.18 + spike * 0.08) spawnEnemy("tank");
+            else if (tier >= 6 && r < 0.30 + spike * 0.08) spawnEnemy("sprinter");
+            else if (tier >= 7 && r < 0.38) spawnEnemy("stalker");
             else spawnEnemy("chaser");
             // soft cap (performance)
             if (enemies.length > CAP.enemies * 0.92) enemies.splice(0, Math.max(0, enemies.length - CAP.enemies));
@@ -2575,7 +2578,7 @@
             o.vx *= Math.pow(0.88, dt * 60);
             o.vy *= Math.pow(0.88, dt * 60);
             if (d < player.r + o.r + 6) {
-              gainXP(o.value * diffMul.xp);
+              gainXP(o.value * diffMul.xp * 1.15);
               addParticles(o.x, o.y, 8, "rgba(0,229,255,0.9)", 260, 0.45);
               sfx("pickup");
               orbs.splice(i, 1);
@@ -2914,14 +2917,15 @@
         function drawPlayer() {
           // i-frame flicker
           const inv = player.iFrames > 0 ? 0.55 + 0.45 * Math.sin(state.time * 40) : 1;
-          glowCircle(player.x, player.y, player.r + 6, "rgba(255,64,64,0.22)", 20, inv * 0.9);
-          glowCircle(player.x, player.y, player.r, "rgba(255,64,64,0.95)", 18, inv);
+          glowCircle(player.x, player.y, player.r + 14, PLAYER_GLOW, 28, inv * 0.95);
+          glowCircle(player.x, player.y, player.r + 3, "rgba(255,255,255,0.18)", 8, inv * 0.75);
+          glowCircle(player.x, player.y, player.r, PLAYER_COLOR, 24, inv);
 
           // direction nib
           ctx.save();
           ctx.globalAlpha = 0.9 * inv;
-          ctx.strokeStyle = "rgba(255,255,255,0.75)";
-          ctx.lineWidth = 2;
+          ctx.strokeStyle = "rgba(255,255,255,0.85)";
+          ctx.lineWidth = 3;
           ctx.beginPath();
           ctx.moveTo(player.x, player.y);
           ctx.lineTo(player.x, player.y - 22);
@@ -3020,7 +3024,8 @@
 
         function drawOrbs() {
           for (const o of orbs) {
-            glowCircle(o.x, o.y, o.r, "rgba(0,229,255,0.9)", 14, 0.95);
+            glowCircle(o.x, o.y, o.r + 6, "rgba(0,229,255,0.18)", 0, 1);
+            glowCircle(o.x, o.y, o.r, "rgba(0,229,255,0.95)", 22, 0.98);
           }
         }
 

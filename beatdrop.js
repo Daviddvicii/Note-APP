@@ -35,13 +35,14 @@
   const SONGS = {
   golden: {
     displayName: "Demon Hunter - Golden",
-    audioCandidates: ["/Note-APP/assets/golden.ogg", "/Note-APP/assets/golden.mp3"],
+    // Use relative paths so it works on GitHub Pages (subpaths) and locally.
+    audioCandidates: ["assets/golden.ogg", "assets/golden.mp3"],
     bpm: 140,
     offsetMs: 0,
   },
   sodapop: {
     displayName: "Soda Pop",
-    audioCandidates: ["/Note-APP/assets/sodapop.ogg", "/Note-APP/assets/sodapop.mp3"],
+    audioCandidates: ["assets/sodapop.ogg", "assets/sodapop.mp3"],
     bpm: 128,
     offsetMs: 0,
   },
@@ -202,7 +203,8 @@
     audio.loop = false;
     audio.crossOrigin = "anonymous"; // safe even for local; avoids some platform quirks
 
-    const src = pickPlayableSrc(audio, song.audioCandidates);
+    // Resolve relative URLs against the document base (handles subpaths correctly).
+    const src = new URL(pickPlayableSrc(audio, song.audioCandidates), document.baseURI).toString();
     audio.src = src;
 
     state.audio = audio;

@@ -33,19 +33,25 @@
   // Song metadata (easy to tweak)
   // -----------------------------
   const SONGS = {
-  golden: {
-    displayName: "Demon Hunter - Golden",
-    audioCandidates: ["/Note-APP/assets/golden.ogg", "/Note-APP/assets/golden.mp3"],
-    bpm: 140,
-    offsetMs: 0,
-  },
-  sodapop: {
-    displayName: "Soda Pop",
-    audioCandidates: ["/Note-APP/assets/sodapop.ogg", "/Note-APP/assets/sodapop.mp3"],
-    bpm: 128,
-    offsetMs: 0,
-  },
-};
+    golden: {
+      displayName: "Demon Hunter - Golden",
+      audioCandidates: ["assets/golden.ogg", "assets/golden.mp3"],
+      bpm: 140,
+      offsetMs: 0,
+    },
+    sodapop: {
+      displayName: "Soda Pop",
+      audioCandidates: ["assets/sodapop.ogg", "assets/sodapop.mp3"],
+      bpm: 128,
+      offsetMs: 0,
+    },
+    unicorn: {
+      displayName: "Unicorn Heads - Drifting",
+      audioCandidates: ["assets/unicorn.ogg", "assets/unicorn.mp3"],
+      bpm: 120,
+      offsetMs: 0,
+    },
+  };
 
   // -----------------------------
   // DOM
@@ -58,8 +64,10 @@
   const startBtn = document.getElementById("startBtn");
   const btnGolden = document.getElementById("songBtn-golden");
   const btnSoda = document.getElementById("songBtn-sodapop");
+  const btnUnicorn = document.getElementById("songBtn-unicorn");
   const metaGolden = document.getElementById("songMeta-golden");
   const metaSoda = document.getElementById("songMeta-sodapop");
+  const metaUnicorn = document.getElementById("songMeta-unicorn");
 
   const hudScore = document.getElementById("hudScore");
   const hudBest = document.getElementById("hudBest");
@@ -154,6 +162,7 @@
     state.songId = songId;
     btnGolden.classList.toggle("selected", songId === "golden");
     btnSoda.classList.toggle("selected", songId === "sodapop");
+    if (btnUnicorn) btnUnicorn.classList.toggle("selected", songId === "unicorn");
 
     const s = SONGS[songId];
     state.best = loadBest(songId);
@@ -776,12 +785,14 @@
 
   btnGolden.addEventListener("click", () => setSelectedSong("golden"));
   btnSoda.addEventListener("click", () => setSelectedSong("sodapop"));
+  if (btnUnicorn) btnUnicorn.addEventListener("click", () => setSelectedSong("unicorn"));
 
   // -----------------------------
   // Init
   // -----------------------------
   metaGolden.textContent = `BPM: ${SONGS.golden.bpm}`;
   metaSoda.textContent = `BPM: ${SONGS.sodapop.bpm}`;
+  if (metaUnicorn) metaUnicorn.textContent = `BPM: ${SONGS.unicorn.bpm}`;
 
   setSelectedSong(state.songId);
   setOverlayVisible(true);

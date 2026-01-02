@@ -1091,10 +1091,10 @@
           pool.push({
             id: "twinshot1",
             name: "Twin Shot",
-            desc: "Each shot fires +1 extra bullet.",
+            desc: "Each shot fires +1 extra bullet. (Stacks)",
             tags: ["GUN"],
             rarity: "rare",
-            apply: () => (player.twin = clamp(player.twin + 1, 0, 2)),
+            apply: () => (player.twin += 1),
           });
           pool.push({
             id: "dmg2",
@@ -1115,10 +1115,10 @@
           pool.push({
             id: "pierce1",
             name: "Piercing Tips",
-            desc: "Bullets pierce 1 enemy.",
+            desc: "Bullets pierce +1 enemy. (Stacks)",
             tags: ["GUN"],
             rarity: "epic",
-            apply: () => (player.pierce = Math.max(player.pierce, 1)),
+            apply: () => (player.pierce += 1),
           });
 
           // MOVE
@@ -1183,10 +1183,10 @@
           pool.push({
             id: "mag1",
             name: "Magnet Coil",
-            desc: "+45 Magnet radius.",
+            desc: "+45 Magnet radius. (Stacks)",
             tags: ["TECH"],
             rarity: "common",
-            apply: () => (player.magnet = Math.min(320, player.magnet + 45)),
+            apply: () => (player.magnet += 45),
           });
           pool.push({
             id: "iframes1",
@@ -1201,18 +1201,18 @@
           pool.push({
             id: "aoe1",
             name: "Arc Splash",
-            desc: "Splash on hit (+Explode radius 26).",
+            desc: "+26 Explode radius. (Stacks)",
             tags: ["AOE", "GUN"],
             rarity: "rare",
-            apply: () => (player.explosiveR = Math.max(player.explosiveR, 26)),
+            apply: () => (player.explosiveR += 26),
           });
           pool.push({
             id: "aoe2",
             name: "Impact Bloom",
-            desc: "Big splash on hit (+Explode radius 42).",
+            desc: "+42 Explode radius. (Stacks)",
             tags: ["AOE", "GUN"],
             rarity: "epic",
-            apply: () => (player.explosiveR = Math.max(player.explosiveR, 42)),
+            apply: () => (player.explosiveR += 42),
           });
 
           return pool;
@@ -1236,34 +1236,34 @@
           {
             id: "leg_chain",
             name: "Chain Lightning",
-            desc: "Bullets jump targets (3 bounces).",
+            desc: "Bullets jump targets (+3 bounces). (Stacks)",
             tags: ["GUN", "TECH"],
             rarity: "legendary",
-            apply: () => (player.chain = Math.max(player.chain, 3)),
+            apply: () => (player.chain += 3),
           },
           {
             id: "leg_blades",
             name: "Blade Orbit",
-            desc: "Rotating blades shred nearby enemies.",
+            desc: "+2 rotating blades. (Stacks)",
             tags: ["AOE", "SURVIVE"],
             rarity: "legendary",
-            apply: () => setBlades(Math.max(player.blades, 4)),
+            apply: () => setBlades(player.blades + 2),
           },
           {
             id: "leg_explosive",
             name: "Explosive Rounds",
-            desc: "Impact AOE. Bigger = louder.",
+            desc: "+60 Explode radius. (Stacks)",
             tags: ["AOE", "GUN"],
             rarity: "legendary",
-            apply: () => (player.explosiveR = Math.max(player.explosiveR, 60)),
+            apply: () => (player.explosiveR += 60),
           },
           {
             id: "leg_drones",
             name: "Drone Wing",
-            desc: "2 orbit drones that fire.",
+            desc: "+2 orbit drones that fire. (Stacks)",
             tags: ["TECH", "GUN"],
             rarity: "legendary",
-            apply: () => setDrones(Math.min(4, player.drones + 2)),
+            apply: () => setDrones(player.drones + 2),
           },
           {
             id: "leg_timewarp",
@@ -1279,10 +1279,10 @@
           {
             id: "leg_vamp",
             name: "Vampiric Circuit",
-            desc: "Heal on kill. (+3 HP per kill)",
+            desc: "Heal on kill. (+1 HP per kill) (Stacks)",
             tags: ["SURVIVE", "TECH"],
             rarity: "legendary",
-            apply: () => (player.vamp = Math.max(player.vamp, 3)),
+            apply: () => (player.vamp += 1),
           },
           {
             id: "leg_barrage",
@@ -1745,12 +1745,12 @@
         function setBlades(n) {
           player.blades = n | 0;
           blades.length = 0;
-          const count = clamp(player.blades, 0, 6);
+          const count = clamp(player.blades, 0, 12);
           for (let i = 0; i < count; i++) blades.push({ a: (i / count) * Math.PI * 2, r: 58, dmg: 12 });
         }
 
         function setDrones(n) {
-          player.drones = clamp(n | 0, 0, 4);
+          player.drones = clamp(n | 0, 0, 12);
           drones.length = 0;
           const count = player.drones;
           for (let i = 0; i < count; i++) drones.push({ a: (i / Math.max(1, count)) * Math.PI * 2, r: 84, t: 0 });
@@ -2068,10 +2068,13 @@
           shootT = 0;
           const target = nearestEnemy();
           if (!target) return;
+          const remaining = CAP.bullets - bullets.length;
+          if (remaining <= 0) return;
           spawnBulletAt(target.x, target.y, false, 0);
           // Power-up: Twin Shot (very noticeable)
           if (player.twin > 0) {
-            for (let k = 0; k < player.twin; k++) {
+            const extraMax = Math.max(0, CAP.bullets - bullets.length);
+            for (let k = 0; k < player.twin && k < extraMax; k++) {
               const a = (k % 2 === 0 ? 0.14 : -0.14) * (1 + ((k / 2) | 0));
               spawnBulletAt(target.x, target.y, false, a);
             }

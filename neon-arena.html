@@ -996,7 +996,8 @@
           // synergy
           tagCount: { GUN: 0, MOVE: 0, SURVIVE: 0, TECH: 0, AOE: 0 },
           synergy: [], // {tag, name, desc}
-          synergyMax: 3,
+          // Uncapped stacking mode: allow all synergies (still naturally limited by tags)
+          synergyMax: 99,
           synergyTimers: {
             overclockT: 0,
             secondWindT: 0,
@@ -1050,6 +1051,13 @@
         const blades = []; // orbit blades {a, r, dmg}
         const drones = []; // orbit drones {a, r, t}
 
+        // Uncapped stacking can create huge counts; we cap *simulated/rendered* entities for perf,
+        // and scale their damage/output to match the full stacked value.
+        const STACK_SIM_CAP = Object.freeze({
+          blades: 12,
+          drones: 12,
+        });
+
         // ===== Upgrades =====
         const rarityOrder = ["common", "rare", "epic", "legendary"];
         const rarityLabel = {
@@ -1094,7 +1102,7 @@
             desc: "Each shot fires +1 extra bullet.",
             tags: ["GUN"],
             rarity: "rare",
-            apply: () => (player.twin = clamp(player.twin + 1, 0, 2)),
+            apply: () => (player.twin = (player.twin | 0) + 1),
           });
           pool.push({
             id: "dmg2",
@@ -1118,7 +1126,7 @@
             desc: "Bullets pierce 1 enemy.",
             tags: ["GUN"],
             rarity: "epic",
-            apply: () => (player.pierce = Math.max(player.pierce, 1)),
+            apply: () => (player.pierce = (player.pierce | 0) + 1),
           });
 
           // MOVE
@@ -1204,7 +1212,7 @@
             desc: "Splash on hit (+Explode radius 26).",
             tags: ["AOE", "GUN"],
             rarity: "rare",
-            apply: () => (player.explosiveR = Math.max(player.explosiveR, 26)),
+            apply: () => (player.explosiveR = (player.explosiveR | 0) + 26),
           });
           pool.push({
             id: "aoe2",
@@ -1212,7 +1220,7 @@
             desc: "Big splash on hit (+Explode radius 42).",
             tags: ["AOE", "GUN"],
             rarity: "epic",
-            apply: () => (player.explosiveR = Math.max(player.explosiveR, 42)),
+            apply: () => (player.explosiveR = (player.explosiveR | 0) + 42),
           });
 
           return pool;
@@ -1239,7 +1247,7 @@
             desc: "Bullets jump targets (3 bounces).",
             tags: ["GUN", "TECH"],
             rarity: "legendary",
-            apply: () => (player.chain = Math.max(player.chain, 3)),
+            apply: () => (player.chain = (player.chain | 0) + 3),
           },
           {
             id: "leg_blades",
@@ -1247,7 +1255,7 @@
             desc: "Rotating blades shred nearby enemies.",
             tags: ["AOE", "SURVIVE"],
             rarity: "legendary",
-            apply: () => setBlades(Math.max(player.blades, 4)),
+            apply: () => setBlades((player.blades | 0) + 4),
           },
           {
             id: "leg_explosive",
@@ -1255,7 +1263,7 @@
             desc: "Impact AOE. Bigger = louder.",
             tags: ["AOE", "GUN"],
             rarity: "legendary",
-            apply: () => (player.explosiveR = Math.max(player.explosiveR, 60)),
+            apply: () => (player.explosiveR = (player.explosiveR | 0) + 60),
           },
           {
             id: "leg_drones",
@@ -1263,7 +1271,7 @@
             desc: "2 orbit drones that fire.",
             tags: ["TECH", "GUN"],
             rarity: "legendary",
-            apply: () => setDrones(Math.min(4, player.drones + 2)),
+            apply: () => setDrones((player.drones | 0) + 2),
           },
           {
             id: "leg_timewarp",
@@ -1282,7 +1290,7 @@
             desc: "Heal on kill. (+3 HP per kill)",
             tags: ["SURVIVE", "TECH"],
             rarity: "legendary",
-            apply: () => (player.vamp = Math.max(player.vamp, 3)),
+            apply: () => (player.vamp = (player.vamp | 0) + 3),
           },
           {
             id: "leg_barrage",
@@ -1771,17 +1779,24 @@
 
         // ===== Blades / Drones =====
         function setBlades(n) {
-          player.blades = n | 0;
+          player.blades = Math.max(0, n | 0);
           blades.length = 0;
-          const count = clamp(player.blades, 0, 6);
-          for (let i = 0; i < count; i++) blades.push({ a: (i / count) * Math.PI * 2, r: 58, dmg: 12 });
+          const count = clamp(player.blades, 0, STACK_SIM_CAP.blades);
+          if (count <= 0) return;
+          // Scale per-blade DPS so total output scales with uncapped blade count.
+          // Old behavior was effectively "12 damage per frame while touching" (~720 DPS at 60fps).
+          const perBladeDps = (720 * player.blades) / count;
+          for (let i = 0; i < count; i++) blades.push({ a: (i / count) * Math.PI * 2, r: 58, dps: perBladeDps });
         }
 
         function setDrones(n) {
-          player.drones = clamp(n | 0, 0, 4);
+          player.drones = Math.max(0, n | 0);
           drones.length = 0;
-          const count = player.drones;
-          for (let i = 0; i < count; i++) drones.push({ a: (i / Math.max(1, count)) * Math.PI * 2, r: 84, t: 0 });
+          const count = clamp(player.drones, 0, STACK_SIM_CAP.drones);
+          if (count <= 0) return;
+          // Keep a capped number of simulated drones, but scale shot damage by the full stacked count.
+          const outMul = player.drones / count;
+          for (let i = 0; i < count; i++) drones.push({ a: (i / Math.max(1, count)) * Math.PI * 2, r: 84, t: 0, outMul });
         }
 
         // ===== Leveling =====
@@ -2416,14 +2431,25 @@
             for (const d of drones) {
               d.a += dt * 1.8;
               d.t += dt;
-              if (d.t >= 0.72) {
-                d.t = 0;
+              while (d.t >= 0.72) {
+                d.t -= 0.72;
                 const t = nearestEnemy();
                 if (t && bullets.length < CAP.bullets) {
                   const px = player.x + Math.cos(d.a) * d.r;
                   const py = player.y + Math.sin(d.a) * d.r;
                   const n = norm(t.x - px, t.y - py);
-                  bullets.push({ x: px, y: py, vx: n.x * (player.bulletSpd * 0.85), vy: n.y * (player.bulletSpd * 0.85), r: 3, life: 1.35, dmg: Math.max(8, player.dmg * 0.55), pierce: 0, color: "rgba(0,229,255,0.9)" });
+                  const dmg = Math.max(8, player.dmg * 0.55) * (d.outMul || 1);
+                  bullets.push({
+                    x: px,
+                    y: py,
+                    vx: n.x * (player.bulletSpd * 0.85),
+                    vy: n.y * (player.bulletSpd * 0.85),
+                    r: 3,
+                    life: 1.35,
+                    dmg,
+                    pierce: 0,
+                    color: "rgba(0,229,255,0.9)",
+                  });
                 }
               }
             }
@@ -2510,7 +2536,7 @@
               const by = player.y + Math.sin(b.a) * b.r;
               for (const e of enemies) {
                 const d = Math.hypot(e.x - bx, e.y - by);
-                if (d < e.r + 10) hitEnemy(e, b.dmg, bx, by, "rgba(255,204,51,0.85)");
+                if (d < e.r + 10) hitEnemy(e, (b.dps || 0) * dt, bx, by, "rgba(255,204,51,0.85)");
               }
             }
           }

@@ -35,13 +35,15 @@
   const SONGS = {
   golden: {
     displayName: "Demon Hunter - Golden",
-    audioCandidates: ["/Note-APP/assets/golden.ogg", "/Note-APP/assets/golden.mp3"],
+    // IMPORTANT: use relative paths so this works on GitHub Pages / subfolders.
+    // Files live in the repo's `assets/` folder.
+    audioCandidates: ["assets/golden.mp3", "assets/golden.ogg"],
     bpm: 140,
     offsetMs: 0,
   },
   sodapop: {
     displayName: "Soda Pop",
-    audioCandidates: ["/Note-APP/assets/sodapop.ogg", "/Note-APP/assets/sodapop.mp3"],
+    audioCandidates: ["assets/sodapop.mp3", "assets/sodapop.ogg"],
     bpm: 128,
     offsetMs: 0,
   },

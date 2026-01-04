@@ -564,13 +564,13 @@
             label: "EASY",
             hint: "More XP, slower THREAT, fewer hazards. Great for chill builds.",
             tuning: {
-              spawnBaseMs: 1450,
-              spawnMinMs: 520,
-              threatPerSec: 0.12,
-              threatPerKill: 0.25,
-              threatTierStep: 60,
-              hazardBaseMs: 22000,
-              hitIFrames: 0.85,
+              spawnBaseMs: 1500,
+              spawnMinMs: 560,
+              threatPerSec: 0.11,
+              threatPerKill: 0.22,
+              threatTierStep: 70,
+              hazardBaseMs: 24000,
+              hitIFrames: 0.90,
             },
             mul: { enemyHp: 0.80, enemyDmg: 0.62, enemySpd: 0.88, xp: 1.7, score: 1.0 },
           },
@@ -579,13 +579,13 @@
             label: "NORMAL",
             hint: "Balanced. Still tough, but upgrades should carry you.",
             tuning: {
-              spawnBaseMs: 1220,
-              spawnMinMs: 420,
-              threatPerSec: 0.18,
-              threatPerKill: 0.38,
-              threatTierStep: 48,
-              hazardBaseMs: 18000,
-              hitIFrames: 0.78,
+              spawnBaseMs: 1320,
+              spawnMinMs: 480,
+              threatPerSec: 0.16,
+              threatPerKill: 0.32,
+              threatTierStep: 56,
+              hazardBaseMs: 20000,
+              hitIFrames: 0.82,
             },
             mul: { enemyHp: 0.95, enemyDmg: 0.88, enemySpd: 0.95, xp: 1.4, score: 1.0 },
           },
@@ -594,13 +594,13 @@
             label: "HARD",
             hint: "Faster spawns, faster THREAT. Builds matter a lot.",
             tuning: {
-              spawnBaseMs: 980,
-              spawnMinMs: 340,
-              threatPerSec: 0.26,
-              threatPerKill: 0.55,
-              threatTierStep: 38,
-              hazardBaseMs: 15000,
-              hitIFrames: 0.72,
+              spawnBaseMs: 1080,
+              spawnMinMs: 390,
+              threatPerSec: 0.22,
+              threatPerKill: 0.42,
+              threatTierStep: 44,
+              hazardBaseMs: 16500,
+              hitIFrames: 0.76,
             },
             mul: { enemyHp: 1.05, enemyDmg: 1.02, enemySpd: 1.02, xp: 1.15, score: 1.0 },
           },
@@ -1299,16 +1299,18 @@
 
         // ===== Tuning knobs =====
         const tuning = {
-          hitIFrames: 0.78,
+          // Defaults (will be overwritten by `applyDifficulty()` on load/start)
+          // Keep these aligned with NORMAL so any early reads remain sane.
+          hitIFrames: 0.82,
           baseEnemyHp: 22,
           scoreKill: 12,
           scorePerSec: 1,
-          spawnBaseMs: 1220,
-          spawnMinMs: 420,
-          threatPerSec: 0.18,
-          threatPerKill: 0.38,
-          threatTierStep: 48,
-          hazardBaseMs: 18000,
+          spawnBaseMs: 1320,
+          spawnMinMs: 480,
+          threatPerSec: 0.16,
+          threatPerKill: 0.32,
+          threatTierStep: 56,
+          hazardBaseMs: 20000,
           barrage: false,
         };
 
@@ -1471,7 +1473,7 @@
           }
 
           const tier = state.threatTier;
-          const hpScale = 1 + state.timeSurvived / 140;
+          const hpScale = 1 + state.timeSurvived / 170;
           const baseHp = tuning.baseEnemyHp * hpScale * (1 + (tier - 1) * 0.10);
 
           let r = 13;
@@ -1547,7 +1549,7 @@
           const t = state.bossCount % 3;
           const type = t === 1 ? "sniper" : t === 2 ? "swarm" : "brute";
 
-          const hpScale = 1 + state.timeSurvived / 120;
+          const hpScale = 1 + state.timeSurvived / 150;
           const base = 760 * hpScale;
           let boss = null;
 
@@ -2047,7 +2049,10 @@
             for (let i = 0; i < e.xp; i++) spawnOrb(e.x + randRange(-12, 12), e.y + randRange(-12, 12));
             state.kills++;
             addScore(e.score);
-            state.threat += tuning.threatPerKill;
+            // Prevent runaway difficulty: kills add less THREAT at higher tiers.
+            const t = clamp((state.threatTier - 1) / 9, 0, 1);
+            const killThreatMul = lerp(1, 0.65, t);
+            state.threat += tuning.threatPerKill * killThreatMul;
             if (player.vamp > 0) player.hp = Math.min(player.maxHp, player.hp + player.vamp);
           }
           // remove
@@ -2238,17 +2243,19 @@
           // spawn enemies
           state.spawnT += dt * 1000;
           const tierSpawnMul = 1 / (1 + (state.threatTier - 1) * 0.22);
-          const bossMul = state.bossAlive ? 0.85 : 1;
-          const spawnMs = clamp(tuning.spawnBaseMs * tierSpawnMul * bossMul, tuning.spawnMinMs, 1200);
+          // Boss fights are already intense; reduce add-spam for fairness.
+          const bossMul = state.bossAlive ? 1.15 : 1;
+          // IMPORTANT: don't hard-cap the upper bound; it breaks difficulty settings (e.g. EASY base spawn).
+          const spawnMs = Math.max(tuning.spawnMinMs, tuning.spawnBaseMs * tierSpawnMul * bossMul);
           if (state.spawnT >= spawnMs) {
             state.spawnT = 0;
-            // difficulty spikes during pulses/boss (but still fair: telegraphs)
-            const spike = state.pulseT > 0 ? 1 : 0;
+            // Micro-spike on tier-up pulse, but keep it subtle (telegraphed != fair if too big).
+            const spike = state.pulseT > 0 ? 0.5 : 0;
             const tier = state.threatTier;
             const r = rand();
-            if (tier >= 9 && r < 0.18 + spike * 0.08) spawnEnemy("tank");
-            else if (tier >= 6 && r < 0.30 + spike * 0.08) spawnEnemy("sprinter");
-            else if (tier >= 7 && r < 0.38) spawnEnemy("stalker");
+            if (tier >= 9 && r < 0.14 + spike * 0.05) spawnEnemy("tank");
+            else if (tier >= 6 && r < 0.28 + spike * 0.06) spawnEnemy("sprinter");
+            else if (tier >= 7 && r < 0.36) spawnEnemy("stalker");
             else spawnEnemy("chaser");
             // soft cap (performance)
             if (enemies.length > CAP.enemies * 0.92) enemies.splice(0, Math.max(0, enemies.length - CAP.enemies));

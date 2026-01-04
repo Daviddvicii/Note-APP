@@ -33,19 +33,22 @@
   // Song metadata (easy to tweak)
   // -----------------------------
   const SONGS = {
-  golden: {
-    displayName: "Demon Hunter - Golden",
-    audioCandidates: ["/Note-APP/assets/golden.ogg", "/Note-APP/assets/golden.mp3"],
-    bpm: 140,
-    offsetMs: 0,
-  },
-  sodapop: {
-    displayName: "Soda Pop",
-    audioCandidates: ["/Note-APP/assets/sodapop.ogg", "/Note-APP/assets/sodapop.mp3"],
-    bpm: 128,
-    offsetMs: 0,
-  },
-};
+    golden: {
+      displayName: "Demon Hunter - Golden",
+      // Keep these relative (no leading slash) so it works on GitHub Pages subpaths.
+      // Files live in: ./assets/golden.mp3
+      audioCandidates: ["assets/golden.mp3", "./assets/golden.mp3"],
+      bpm: 140,
+      offsetMs: 0,
+    },
+    sodapop: {
+      displayName: "Soda Pop",
+      // Files live in: ./assets/sodapop.mp3
+      audioCandidates: ["assets/sodapop.mp3", "./assets/sodapop.mp3"],
+      bpm: 128,
+      offsetMs: 0,
+    },
+  };
 
   // -----------------------------
   // DOM
@@ -217,8 +220,19 @@
     audio.onerror = () => {
       state.audioErrored = true;
       state.audioReady = false;
+      // Helpful debugging for path issues (404 / wrong base path).
+      // Note: some browsers don't populate audio.error details reliably.
+      try {
+        // eslint-disable-next-line no-console
+        console.warn("[Neon Beat Drop] Audio load failed", {
+          attemptedSrc: audio.currentSrc || audio.src,
+          candidates: song.audioCandidates,
+          error: audio.error ? { code: audio.error.code, message: audio.error.message } : null,
+        });
+      } catch (_) {}
+
       setOverlayMessage(
-        `Couldn't load audio. Put a local file at "${song.audioCandidates.join('" or "')}".`
+        `Couldn't load audio. Expected files in assets/: "${song.audioCandidates.join('" or "')}".`
       );
     };
 

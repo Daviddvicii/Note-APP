@@ -1,6 +1,6 @@
 /* Neon Beat Drop
  * Plain HTML/CSS/JS 1-lane rhythm game.
- * Audio is loaded from local files in /assets (no external fetch).
+ * Audio is loaded from local files in ./assets (no external fetch).
  */
 
 (() => {
@@ -33,19 +33,20 @@
   // Song metadata (easy to tweak)
   // -----------------------------
   const SONGS = {
-  golden: {
-    displayName: "Demon Hunter - Golden",
-    audioCandidates: ["/Note-APP/assets/golden.ogg", "/Note-APP/assets/golden.mp3"],
-    bpm: 140,
-    offsetMs: 0,
-  },
-  sodapop: {
-    displayName: "Soda Pop",
-    audioCandidates: ["/Note-APP/assets/sodapop.ogg", "/Note-APP/assets/sodapop.mp3"],
-    bpm: 128,
-    offsetMs: 0,
-  },
-};
+    golden: {
+      displayName: "Demon Hunter - Golden",
+      // Keep these relative so the game works from subfolders / GitHub Pages.
+      audioCandidates: ["assets/golden.mp3"],
+      bpm: 140,
+      offsetMs: 0,
+    },
+    sodapop: {
+      displayName: "Soda Pop",
+      audioCandidates: ["assets/sodapop.mp3"],
+      bpm: 128,
+      offsetMs: 0,
+    },
+  };
 
   // -----------------------------
   // DOM
@@ -179,8 +180,9 @@
     const ogg = candidates.find((p) => p.toLowerCase().endsWith(".ogg"));
     const mp3 = candidates.find((p) => p.toLowerCase().endsWith(".mp3"));
 
-    if (ogg && canOgg) return ogg;
+    // Prefer mp3 when available (common + avoids picking missing .ogg files).
     if (mp3 && canMp3) return mp3;
+    if (ogg && canOgg) return ogg;
 
     // Fallback to first candidate (may still work)
     return candidates[0];
@@ -217,6 +219,11 @@
     audio.onerror = () => {
       state.audioErrored = true;
       state.audioReady = false;
+      try {
+        // Helpful when debugging 404/path issues
+        // eslint-disable-next-line no-console
+        console.error("Neon Beat Drop: audio load failed", { src: audio.src, songId: state.songId });
+      } catch (_) {}
       setOverlayMessage(
         `Couldn't load audio. Put a local file at "${song.audioCandidates.join('" or "')}".`
       );

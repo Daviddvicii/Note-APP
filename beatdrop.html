@@ -241,6 +241,50 @@
         flex-wrap: wrap;
       }
 
+      .syncPanel {
+        margin-top: 10px;
+        padding: 10px 10px;
+        border-radius: 14px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        background: rgba(10, 12, 26, 0.22);
+        display: grid;
+        gap: 8px;
+      }
+
+      .syncTopRow {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        flex-wrap: wrap;
+        color: var(--muted);
+        font-size: 12px;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .syncBtns {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
+
+      .tinyBtn {
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.03));
+        color: rgba(255, 255, 255, 0.92);
+        border-radius: 12px;
+        padding: 10px 10px;
+        font-weight: 850;
+        letter-spacing: 0.01em;
+        cursor: pointer;
+        user-select: none;
+      }
+
+      .tinyBtn:active {
+        transform: translateY(1px);
+        filter: brightness(0.98);
+      }
+
       .chip {
         padding: 8px 10px;
         border-radius: 999px;
@@ -316,6 +360,22 @@
               </button>
             </div>
 
+            <div class="syncPanel" aria-label="Beat sync">
+              <div class="syncTopRow">
+                <div><b>Sync</b> • BPM: <span id="syncBpm">--</span></div>
+                <div>Offset: <span id="syncOffset">--</span> ms</div>
+              </div>
+              <div class="syncBtns">
+                <button class="tinyBtn" id="bpmDownBtn" type="button">BPM −</button>
+                <button class="tinyBtn" id="bpmUpBtn" type="button">BPM +</button>
+                <button class="tinyBtn" id="offsetDownBtn" type="button">Offset −</button>
+                <button class="tinyBtn" id="offsetUpBtn" type="button">Offset +</button>
+                <button class="tinyBtn" id="calibrateBtn" type="button" style="grid-column: 1 / -1">
+                  Calibrate (tap 8 beats)
+                </button>
+              </div>
+            </div>
+
             <button class="primaryBtn" id="startBtn" type="button">Tap to Play</button>
 
             <div class="secondaryRow">
@@ -332,4 +392,3 @@
     <script src="beatdrop.js"></script>
   </body>
 </html>
-

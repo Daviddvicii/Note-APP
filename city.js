@@ -19,6 +19,28 @@
     mapHeight: 60,
   };
 
+  const DIFFICULTY_SETTINGS = {
+    easy: {
+      maxSpeed: 110,
+      accel: 180,
+      friction: 180,
+      turnSpeed: 3.2
+    },
+    normal: {
+      maxSpeed: 140,
+      accel: 220,
+      friction: 140,
+      turnSpeed: 2.6
+    },
+    hard: {
+      maxSpeed: 170,
+      accel: 260,
+      friction: 100,
+      turnSpeed: 2.2
+    }
+  };
+  let currentDifficulty = "normal";
+
   const car = {
     x: 0,
     y: 0,
@@ -61,6 +83,9 @@
     state.world = world;
     state.roadTiles = roads;
 
+    setupDifficultyControls();
+    applyDifficulty();
+
     placeCarAtCenter();
     placeCheckpoint(200);
     state.cameraX = car.x;
@@ -86,7 +111,33 @@
     requestAnimationFrame(loop);
   }
 
-  function handleOverlayClick() {
+  function setupDifficultyControls() {
+    const buttons = document.querySelectorAll(".difficulty-btn");
+    buttons.forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation(); // Prevent game start from overlay click
+        buttons.forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        currentDifficulty = btn.dataset.diff;
+        applyDifficulty();
+      });
+    });
+  }
+
+  function applyDifficulty() {
+    const settings = DIFFICULTY_SETTINGS[currentDifficulty];
+    // Preserve current dynamic properties like x, y, angle, speed, radius
+    // Only update physics constants
+    car.maxSpeed = settings.maxSpeed;
+    car.accel = settings.accel;
+    car.friction = settings.friction;
+    car.turnSpeed = settings.turnSpeed;
+  }
+
+  function handleOverlayClick(event) {
+    // Don't start if clicking controls
+    if (event.target.closest(".difficulty-container")) return;
+
     if (state.phase === "idle") {
       startGame();
     } else if (state.phase === "paused") {
@@ -232,6 +283,10 @@
     state.missionsDone = 0;
     state.missionText = "Drive to the glowing checkpoint";
     state.missionTextTimer = 0;
+    
+    // Re-apply difficulty just in case, though it shouldn't change unless user clicked
+    applyDifficulty();
+    
     placeCarAtCenter();
     placeCheckpoint(200);
     updateHUD(0);
@@ -280,6 +335,11 @@
 
   function showOverlay() {
     overlay.classList.add("visible");
+    // Show difficulty controls only in idle state
+    const diffControls = document.getElementById("difficulty-controls");
+    if (diffControls) {
+      diffControls.style.display = state.phase === "idle" ? "flex" : "none";
+    }
   }
 
   function hideOverlay() {

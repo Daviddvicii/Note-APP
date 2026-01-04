@@ -202,6 +202,36 @@
         opacity: 0.85;
       }
 
+      .difficulty-container {
+        display: flex;
+        gap: 0.5rem;
+        margin: 1rem 0;
+        pointer-events: auto;
+      }
+
+      .difficulty-btn {
+        background: rgba(57, 255, 20, 0.1);
+        border: 1px solid var(--primary);
+        color: var(--primary);
+        padding: 0.4rem 0.8rem;
+        font-family: inherit;
+        font-size: 0.7rem;
+        cursor: pointer;
+        text-transform: uppercase;
+        border-radius: 4px;
+        transition: all 0.2s;
+      }
+
+      .difficulty-btn:hover {
+        background: rgba(57, 255, 20, 0.3);
+      }
+
+      .difficulty-btn.active {
+        background: var(--primary);
+        color: #000;
+        box-shadow: 0 0 10px var(--primary);
+      }
+
       .touch-controls {
         position: fixed;
         left: 50%;
@@ -305,6 +335,11 @@
         <canvas id="game-canvas" width="400" height="225" aria-label="Neon City Driver game canvas"></canvas>
         <div id="overlay" class="overlay visible" role="status" aria-live="polite">
           <strong id="overlay-message">Press Space or Tap to Start</strong>
+          <div class="difficulty-container" id="difficulty-controls">
+             <button class="difficulty-btn" data-diff="easy">Easy</button>
+             <button class="difficulty-btn active" data-diff="normal">Normal</button>
+             <button class="difficulty-btn" data-diff="hard">Hard</button>
+          </div>
           <span id="overlay-hint">Arrow keys or WASD to drive · Space handbrake · P pause · R restart</span>
         </div>
       </div>

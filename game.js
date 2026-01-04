@@ -12,10 +12,19 @@ const MAX_FALL_SPEED = 900; // clamp falling speed
 
 // Pipes
 const PIPE_WIDTH = 52;
-const PIPE_SPEED = 120; // units/s
-const PIPE_SPAWN_INTERVAL_S = 1.25; // seconds between pipe pairs
-const PIPE_GAP_BASE = 140; // starting gap size
-const PIPE_GAP_MIN = 95; // minimum gap size as difficulty increases
+const DIFFICULTIES = {
+  EASY: { speed: 105, spawn: 1.5, gapBase: 165, gapMin: 125, id: 'EASY' },
+  NORMAL: { speed: 125, spawn: 1.25, gapBase: 140, gapMin: 95, id: 'NORMAL' },
+  HARD: { speed: 155, spawn: 1.05, gapBase: 110, gapMin: 80, id: 'HARD' }
+};
+let currentDifficulty = DIFFICULTIES.NORMAL;
+
+window.setDifficulty = (diffName) => {
+  if (DIFFICULTIES[diffName]) {
+    currentDifficulty = DIFFICULTIES[diffName];
+    // console.log("Difficulty set to", diffName);
+  }
+};
 
 // Drawing
 const BACKGROUND_COLOR_TOP = "#5fc0ff";
@@ -169,7 +178,7 @@ class PipePair {
 
   update(dt, isRunning) {
     if (isRunning) {
-      this.x -= PIPE_SPEED * dt;
+      this.x -= currentDifficulty.speed * dt;
     }
   }
 
@@ -230,6 +239,7 @@ class GameController {
     if (this.state === GameState.Running) return;
     this.reset();
     this.state = GameState.Running;
+    const ov = document.getElementById('overlay'); if(ov) ov.classList.remove('visible');
   }
 
   gameOver() {
@@ -243,7 +253,7 @@ class GameController {
 
   spawnPipe() {
     const difficulty = clamp(this.score, 0, 20);
-    const gapSize = clamp(PIPE_GAP_BASE - difficulty * 2, PIPE_GAP_MIN, PIPE_GAP_BASE);
+    const gapSize = clamp(currentDifficulty.gapBase - difficulty * 2, currentDifficulty.gapMin, currentDifficulty.gapBase);
 
     const minCenter = 40 + gapSize / 2;
     const maxCenter = SKY_HEIGHT - 40 - gapSize / 2;
@@ -267,7 +277,7 @@ class GameController {
     if (this.state === GameState.Running) {
       // Spawn pipes
       this.timeSinceLastPipe += dt;
-      if (this.timeSinceLastPipe >= PIPE_SPAWN_INTERVAL_S) {
+      if (this.timeSinceLastPipe >= currentDifficulty.spawn) {
         this.timeSinceLastPipe = 0;
         this.spawnPipe();
       }
@@ -397,6 +407,7 @@ window.addEventListener("keydown", (e) => {
 });
 
 window.addEventListener("pointerdown", (e) => {
+  if (e.target.closest && e.target.closest('button')) return;
   e.preventDefault();
   handlePress();
 });
@@ -414,6 +425,7 @@ function handlePress() {
   if (game.state === GameState.Over) {
     game.reset();
     game.state = GameState.Ready;
+    const ov = document.getElementById('overlay'); if(ov) ov.classList.add('visible');
     return;
   }
 }

@@ -16,6 +16,16 @@
 
     <link rel="stylesheet" href="./styles.css" />
 
+    <style>
+      .overlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(0,0,0,0.85);opacity:0;pointer-events:none;transition:opacity .2s;z-index:20}
+      .overlay.visible{opacity:1;pointer-events:auto}
+      .menu-box{text-align:center;font-family:'Press Start 2P',monospace}
+      .diff-select{display:flex;gap:12px;margin:24px 0}
+      .diff-btn{background:transparent;border:2px solid #5fc0ff;color:#fff;padding:12px 16px;font:inherit;font-size:12px;cursor:pointer;text-transform:uppercase;transition:transform .1s}
+      .diff-btn.active{background:#5fc0ff;color:#000;box-shadow:0 0 15px #5fc0ff}
+      .diff-btn:hover{transform:scale(1.05)}
+      @keyframes blink{50%{opacity:.5}}
+    </style>
   </head>
 
   <body>
@@ -23,6 +33,27 @@
     <a class="back-link" href="./index.html" aria-label="Back to game menu">← Back</a>
 
     <canvas id="game" aria-label="Flappy Bird style game" role="img"></canvas>
+
+    <div id="overlay" class="overlay visible">
+      <div class="menu-box">
+        <h1 style="color:#5fc0ff;text-shadow:0 0 10px #5fc0ff;font-size:24px;margin-bottom:20px">Neon Bird</h1>
+        <div style="font-size:10px;color:#aaa">SELECT DIFFICULTY</div>
+        <div class="diff-select">
+          <button class="diff-btn" onclick="setDiff('EASY',this)">Easy</button>
+          <button class="diff-btn active" onclick="setDiff('NORMAL',this)">Normal</button>
+          <button class="diff-btn" onclick="setDiff('HARD',this)">Hard</button>
+        </div>
+        <div style="font-size:12px;margin-top:20px;animation:blink 1.5s infinite">TAP TO START</div>
+      </div>
+    </div>
+    <script>
+      function setDiff(d,b){
+        if(window.setDifficulty) window.setDifficulty(d);
+        document.querySelectorAll('.diff-btn').forEach(x=>x.classList.remove('active'));
+        b.classList.add('active');
+        event.stopPropagation();
+      }
+    </script>
 
     <noscript>This game requires JavaScript to run.</noscript>
 

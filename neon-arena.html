@@ -1471,8 +1471,10 @@
           }
 
           const tier = state.threatTier;
-          const hpScale = 1 + state.timeSurvived / 140;
-          const baseHp = tuning.baseEnemyHp * hpScale * (1 + (tier - 1) * 0.10);
+          // Difficulty balance: scale HP slower over time to avoid runaway "HP walls".
+          // Still ramps with THREAT tier, but more steadily.
+          const hpScale = 1 + state.timeSurvived / 200;
+          const baseHp = tuning.baseEnemyHp * hpScale * (1 + (tier - 1) * 0.09);
 
           let r = 13;
           let spd = 98 + tier * 7;
@@ -1547,7 +1549,8 @@
           const t = state.bossCount % 3;
           const type = t === 1 ? "sniper" : t === 2 ? "swarm" : "brute";
 
-          const hpScale = 1 + state.timeSurvived / 120;
+          // Difficulty balance: bosses scale slower over time than regular enemies.
+          const hpScale = 1 + state.timeSurvived / 160;
           const base = 760 * hpScale;
           let boss = null;
 
@@ -2237,9 +2240,20 @@
 
           // spawn enemies
           state.spawnT += dt * 1000;
+          // Difficulty balance:
+          // - Warmup at run start so early game isn't instantly overwhelming.
+          // - Remove the accidental 1200ms max cap (made EASY much harder than intended).
+          // - Slightly fewer adds during bosses to keep fights readable.
+          const warmup = clamp(state.timeSurvived / 20, 0, 1); // 0..1 over first 20s
+          const warmupMul = lerp(1.35, 1.0, warmup); // slower early spawns
           const tierSpawnMul = 1 / (1 + (state.threatTier - 1) * 0.22);
-          const bossMul = state.bossAlive ? 0.85 : 1;
-          const spawnMs = clamp(tuning.spawnBaseMs * tierSpawnMul * bossMul, tuning.spawnMinMs, 1200);
+          // When a boss is alive, reduce extra adds (bigger interval => fewer spawns).
+          const bossMul = state.bossAlive ? 1.20 : 1;
+          const spawnMs = clamp(
+            tuning.spawnBaseMs * warmupMul * tierSpawnMul * bossMul,
+            tuning.spawnMinMs,
+            tuning.spawnBaseMs * 1.5
+          );
           if (state.spawnT >= spawnMs) {
             state.spawnT = 0;
             // difficulty spikes during pulses/boss (but still fair: telegraphs)

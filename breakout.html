@@ -304,7 +304,12 @@
     </header>
     <main>
       <p class="info-pill" role="status" aria-live="polite">
-        NEON BREAKER · Level <span id="level">1</span>
+        NEON BREAKER · Level <span id="level">1</span> · Difficulty 
+        <select id="difficulty-select" style="background: rgba(57, 255, 20, 0.15); border: 1px solid #39ff14; color: #39ff14; padding: 0.2rem 0.5rem; border-radius: 4px; font-family: inherit; font-size: inherit; cursor: pointer;">
+          <option value="easy">Easy</option>
+          <option value="normal" selected>Normal</option>
+          <option value="hard">Hard</option>
+        </select>
       </p>
       <div class="game-shell">
         <canvas id="game-canvas" width="800" height="450" aria-label="Breakout game canvas"></canvas>

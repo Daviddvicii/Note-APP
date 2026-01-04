@@ -52,6 +52,13 @@
     cameraX: 0,
     cameraY: 0,
     lastTime: performance.now(),
+    difficulty: "normal", // default
+  };
+
+  const difficulties = {
+    easy: { maxSpeed: 100, accel: 180, friction: 160, turnSpeed: 3.0, checkpointTime: 2.5 },
+    normal: { maxSpeed: 140, accel: 220, friction: 140, turnSpeed: 2.6, checkpointTime: 2.5 },
+    hard: { maxSpeed: 180, accel: 280, friction: 120, turnSpeed: 2.2, checkpointTime: 1.5 }
   };
 
   init();
@@ -69,6 +76,18 @@
 
     setupKeyboard();
     setupTouchControls();
+    
+    // Difficulty button handlers
+    const difficultyButtons = document.querySelectorAll(".difficulty-btn");
+    difficultyButtons.forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation(); // prevent overlay click
+        const level = e.target.dataset.level;
+        setDifficulty(level);
+        startGame();
+      });
+    });
+
     overlay.addEventListener("click", handleOverlayClick);
     window.addEventListener("blur", () => {
       clearInput();
@@ -86,8 +105,22 @@
     requestAnimationFrame(loop);
   }
 
-  function handleOverlayClick() {
+  function setDifficulty(level) {
+    state.difficulty = level;
+    const settings = difficulties[level];
+    car.maxSpeed = settings.maxSpeed;
+    car.accel = settings.accel;
+    car.friction = settings.friction;
+    car.turnSpeed = settings.turnSpeed;
+  }
+
+  function handleOverlayClick(e) {
+    // If clicking buttons, do nothing (handled by button listeners)
+    if (e.target.closest(".difficulty-btn")) return;
+
     if (state.phase === "idle") {
+      // Default to normal if clicked outside buttons in idle
+      setDifficulty("normal");
       startGame();
     } else if (state.phase === "paused") {
       resumeGame();
@@ -127,6 +160,7 @@
         break;
       case "Space":
         if (state.phase === "idle" && isDown) {
+          setDifficulty("normal"); // Default if space pressed
           startGame();
         } else if (state.phase === "paused" && isDown) {
           resumeGame();
@@ -207,6 +241,11 @@
 
   function startGame() {
     state.phase = "running";
+    
+    // Hide difficulty buttons when game starts
+    const diffButtons = document.getElementById("difficulty-buttons");
+    if (diffButtons) diffButtons.style.display = "none";
+    
     hideOverlay();
     state.lastTime = performance.now();
   }
@@ -235,7 +274,11 @@
     placeCarAtCenter();
     placeCheckpoint(200);
     updateHUD(0);
-    setOverlayMessage("Press Space or Tap to Start");
+    setOverlayMessage("Select Difficulty");
+    // Show difficulty buttons again
+    const diffButtons = document.getElementById("difficulty-buttons");
+    if (diffButtons) diffButtons.style.display = "flex";
+    
     showOverlay();
     state.phase = "idle";
   }
@@ -409,7 +452,10 @@
       state.score += 100;
       state.missionsDone += 1;
       state.missionText = "Checkpoint reached! New destination!";
-      state.missionTextTimer = 2.5;
+      
+      const settings = difficulties[state.difficulty] || difficulties.normal;
+      state.missionTextTimer = settings.checkpointTime;
+      
       placeCheckpoint(220);
     }
 

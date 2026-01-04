@@ -304,8 +304,13 @@
       <div class="game-shell">
         <canvas id="game-canvas" width="400" height="225" aria-label="Neon City Driver game canvas"></canvas>
         <div id="overlay" class="overlay visible" role="status" aria-live="polite">
-          <strong id="overlay-message">Press Space or Tap to Start</strong>
-          <span id="overlay-hint">Arrow keys or WASD to drive · Space handbrake · P pause · R restart</span>
+          <strong id="overlay-message">Select Difficulty</strong>
+          <div id="difficulty-buttons" style="margin-top: 15px; display: flex; gap: 10px;">
+            <button class="difficulty-btn" data-level="easy" style="padding: 10px; background: #00ff66; border: none; border-radius: 5px; cursor: pointer; font-family: inherit; font-weight: bold;">EASY</button>
+            <button class="difficulty-btn" data-level="normal" style="padding: 10px; background: #00ccff; border: none; border-radius: 5px; cursor: pointer; font-family: inherit; font-weight: bold;">NORMAL</button>
+            <button class="difficulty-btn" data-level="hard" style="padding: 10px; background: #ff3333; border: none; border-radius: 5px; cursor: pointer; font-family: inherit; color: white; font-weight: bold;">HARD</button>
+          </div>
+          <span id="overlay-hint" style="margin-top: 20px;">Arrow keys or WASD to drive · Space handbrake · P pause · R restart</span>
         </div>
       </div>
     </main>

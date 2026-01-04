@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
     <meta name="theme-color" content="#000000" />
-    <title>Breakout</title>
+    <title>Neon Arena</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" />
     <style>
       :root {
@@ -96,6 +96,62 @@
         align-items: center;
         padding: clamp(1rem, 3vw, 2rem) clamp(0.85rem, 3vw, 2rem) clamp(2.4rem, 6vw, 3.5rem);
         gap: clamp(1rem, 3vw, 1.5rem);
+      }
+
+      .difficulty-selector {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: center;
+        gap: 0.65rem 1rem;
+        margin: 0;
+        padding: 0.65rem 1.2rem;
+        border: 2px solid rgba(57, 255, 20, 0.35);
+        border-radius: 999px;
+        background: rgba(57, 255, 20, 0.06);
+        font-size: clamp(0.55rem, 0.45vw + 0.55rem, 0.85rem);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .difficulty-selector legend {
+        padding: 0;
+        margin: 0;
+      }
+
+      .difficulty-selector label {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        cursor: pointer;
+        user-select: none;
+        opacity: 0.9;
+      }
+
+      .difficulty-selector input[type="radio"] {
+        appearance: none;
+        width: 16px;
+        height: 16px;
+        border: 2px solid rgba(57, 255, 20, 0.75);
+        border-radius: 999px;
+        display: grid;
+        place-items: center;
+        background: rgba(0, 0, 0, 0.45);
+      }
+
+      .difficulty-selector input[type="radio"]::after {
+        content: "";
+        width: 8px;
+        height: 8px;
+        border-radius: 999px;
+        transform: scale(0);
+        transition: transform 0.12s ease;
+        background: var(--primary);
+        box-shadow: 0 0 10px rgba(57, 255, 20, 0.6);
+      }
+
+      .difficulty-selector input[type="radio"]:checked::after {
+        transform: scale(1);
       }
 
       .info-pill {
@@ -304,8 +360,23 @@
     </header>
     <main>
       <p class="info-pill" role="status" aria-live="polite">
-        NEON BREAKER · Level <span id="level">1</span>
+        NEON ARENA · Level <span id="level">1</span>
       </p>
+      <form class="difficulty-selector" aria-label="Difficulty selector">
+        <span>Difficulty</span>
+        <label>
+          <input type="radio" name="difficulty" value="easy" />
+          Easy
+        </label>
+        <label>
+          <input type="radio" name="difficulty" value="normal" checked />
+          Normal
+        </label>
+        <label>
+          <input type="radio" name="difficulty" value="hard" />
+          Hard
+        </label>
+      </form>
       <div class="game-shell">
         <canvas id="game-canvas" width="800" height="450" aria-label="Breakout game canvas"></canvas>
         <div id="overlay" class="overlay" role="status" aria-live="polite" aria-hidden="true">

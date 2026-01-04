@@ -30,6 +30,17 @@
       z-index: 10000;
     }
 
+    /* Difficulty selector centered at the top */
+    #difficulty{
+      position: fixed !important;
+      top: var(--ui-top) !important;
+      left: 50% !important;
+      transform: translateX(-50%);
+      z-index: 10000;
+      max-width: min(220px, 60vw);
+      text-align: center;
+    }
+
     /* On-screen controls styling */
     .control-btn{
       font:600 22px/1 monospace;
@@ -65,6 +76,11 @@
   <!-- Separated controls -->
   <button id="btn-left"  class="control-btn" aria-label="Move left">◀</button>
   <button id="btn-right" class="control-btn" aria-label="Move right">▶</button>
+  <select id="difficulty" class="control-btn small" aria-label="Select difficulty">
+    <option value="easy">Easy</option>
+    <option value="normal" selected>Normal</option>
+    <option value="hard">Hard</option>
+  </select>
   <button id="btn-mute" class="control-btn small" aria-label="Toggle mute" title="M to toggle">🔊</button>
 
   <!-- Error Display (for mobile debugging) -->

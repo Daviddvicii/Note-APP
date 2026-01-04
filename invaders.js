@@ -5,12 +5,76 @@
 */
 
 /* ===== Tuning ===== */
-const PLAYER_SPEED = 260;
-const BULLET_SPEED = 520;
-const ENEMY_SPEED  = 30;
-const DESCENT_STEP = 8;
-const SHOOT_COOLDOWN = 0.25;
-const ENEMY_FIRE_RATE = 0.9;
+const DEFAULT_DIFFICULTY = 'normal';
+
+// Easy should feel easy, hard should feel hard.
+// - Higher enemyFireRate => more frequent enemy shots.
+// - Higher enemySpeed / descentStep => invader pressure increases faster.
+const DIFFICULTY_PRESETS = {
+  easy: {
+    lives: 5,
+    playerSpeed: 280,
+    shootCooldown: 0.2,
+    playerBulletSpeed: 560,
+    enemySpeed: 22,
+    descentStep: 7,
+    enemyFireRate: 0.65,
+    enemyBulletSpeed: 520 * 0.6,
+  },
+  normal: {
+    lives: 3,
+    playerSpeed: 260,
+    shootCooldown: 0.25,
+    playerBulletSpeed: 520,
+    enemySpeed: 30,
+    descentStep: 8,
+    enemyFireRate: 0.9,
+    enemyBulletSpeed: 520 * 0.7,
+  },
+  hard: {
+    lives: 2,
+    playerSpeed: 250,
+    shootCooldown: 0.3,
+    playerBulletSpeed: 500,
+    enemySpeed: 38,
+    descentStep: 9,
+    enemyFireRate: 1.35,
+    enemyBulletSpeed: 520 * 0.85,
+  },
+};
+
+function normalizeDifficulty(value) {
+  const key = String(value || '').toLowerCase().trim();
+  return Object.prototype.hasOwnProperty.call(DIFFICULTY_PRESETS, key) ? key : DEFAULT_DIFFICULTY;
+}
+
+function loadDifficulty() {
+  try {
+    return normalizeDifficulty(localStorage.getItem('invaders_difficulty'));
+  } catch {
+    return DEFAULT_DIFFICULTY;
+  }
+}
+
+function saveDifficulty(key) {
+  try {
+    localStorage.setItem('invaders_difficulty', key);
+  } catch {
+    // ignore
+  }
+}
+
+function difficultyLabel(key) {
+  switch (key) {
+    case 'easy':
+      return 'Easy';
+    case 'hard':
+      return 'Hard';
+    default:
+      return 'Normal';
+  }
+}
+
 const INVADER_COLS = 10, INVADER_ROWS = 5;
 const INVADER_SIZE = 18, INVADER_H_SPACING = 16, INVADER_V_SPACING = 14;
 const PLAYER_WIDTH = 32, PLAYER_HEIGHT = 16;
@@ -65,14 +129,14 @@ class Player {
   reset(){ this.x=(this.game.width-this.width)/2; this.y=this.game.height-this.height-18; this.cooldown=0; this.invuln=0; }
   update(dt){
     let dx=(this.moveRight?1:0)-(this.moveLeft?1:0);
-    this.x=clamp(this.x+dx*PLAYER_SPEED*dt, 0, this.game.width-this.width);
+    this.x=clamp(this.x+dx*this.game.tuning.playerSpeed*dt, 0, this.game.width-this.width);
     if(this.cooldown>0) this.cooldown-=dt; if(this.invuln>0) this.invuln-=dt;
   }
   tryShoot(){
     if(this.cooldown>0) return;
     const bx=this.x+this.width/2-BULLET_WIDTH/2, by=this.y-BULLET_HEIGHT;
-    if(this.game.playerBullets.spawn(bx,by,-BULLET_SPEED,false)) {
-      this.cooldown=SHOOT_COOLDOWN; this.game.sound.shoot();
+    if(this.game.playerBullets.spawn(bx,by,-this.game.tuning.playerBulletSpeed,false)) {
+      this.cooldown=this.game.tuning.shootCooldown; this.game.sound.shoot();
     }
   }
   hit(){ if(this.invuln>0) return false; this.invuln=PLAYER_INVULN_TIME; return true; }
@@ -88,7 +152,7 @@ class InvaderGrid {
     this.game=game; this.cols=INVADER_COLS; this.rows=INVADER_ROWS; this.size=INVADER_SIZE;
     this.h=INVADER_H_SPACING; this.v=INVADER_V_SPACING; this.alive=Array(this.cols*this.rows).fill(true);
     this.total=this.alive.length; this.remaining=this.total; this.dir=1; this.x=40; this.y=50;
-    this.base=ENEMY_SPEED; this.descendPending=false;
+    this.base=this.game.tuning.enemySpeed; this.descendStep=this.game.tuning.descentStep; this.descendPending=false;
   }
   idx(c,r){ return r*this.cols+c; }
   isAlive(c,r){ return this.alive[this.idx(c,r)]; }
@@ -103,12 +167,15 @@ class InvaderGrid {
   }
   update(dt){
     if(this.remaining===0) return;
+    // Keep base synced in case difficulty changes between rounds.
+    this.base=this.game.tuning.enemySpeed;
+    this.descendStep=this.game.tuning.descentStep;
     const speed=this.base*(1+(1-this.remaining/this.total)*1.8);
     const b=this.bounds();
     this.x+=this.dir*speed*dt;
     if(b.minX<=0 && this.dir<0) this.descendPending=true;
     if(b.maxX>=this.game.width && this.dir>0) this.descendPending=true;
-    if(this.descendPending){ this.descendPending=false; this.dir*=-1; this.y+=DESCENT_STEP; }
+    if(this.descendPending){ this.descendPending=false; this.dir*=-1; this.y+=this.descendStep; }
   }
   draw(ctx){
     if(this.remaining===0) return;
@@ -133,12 +200,14 @@ const GameState = { READY:'READY', RUNNING:'RUNNING', GAME_OVER:'GAME_OVER', YOU
 class Game {
   constructor(canvas){
     this.canvas=canvas; this.ctx=canvas.getContext('2d'); this.width=0; this.height=0; this.dpr=1;
+    this.difficulty = loadDifficulty();
+    this.tuning = { ...DIFFICULTY_PRESETS[this.difficulty] };
     this.sound=new Sound();
     this.player=new Player(this);
     this.grid=new InvaderGrid(this);
     this.playerBullets=new BulletPool(24);
     this.enemyBullets=new BulletPool(24);
-    this.lives=3; this.score=0; this.best=Number(localStorage.getItem('invaders_best_score')||'0')||0;
+    this.lives=this.tuning.lives; this.score=0; this.best=Number(localStorage.getItem('invaders_best_score')||'0')||0;
     this.state=GameState.READY; this.timeToEnemyFire=0;
     this.lastTime=0; this.accum=0; this.fixedDt=1/60;
     this.installEvents(); this.onResize(); this.resetRound(); requestAnimationFrame(t=>this.frame(t));
@@ -164,6 +233,7 @@ class Game {
     });
 
     const L=document.getElementById('btn-left'), R=document.getElementById('btn-right'), M=document.getElementById('btn-mute');
+    const D=document.getElementById('difficulty');
     const pl=e=>{ e.preventDefault(); this.sound.resume(); this.player.moveLeft=true;  };
     const rl=e=>{ e.preventDefault(); this.player.moveLeft=false; };
     const pr=e=>{ e.preventDefault(); this.sound.resume(); this.player.moveRight=true; };
@@ -175,6 +245,22 @@ class Game {
            R.addEventListener('touchcancel',rr,{passive:false}); R.addEventListener('mousedown',pr);
            R.addEventListener('mouseup',rr); R.addEventListener('mouseleave',rr); }
     if(M){ M.addEventListener('click', ()=>updateMuteButton(this.sound.toggle())); }
+    if(D){
+      D.value = this.difficulty;
+      D.addEventListener('change', () => {
+        this.setDifficulty(D.value);
+      });
+    }
+  }
+
+  setDifficulty(value){
+    const key = normalizeDifficulty(value);
+    this.difficulty = key;
+    this.tuning = { ...DIFFICULTY_PRESETS[key] };
+    saveDifficulty(key);
+    // Reset so the new difficulty clearly applies.
+    this.resetRound();
+    this.state = GameState.READY;
   }
 
   onAction(){
@@ -194,7 +280,7 @@ class Game {
   }
 
   resetRound(){
-    this.lives=3; this.score=0; this.player.reset();
+    this.lives=this.tuning.lives; this.score=0; this.player.reset();
     this.grid=new InvaderGrid(this);
     this.playerBullets.active.length=0; this.enemyBullets.active.length=0;
     for (const b of this.playerBullets.pool) b.active=false;
@@ -221,9 +307,9 @@ class Game {
   }
 
   enemyShoot(){ if(this.grid.remaining===0) return;
-    const s=this.grid.pickShooter(); if(!s) return; this.enemyBullets.spawn(s.x,s.y,BULLET_SPEED*0.7,true); }
+    const s=this.grid.pickShooter(); if(!s) return; this.enemyBullets.spawn(s.x,s.y,this.tuning.enemyBulletSpeed,true); }
 
-  sampleEnemyInterval(){ const r=Math.max(ENEMY_FIRE_RATE,0.0001), u=Math.random(); return Math.max(0.08, -Math.log(1-u)/r); }
+  sampleEnemyInterval(){ const r=Math.max(this.tuning.enemyFireRate,0.0001), u=Math.random(); return Math.max(0.08, -Math.log(1-u)/r); }
 
   handlePlayerHits(){
     if(this.playerBullets.active.length===0 || this.grid.remaining===0) return;
@@ -265,7 +351,8 @@ class Game {
     const lt=`Lives: ${this.lives}`; const w=ctx.measureText(lt).width; ctx.fillText(lt, this.width-w-12, 10);
     ctx.fillStyle='#888'; ctx.font='12px monospace'; ctx.fillText(`Best: ${this.best}`, 12, 28);
     if(this.state!==GameState.RUNNING){
-      const text = this.state===GameState.READY ? 'Tap / Space to start'
+      const diff = difficultyLabel(this.difficulty);
+      const text = this.state===GameState.READY ? `Tap / Space to start\nDifficulty: ${diff}`
                   : this.state===GameState.GAME_OVER ? `Game Over\nScore: ${this.score}\nTap / Space to restart`
                   : `You Win!\nScore: ${this.score}\nTap / Space to restart`;
       this.centerText(text);

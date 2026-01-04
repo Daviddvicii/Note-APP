@@ -1,0 +1,395 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Neon Beat Drop</title>
+    <style>
+      :root {
+        --bg1: #06061a;
+        --bg2: #0b0030;
+        --bg3: #001a2a;
+        --neonA: #00f5ff;
+        --neonB: #ff2bd6;
+        --neonC: #9b5cff;
+        --text: rgba(255, 255, 255, 0.92);
+        --muted: rgba(255, 255, 255, 0.66);
+        --glass: rgba(10, 12, 26, 0.55);
+        --glass2: rgba(10, 12, 26, 0.32);
+        --stroke: rgba(255, 255, 255, 0.12);
+        --shadow: rgba(0, 0, 0, 0.45);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+        background: radial-gradient(1200px 900px at 15% 15%, rgba(255, 43, 214, 0.20), transparent 60%),
+          radial-gradient(1000px 800px at 85% 25%, rgba(0, 245, 255, 0.18), transparent 55%),
+          radial-gradient(900px 700px at 40% 95%, rgba(155, 92, 255, 0.18), transparent 60%),
+          linear-gradient(135deg, var(--bg1), var(--bg2) 42%, var(--bg3));
+        color: var(--text);
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji",
+          "Segoe UI Emoji";
+        overflow: hidden;
+      }
+
+      /* Subtle scanning glow overlay */
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        background: linear-gradient(
+          to bottom,
+          rgba(255, 255, 255, 0.03),
+          rgba(255, 255, 255, 0.00) 22%,
+          rgba(255, 255, 255, 0.025) 52%,
+          rgba(255, 255, 255, 0.00) 78%,
+          rgba(255, 255, 255, 0.03)
+        );
+        mix-blend-mode: overlay;
+        opacity: 0.45;
+      }
+
+      .wrap {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 12px 12px calc(12px + env(safe-area-inset-bottom));
+        gap: 10px;
+      }
+
+      header#hud {
+        width: min(540px, 100%);
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 10px;
+        padding: 10px 12px;
+        border-radius: 14px;
+        background: linear-gradient(180deg, rgba(10, 12, 26, 0.60), rgba(10, 12, 26, 0.28));
+        border: 1px solid var(--stroke);
+        box-shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
+        backdrop-filter: blur(10px);
+      }
+
+      .hudItem {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        align-items: center;
+        justify-content: center;
+        user-select: none;
+      }
+
+      .hudLabel {
+        font-size: 11px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .hudValue {
+        font-variant-numeric: tabular-nums;
+        font-size: 18px;
+        font-weight: 750;
+        text-shadow: 0 0 10px rgba(0, 245, 255, 0.20);
+      }
+
+      #arena-wrapper {
+        width: min(540px, 100%);
+        aspect-ratio: 9 / 16;
+        position: relative;
+        border-radius: 18px;
+        overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        background: linear-gradient(180deg, rgba(0, 0, 0, 0.10), rgba(0, 0, 0, 0.32));
+        box-shadow: 0 24px 80px rgba(0, 0, 0, 0.42);
+      }
+
+      canvas#arena {
+        width: 100%;
+        height: 100%;
+        display: block;
+        image-rendering: auto;
+        touch-action: manipulation;
+      }
+
+      /* Overlay */
+      #overlay {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        padding: 18px;
+        background: radial-gradient(900px 700px at 50% 20%, rgba(255, 43, 214, 0.16), transparent 55%),
+          linear-gradient(180deg, rgba(8, 10, 20, 0.72), rgba(8, 10, 20, 0.86));
+        backdrop-filter: blur(8px);
+      }
+
+      #overlay.hidden {
+        display: none;
+      }
+
+      .panel {
+        width: min(520px, 100%);
+        border-radius: 18px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        background: linear-gradient(180deg, rgba(10, 12, 26, 0.60), rgba(10, 12, 26, 0.26));
+        box-shadow: 0 30px 90px rgba(0, 0, 0, 0.50);
+        padding: 16px 16px 14px;
+      }
+
+      .title {
+        margin: 2px 0 10px;
+        font-weight: 900;
+        letter-spacing: 0.02em;
+        font-size: 28px;
+        line-height: 1.05;
+        text-align: center;
+        background: linear-gradient(90deg, var(--neonA), var(--neonB), var(--neonC));
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        text-shadow: 0 0 26px rgba(0, 245, 255, 0.20);
+      }
+
+      .subtitle {
+        margin: 0 0 12px;
+        text-align: center;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.35;
+      }
+
+      .songRow {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin: 12px 0 12px;
+      }
+
+      .songBtn {
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03));
+        color: var(--text);
+        border-radius: 14px;
+        padding: 12px 12px;
+        text-align: left;
+        cursor: pointer;
+        user-select: none;
+        box-shadow: 0 14px 40px rgba(0, 0, 0, 0.25);
+        transition: transform 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
+      }
+
+      .songBtn:active {
+        transform: translateY(1px);
+      }
+
+      .songBtn .songName {
+        font-weight: 800;
+        font-size: 14px;
+        line-height: 1.2;
+        margin-bottom: 4px;
+      }
+
+      .songBtn .songMeta {
+        color: var(--muted);
+        font-size: 12px;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .songBtn.selected {
+        border-color: rgba(0, 245, 255, 0.70);
+        box-shadow: 0 0 0 1px rgba(0, 245, 255, 0.25), 0 18px 60px rgba(0, 245, 255, 0.10);
+        background: radial-gradient(500px 260px at 15% 15%, rgba(0, 245, 255, 0.16), transparent 55%),
+          linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03));
+      }
+
+      .primaryBtn {
+        width: 100%;
+        border: 0;
+        border-radius: 14px;
+        padding: 12px 14px;
+        cursor: pointer;
+        color: rgba(255, 255, 255, 0.95);
+        background: linear-gradient(90deg, rgba(0, 245, 255, 0.85), rgba(255, 43, 214, 0.85));
+        box-shadow: 0 18px 60px rgba(255, 43, 214, 0.18), 0 18px 60px rgba(0, 245, 255, 0.14);
+        font-size: 16px;
+        font-weight: 900;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+        transition: transform 120ms ease, filter 120ms ease;
+      }
+
+      .primaryBtn:active {
+        transform: translateY(1px);
+        filter: brightness(0.98);
+      }
+
+      .secondaryRow {
+        display: flex;
+        gap: 10px;
+        margin-top: 10px;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+      }
+
+      .syncPanel {
+        margin-top: 10px;
+        padding: 10px 10px;
+        border-radius: 14px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        background: rgba(10, 12, 26, 0.22);
+        display: grid;
+        gap: 8px;
+      }
+
+      .syncTopRow {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        flex-wrap: wrap;
+        color: var(--muted);
+        font-size: 12px;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .syncBtns {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
+
+      .tinyBtn {
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.03));
+        color: rgba(255, 255, 255, 0.92);
+        border-radius: 12px;
+        padding: 10px 10px;
+        font-weight: 850;
+        letter-spacing: 0.01em;
+        cursor: pointer;
+        user-select: none;
+      }
+
+      .tinyBtn:active {
+        transform: translateY(1px);
+        filter: brightness(0.98);
+      }
+
+      .chip {
+        padding: 8px 10px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        background: rgba(10, 12, 26, 0.32);
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      #overlayMessage {
+        margin-top: 10px;
+        color: rgba(255, 210, 210, 0.92);
+        font-size: 12px;
+        line-height: 1.35;
+        min-height: 16px;
+        text-align: center;
+      }
+
+      /* Small screens */
+      @media (max-width: 380px) {
+        header#hud {
+          grid-template-columns: 1fr 1fr 1fr;
+          padding: 9px 10px;
+        }
+        .hudValue {
+          font-size: 17px;
+        }
+        .title {
+          font-size: 26px;
+        }
+        .songRow {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header id="hud" aria-label="HUD">
+        <div class="hudItem">
+          <div class="hudLabel">Score</div>
+          <div class="hudValue" id="hudScore">0</div>
+        </div>
+        <div class="hudItem">
+          <div class="hudLabel">Best</div>
+          <div class="hudValue" id="hudBest">0</div>
+        </div>
+        <div class="hudItem">
+          <div class="hudLabel">Combo</div>
+          <div class="hudValue" id="hudCombo">0</div>
+        </div>
+      </header>
+
+      <div id="arena-wrapper">
+        <canvas id="arena" width="720" height="1280" aria-label="Game canvas"></canvas>
+
+        <div id="overlay" role="dialog" aria-modal="true">
+          <div class="panel">
+            <div class="title">Neon Beat Drop</div>
+            <p class="subtitle">
+              Tap on beat to hit falling notes. Works best in mobile portrait. Provide your own local audio files in
+              <code>assets/</code>.
+            </p>
+
+            <div class="songRow" aria-label="Song selection">
+              <button class="songBtn selected" id="songBtn-golden" type="button">
+                <div class="songName">Demon Hunter - Golden</div>
+                <div class="songMeta"><span id="songMeta-golden">BPM: --</span></div>
+              </button>
+              <button class="songBtn" id="songBtn-sodapop" type="button">
+                <div class="songName">Soda Pop</div>
+                <div class="songMeta"><span id="songMeta-sodapop">BPM: --</span></div>
+              </button>
+            </div>
+
+            <div class="syncPanel" aria-label="Beat sync">
+              <div class="syncTopRow">
+                <div><b>Sync</b> • BPM: <span id="syncBpm">--</span></div>
+                <div>Offset: <span id="syncOffset">--</span> ms</div>
+              </div>
+              <div class="syncBtns">
+                <button class="tinyBtn" id="bpmDownBtn" type="button">BPM −</button>
+                <button class="tinyBtn" id="bpmUpBtn" type="button">BPM +</button>
+                <button class="tinyBtn" id="offsetDownBtn" type="button">Offset −</button>
+                <button class="tinyBtn" id="offsetUpBtn" type="button">Offset +</button>
+                <button class="tinyBtn" id="calibrateBtn" type="button" style="grid-column: 1 / -1">
+                  Calibrate (tap 8 beats)
+                </button>
+              </div>
+            </div>
+
+            <button class="primaryBtn" id="startBtn" type="button">Tap to Play</button>
+
+            <div class="secondaryRow">
+              <div class="chip" id="hintChip">Tap anywhere to hit • Space on desktop</div>
+              <div class="chip" id="versionChip">1-lane • Neon</div>
+            </div>
+
+            <div id="overlayMessage" aria-live="polite"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="beatdrop.js"></script>
+  </body>
+</html>
+

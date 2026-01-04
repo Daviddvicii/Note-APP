@@ -1312,6 +1312,27 @@
           barrage: false,
         };
 
+        // ===== Difficulty curve constants (balance knobs) =====
+        // Centralized so future tuning doesn't require hunting for magic numbers.
+        const CURVE = Object.freeze({
+          // Enemy HP scaling
+          enemyHpTimeDiv: 180,
+          enemyHpTimePow: 0.75,
+          enemyHpTierStep: 0.075, // per tier above 1
+
+          // Boss HP scaling
+          bossHpTimeDiv: 160,
+          bossHpTimePow: 0.85,
+
+          // Spawn scaling
+          tierSpawnRamp: 0.18,
+          bossSpawnMul: 1.10, // >1 => fewer adds during boss
+
+          // Kill-based THREAT diminishing returns
+          threatKillTierFalloff: 0.06,
+          threatKillMinMul: 0.45,
+        });
+
         function applyDifficulty(id) {
           const d = DIFFS[id] || DIFFS.normal;
           difficultyId = d.id;
@@ -1471,8 +1492,13 @@
           }
 
           const tier = state.threatTier;
-          const hpScale = 1 + state.timeSurvived / 140;
-          const baseHp = tuning.baseEnemyHp * hpScale * (1 + (tier - 1) * 0.10);
+          // Smoother HP scaling:
+          // - previously linear time scaling + large per-tier scaling could create sudden "bullet sponge" spikes
+          // - use a softer power curve by time and a smaller per-tier multiplier
+          const tSurv = Math.max(0, state.timeSurvived);
+          const hpScale = 1 + Math.pow(tSurv / CURVE.enemyHpTimeDiv, CURVE.enemyHpTimePow);
+          const tierHp = 1 + (tier - 1) * CURVE.enemyHpTierStep;
+          const baseHp = tuning.baseEnemyHp * hpScale * tierHp;
 
           let r = 13;
           let spd = 98 + tier * 7;
@@ -1547,7 +1573,9 @@
           const t = state.bossCount % 3;
           const type = t === 1 ? "sniper" : t === 2 ? "swarm" : "brute";
 
-          const hpScale = 1 + state.timeSurvived / 120;
+          // Boss HP should ramp, but not exponentially punish fast clears.
+          const tSurv = Math.max(0, state.timeSurvived);
+          const hpScale = 1 + Math.pow(tSurv / CURVE.bossHpTimeDiv, CURVE.bossHpTimePow);
           const base = 760 * hpScale;
           let boss = null;
 
@@ -2047,7 +2075,15 @@
             for (let i = 0; i < e.xp; i++) spawnOrb(e.x + randRange(-12, 12), e.y + randRange(-12, 12));
             state.kills++;
             addScore(e.score);
-            state.threat += tuning.threatPerKill;
+            // Kill-based THREAT accelerates difficulty; add diminishing returns at high tiers
+            // to avoid runaway "snowball into impossible" spikes for high-DPS builds.
+            const tier = Math.max(1, state.threatTier | 0);
+            const killThreatMul = clamp(
+              1 - (tier - 1) * CURVE.threatKillTierFalloff,
+              CURVE.threatKillMinMul,
+              1
+            );
+            state.threat += tuning.threatPerKill * killThreatMul;
             if (player.vamp > 0) player.hp = Math.min(player.maxHp, player.hp + player.vamp);
           }
           // remove
@@ -2237,9 +2273,11 @@
 
           // spawn enemies
           state.spawnT += dt * 1000;
-          const tierSpawnMul = 1 / (1 + (state.threatTier - 1) * 0.22);
-          const bossMul = state.bossAlive ? 0.85 : 1;
-          const spawnMs = clamp(tuning.spawnBaseMs * tierSpawnMul * bossMul, tuning.spawnMinMs, 1200);
+          // Spawn rate ramps with threat, but should respect the selected difficulty's base values.
+          // (Previous hard cap of 1200ms accidentally flattened EASY's slower spawns.)
+          const tierSpawnMul = 1 / (1 + (state.threatTier - 1) * CURVE.tierSpawnRamp);
+          const bossMul = state.bossAlive ? CURVE.bossSpawnMul : 1; // slightly fewer adds during boss for fairness
+          const spawnMs = clamp(tuning.spawnBaseMs * tierSpawnMul * bossMul, tuning.spawnMinMs, tuning.spawnBaseMs);
           if (state.spawnT >= spawnMs) {
             state.spawnT = 0;
             // difficulty spikes during pulses/boss (but still fair: telegraphs)

@@ -3,8 +3,9 @@ function syncLeaderboard(name, score) {
 }
 
 window.addEventListener("DOMContentLoaded", () => {
+  const diff = localStorage.getItem('retro_difficulty') || 'normal';
   const gridSize = 20;
-  const tickInterval = 130;
+  const tickInterval = diff==='easy' ? 160 : diff==='hard' ? 90 : 130;
   const storageKey = "snake_best_score";
 
   const canvas = document.getElementById("game-canvas");

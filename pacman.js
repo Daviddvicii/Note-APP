@@ -95,6 +95,9 @@
   }
 
   // ---------- maze ----------
+  const diff = localStorage.getItem('retro_difficulty') || 'normal';
+  const GHOST_SPEED = diff==='easy'?3.5 : diff==='hard'?6.5 : 5.1;
+
   class Maze{
     constructor(){
       this.w=GRID_W; this.h=GRID_H; this.grid=new Array(this.h); this.dotCount=0;
@@ -179,7 +182,7 @@
   }
 
   class Ghost extends Entity{
-    constructor(x,y,color,name){ super(x,y,5.1); this.color=color; this.name=name; }
+    constructor(x,y,color,name){ super(x,y,GHOST_SPEED); this.color=color; this.name=name; }
     update(dt,maze,pm){
       const {cx,cy}=this.center();
       const near=Math.abs(this.x-cx)<0.2 && Math.abs(this.y-cy)<0.2;

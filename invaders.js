@@ -5,12 +5,32 @@
 */
 
 /* ===== Tuning ===== */
-const PLAYER_SPEED = 260;
-const BULLET_SPEED = 520;
-const ENEMY_SPEED  = 30;
+const diffSetting = localStorage.getItem('retro_difficulty') || 'normal';
+
+let PLAYER_SPEED = 260;
+let BULLET_SPEED = 520;
+let ENEMY_SPEED  = 30;
+let ENEMY_FIRE_RATE = 0.9;
+
+if (diffSetting === 'easy') {
+  PLAYER_SPEED = 300; // Faster player
+  ENEMY_SPEED = 20;   // Slower enemies
+  ENEMY_FIRE_RATE = 0.6; // Less frequent fire (higher number might be slower? No, usage is rate or interval?)
+  // Checking usage: sampleEnemyInterval uses ENEMY_FIRE_RATE as 'r' in -Math.log(1-u)/r. 
+  // If r is rate (events per sec), higher is faster.
+  // Wait, let's check sampleEnemyInterval: return Math.max(0.08, -Math.log(1-u)/r);
+  // If r is small, 1/r is large -> interval is large -> slower fire.
+  // So ENEMY_FIRE_RATE should be LOWER for easy?
+  // Original is 0.9.
+  ENEMY_FIRE_RATE = 0.5; 
+} else if (diffSetting === 'hard') {
+  PLAYER_SPEED = 240;
+  ENEMY_SPEED = 45;
+  ENEMY_FIRE_RATE = 1.4;
+}
+
 const DESCENT_STEP = 8;
 const SHOOT_COOLDOWN = 0.25;
-const ENEMY_FIRE_RATE = 0.9;
 const INVADER_COLS = 10, INVADER_ROWS = 5;
 const INVADER_SIZE = 18, INVADER_H_SPACING = 16, INVADER_V_SPACING = 14;
 const PLAYER_WIDTH = 32, PLAYER_HEIGHT = 16;

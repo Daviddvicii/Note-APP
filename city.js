@@ -19,15 +19,19 @@
     mapHeight: 60,
   };
 
+  const diff = localStorage.getItem('retro_difficulty') || 'normal';
+  const speedMax = diff==='easy'?120 : diff==='hard'?170 : 140;
+  const turnS = diff==='easy'?3.0 : diff==='hard'?2.2 : 2.6;
+
   const car = {
     x: 0,
     y: 0,
     angle: 0,
     speed: 0,
-    maxSpeed: 140,
+    maxSpeed: speedMax,
     accel: 220,
     friction: 140,
-    turnSpeed: 2.6,
+    turnSpeed: turnS,
     radius: 8,
   };
 

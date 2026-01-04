@@ -21,16 +21,20 @@
   const ctx = canvas.getContext("2d");
   const overlayHint = "←/→ or A/D to move · Space to launch/pause · R to restart";
 
+  const diff = localStorage.getItem('retro_difficulty') || 'normal';
+  const paddleW = diff==='easy'?140 : diff==='hard'?80 : 110;
+  const ballS = diff==='easy'?300 : diff==='hard'?450 : 360;
+
   const config = {
     canvasWidth: canvas.width,
     canvasHeight: canvas.height,
-    paddleWidth: 110,
+    paddleWidth: paddleW,
     paddleHeight: 16,
     paddleSpeed: 420,
     paddleMarginBottom: 40,
     paddlePadding: 24,
     ballSize: 10,
-    baseBallSpeed: 360,
+    baseBallSpeed: ballS,
     ballSpeedIncrement: 1.018,
     maxBallSpeed: 760,
     maxBounceAngle: Math.PI / 2.35,

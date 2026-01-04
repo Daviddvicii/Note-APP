@@ -17,13 +17,16 @@
   const defaultHint = "←/→ move · ↑ rotate · ↓ soft drop · Space hard drop · P pause · R restart";
   const scoreTable = { 1: 100, 2: 300, 3: 500, 4: 800 };
 
+  const diff = localStorage.getItem('retro_difficulty') || 'normal';
+  const gBase = diff==='easy'?1200 : diff==='hard'?600 : 900;
+
   const config = {
     cols: 10,
     rows: 20,
     das: 150, // first horizontal repeat delay (ms)
     arr: 45, // horizontal repeat interval (ms)
     lockDelay: 550,
-    gravityBase: 900,
+    gravityBase: gBase,
     gravityDecay: 0.92,
     gravityMin: 70,
     softDropDivider: 6,

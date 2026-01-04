@@ -14,8 +14,18 @@ const MAX_FALL_SPEED = 900; // clamp falling speed
 const PIPE_WIDTH = 52;
 const PIPE_SPEED = 120; // units/s
 const PIPE_SPAWN_INTERVAL_S = 1.25; // seconds between pipe pairs
-const PIPE_GAP_BASE = 140; // starting gap size
-const PIPE_GAP_MIN = 95; // minimum gap size as difficulty increases
+// Difficulty tuning
+const diffSetting = localStorage.getItem('retro_difficulty') || 'normal';
+let PIPE_GAP_BASE = 140;
+let PIPE_GAP_MIN = 95;
+
+if (diffSetting === 'easy') {
+  PIPE_GAP_BASE = 170;
+  PIPE_GAP_MIN = 120;
+} else if (diffSetting === 'hard') {
+  PIPE_GAP_BASE = 120;
+  PIPE_GAP_MIN = 80;
+}
 
 // Drawing
 const BACKGROUND_COLOR_TOP = "#5fc0ff";
@@ -243,7 +253,8 @@ class GameController {
 
   spawnPipe() {
     const difficulty = clamp(this.score, 0, 20);
-    const gapSize = clamp(PIPE_GAP_BASE - difficulty * 2, PIPE_GAP_MIN, PIPE_GAP_BASE);
+    // Easier gap calculation: slower shrink rate
+    const gapSize = clamp(PIPE_GAP_BASE - difficulty * 1.5, PIPE_GAP_MIN, PIPE_GAP_BASE);
 
     const minCenter = 40 + gapSize / 2;
     const maxCenter = SKY_HEIGHT - 40 - gapSize / 2;

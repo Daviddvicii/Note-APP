@@ -34,7 +34,17 @@
 
       h1 { margin:0 0 8px; font-size:28px; text-shadow:0 0 8px var(--green); }
 
-      .menu-subtitle { margin:0 0 24px; opacity:.8; }
+      .difficulty-selector { margin-bottom: 20px; display: flex; flex-direction: column; gap: 8px; align-items: center; }
+      .difficulty-btns { display: flex; gap: 10px; }
+      .diff-btn {
+        background: transparent; border: 1px solid var(--green); color: var(--green);
+        padding: 6px 12px; border-radius: 4px; cursor: pointer; font-family: inherit; font-size: 14px;
+        transition: all 0.2s;
+      }
+      .diff-btn.active { background: var(--green); color: #000; box-shadow: 0 0 10px var(--green); }
+      .diff-btn:hover { background: rgba(0, 255, 102, 0.2); }
+
+      .menu-subtitle { margin:0 0 16px; opacity:.8; }
 
       .menu-items { display:flex; flex-direction:column; gap:14px; width:100%; max-width:360px; }
 
@@ -64,6 +74,15 @@
 
       <p class="menu-subtitle">Select a game</p>
 
+      <div class="difficulty-selector">
+        <label>Difficulty:</label>
+        <div class="difficulty-btns">
+          <button type="button" class="diff-btn" data-diff="easy">Easy</button>
+          <button type="button" class="diff-btn active" data-diff="normal">Normal</button>
+          <button type="button" class="diff-btn" data-diff="hard">Hard</button>
+        </div>
+      </div>
+
         <nav class="menu-items">
           <a class="retro-btn" href="./flappy.html">🐤 Play Flappy Bird</a>
           <a class="retro-btn" href="./invaders.html">👾 Play Space Invaders</a>
@@ -85,5 +104,26 @@
         Flappy: Tap / Space · Invaders: ← → + Space · Pac-Man: Arrows · Snake: Arrows / D-pad
       </p>
     </div>
+    <script>
+      // Simple difficulty manager
+      (function() {
+        const btns = document.querySelectorAll('.diff-btn');
+        const currentDiff = localStorage.getItem('retro_difficulty') || 'normal';
+        
+        btns.forEach(btn => {
+          if(btn.dataset.diff === currentDiff) {
+            btn.classList.add('active');
+          } else {
+            btn.classList.remove('active');
+          }
+          
+          btn.addEventListener('click', () => {
+            btns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            localStorage.setItem('retro_difficulty', btn.dataset.diff);
+          });
+        });
+      })();
+    </script>
   </body>
 </html>

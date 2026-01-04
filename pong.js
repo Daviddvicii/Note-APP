@@ -14,6 +14,7 @@
   const touchGroups = touchControls?.querySelectorAll("[data-player]");
   const touchButtons = touchControls?.querySelectorAll(".touch-btn");
 
+  const diff = localStorage.getItem('retro_difficulty') || 'normal';
   const config = {
     canvasWidth: canvas.width,
     canvasHeight: canvas.height,
@@ -22,10 +23,10 @@
     paddleMargin: 36,
     paddleSpeed: 360, // units per second
     ballSize: 14,
-    baseBallSpeed: 380,
+    baseBallSpeed: diff==='easy'?300 : diff==='hard'?480 : 380,
     maxBounceAngle: Math.PI / 3,
     serveAngleRange: Math.PI / 3.2,
-    aiSpeed: 300,
+    aiSpeed: diff==='easy'?220 : diff==='hard'?420 : 300,
     winningScore: 10,
   };
 

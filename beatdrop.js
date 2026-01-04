@@ -32,20 +32,31 @@
   // -----------------------------
   // Song metadata (easy to tweak)
   // -----------------------------
+  const ASSETS_DIR = new URL("./assets/", document.baseURI);
+
+  function assetUrl(filename) {
+    // Use base-URL-safe absolute URLs so it works on GitHub Pages subpaths too.
+    return new URL(filename, ASSETS_DIR).toString();
+  }
+
   const SONGS = {
-  golden: {
-    displayName: "Demon Hunter - Golden",
-    audioCandidates: ["/Note-APP/assets/golden.ogg", "/Note-APP/assets/golden.mp3"],
-    bpm: 140,
-    offsetMs: 0,
-  },
-  sodapop: {
-    displayName: "Soda Pop",
-    audioCandidates: ["/Note-APP/assets/sodapop.ogg", "/Note-APP/assets/sodapop.mp3"],
-    bpm: 128,
-    offsetMs: 0,
-  },
-};
+    golden: {
+      displayName: "Demon Hunter - Golden",
+      // Files live in main ./assets: golden.mp3
+      // (If you add golden.ogg later, also update audioCandidates accordingly.)
+      audioCandidates: [assetUrl("golden.mp3")],
+      bpm: 140,
+      offsetMs: 0,
+    },
+    sodapop: {
+      displayName: "Soda Pop",
+      // Files live in main ./assets: sodapop.mp3
+      // (If you add sodapop.ogg later, also update audioCandidates accordingly.)
+      audioCandidates: [assetUrl("sodapop.mp3")],
+      bpm: 128,
+      offsetMs: 0,
+    },
+  };
 
   // -----------------------------
   // DOM

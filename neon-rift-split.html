@@ -682,11 +682,13 @@
 
         canvas.addEventListener("pointermove", (e) => {
           if (state !== GameState.Running) return;
-          const i = e.clientX < window.innerWidth / 2 ? 0 : 1;
-          const j = joystick[i];
-          if (j.id !== e.pointerId) return;
-          j.curX = e.clientX;
-          j.curY = e.clientY;
+          for (let i = 0; i < joystick.length; i++) {
+            const j = joystick[i];
+            if (j.id !== e.pointerId) continue;
+            j.curX = e.clientX;
+            j.curY = e.clientY;
+            break;
+          }
         });
 
         function clearJoyById(pointerId) {

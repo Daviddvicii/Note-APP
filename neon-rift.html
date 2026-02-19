@@ -42,10 +42,6 @@
       canvas {
         display: block;
         position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
         image-rendering: pixelated;
       }
 
@@ -160,6 +156,8 @@ function resetGame() {
   nearMissTimer = 0;
   nearMissCount = 0;
   shakeTimer = 0;
+  spawnTimerA = 1.5;
+  spawnTimerB = 5.0;
 }
 
 // ─── Input ───
@@ -306,13 +304,24 @@ function gameOver() {
 }
 
 // ─── Canvas Resize ───
-let scaleX = 1, scaleY = 1;
 function resize() {
   canvas.width = W;
   canvas.height = H;
-  const rect = canvas.getBoundingClientRect();
-  scaleX = W / rect.width;
-  scaleY = H / rect.height;
+  const winW = window.innerWidth;
+  const winH = window.innerHeight;
+  const aspect = W / H;
+  let cw, ch;
+  if (winW / winH > aspect) {
+    ch = winH;
+    cw = ch * aspect;
+  } else {
+    cw = winW;
+    ch = cw / aspect;
+  }
+  canvas.style.width = cw + "px";
+  canvas.style.height = ch + "px";
+  canvas.style.left = ((winW - cw) / 2) + "px";
+  canvas.style.top = ((winH - ch) / 2) + "px";
 }
 window.addEventListener("resize", resize);
 resize();
@@ -893,14 +902,26 @@ function drawHUD() {
   const tier = Math.floor(difficultyFactor());
   ctx.fillText(`TIER ${tier}`, W - 12, cy);
 
-  // Rift Pulse indicator
-  ctx.textAlign = "right";
+  // Rift Pulse indicator with cooldown bar
+  const riftBarW = 80, riftBarH = 8;
+  const riftBarX = W - 220, riftBarY = cy - riftBarH / 2;
+  ctx.fillStyle = "rgba(255,255,255,0.08)";
+  ctx.fillRect(riftBarX, riftBarY, riftBarW, riftBarH);
   if (riftPulseCd > 0) {
+    const pct = 1 - riftPulseCd / RIFT_PULSE_CD;
+    ctx.fillStyle = COL.purp;
+    ctx.fillRect(riftBarX, riftBarY, riftBarW * pct, riftBarH);
     ctx.fillStyle = COL.hudDim;
-    ctx.fillText(`RIFT: ${riftPulseCd.toFixed(1)}s`, W - 100, cy);
+    ctx.font = "bold 11px monospace";
+    ctx.textAlign = "right";
+    ctx.fillText(`RIFT ${riftPulseCd.toFixed(1)}s`, riftBarX - 4, cy + 1);
   } else {
     ctx.fillStyle = COL.mag;
-    ctx.fillText("RIFT: READY", W - 100, cy);
+    ctx.fillRect(riftBarX, riftBarY, riftBarW, riftBarH);
+    ctx.fillStyle = COL.mag;
+    ctx.font = "bold 11px monospace";
+    ctx.textAlign = "right";
+    ctx.fillText("RIFT RDY", riftBarX - 4, cy + 1);
   }
 
   // Arena labels
@@ -1019,7 +1040,14 @@ function drawMenu() {
   ctx.globalAlpha = startAlpha;
   ctx.fillStyle = COL.neon;
   ctx.font = "bold 18px monospace";
-  ctx.fillText("[ PRESS ENTER OR TAP TO START ]", W / 2, 550);
+  ctx.fillText("[ PRESS ENTER OR TAP TO START ]", W / 2, 545);
+  ctx.globalAlpha = 1;
+
+  // ESC hint
+  ctx.globalAlpha = 0.3;
+  ctx.fillStyle = COL.hudDim;
+  ctx.font = "11px monospace";
+  ctx.fillText("ESC → Back to Hub", W / 2, 580);
   ctx.globalAlpha = 1;
 }
 

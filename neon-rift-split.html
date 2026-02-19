@@ -58,6 +58,8 @@ function screenToWorld(tx,ty){return{x:(tx-offX)/scale,y:(ty-offY)/scale}}
 
 canvas.addEventListener("touchstart",e=>{
   e.preventDefault();
+  if(state==="menu"){handleStartInput();return}
+  if(state==="over"){handleStartInput();return}
   for(let t of e.changedTouches){
     const p=screenToWorld(t.clientX,t.clientY);
     if(p.x<AW&&!touchL.active){touchL.active=true;touchL.id=t.identifier;touchL.sx=p.x;touchL.sy=p.y;touchL.cx=p.x;touchL.cy=p.y;
@@ -93,6 +95,7 @@ let particles=[];
 let hazards=[];
 let shakeTimer=0,shakeAmt=0;
 let flashTimer=0;
+let isNewBestScore=false,isNewBestTime=false;
 
 const playerL={x:AW/2,y:AH*0.7,vx:0,vy:0,arena:0,alive:true,trail:[]};
 const playerR={x:AW/2,y:AH*0.7,vx:0,vy:0,arena:1,alive:true,trail:[]};
@@ -105,7 +108,7 @@ function resetGame(){
   playerR.x=AW/2;playerR.y=AH*0.7;playerR.vx=0;playerR.vy=0;playerR.alive=true;playerR.trail=[];
   hazards=[];particles=[];score=0;timeAlive=0;riftCooldown=0;difficulty=1;
   spawnTimerA=0;spawnTimerB=0;nearMissBonus=0;nearMissTimer=0;
-  shakeTimer=0;flashTimer=0;
+  shakeTimer=0;flashTimer=0;isNewBestScore=false;isNewBestTime=false;
 }
 
 function triggerRift(){
@@ -157,11 +160,10 @@ function spawnHazardLaser(arena){
 
 function updatePlayers(dt){
   let lx=0,ly=0,rx=0,ry=0;
-  if(keys["KeyW"]||keys["KeyUp"]&&false)ly=-1;
+  if(keys["KeyW"])ly=-1;
   if(keys["KeyS"])ly=1;
   if(keys["KeyA"])lx=-1;
   if(keys["KeyD"])lx=1;
-  if(keys["KeyW"])ly=-1;
 
   if(keys["ArrowUp"])ry=-1;
   if(keys["ArrowDown"])ry=1;
@@ -190,10 +192,11 @@ function updatePlayers(dt){
   playerL.x+=playerL.vx*dt;playerL.y+=playerL.vy*dt;
   playerR.x+=playerR.vx*dt;playerR.y+=playerR.vy*dt;
 
+  const TOP=38;
   playerL.x=Math.max(PLAYER_R,Math.min(AW-PLAYER_R,playerL.x));
-  playerL.y=Math.max(PLAYER_R,Math.min(AH-PLAYER_R,playerL.y));
+  playerL.y=Math.max(TOP+PLAYER_R,Math.min(AH-PLAYER_R,playerL.y));
   playerR.x=Math.max(PLAYER_R,Math.min(AW-PLAYER_R,playerR.x));
-  playerR.y=Math.max(PLAYER_R,Math.min(AH-PLAYER_R,playerR.y));
+  playerR.y=Math.max(TOP+PLAYER_R,Math.min(AH-PLAYER_R,playerR.y));
 
   playerL.trail.unshift({x:playerL.x,y:playerL.y,a:1});
   playerR.trail.unshift({x:playerR.x,y:playerR.y,a:1});
@@ -221,7 +224,6 @@ function updateHazards(dt){
 }
 
 function checkCollisions(){
-  const players=[playerL,playerR];
   for(const h of hazards){
     if(h.phase!=="active")continue;
     const p=h.arena===0?playerL:playerR;
@@ -230,14 +232,14 @@ function checkCollisions(){
       const dx=p.x-h.x,dy=p.y-h.y;
       const dist=Math.sqrt(dx*dx+dy*dy);
       if(dist<PLAYER_R+h.r){killPlayer(p,h);return true}
-      if(dist<PLAYER_R+h.r+18){nearMissBonus+=5;nearMissTimer=1.5;playNearMiss()}
+      if(!h.nearMissed&&dist<PLAYER_R+h.r+18){h.nearMissed=true;nearMissBonus+=5;nearMissTimer=1.5;playNearMiss()}
     }else if(h.type==="laser"){
       if(h.horiz){
         if(Math.abs(p.y-h.pos)<PLAYER_R+4){killPlayer(p,h);return true}
-        if(Math.abs(p.y-h.pos)<PLAYER_R+20){nearMissBonus+=3;nearMissTimer=1.5;playNearMiss()}
+        if(!h.nearMissed&&Math.abs(p.y-h.pos)<PLAYER_R+20){h.nearMissed=true;nearMissBonus+=3;nearMissTimer=1.5;playNearMiss()}
       }else{
         if(Math.abs(p.x-h.pos)<PLAYER_R+4){killPlayer(p,h);return true}
-        if(Math.abs(p.x-h.pos)<PLAYER_R+20){nearMissBonus+=3;nearMissTimer=1.5;playNearMiss()}
+        if(!h.nearMissed&&Math.abs(p.x-h.pos)<PLAYER_R+20){h.nearMissed=true;nearMissBonus+=3;nearMissTimer=1.5;playNearMiss()}
       }
     }
   }
@@ -296,6 +298,7 @@ function draw(){
   }
 
   drawHUD();
+  drawTouchJoysticks();
   ctx.restore();
 }
 
@@ -433,6 +436,38 @@ function drawHUD(){
     ctx.fillText("NEAR MISS! +"+nearMissBonus,W/2,56);
     ctx.globalAlpha=1;
   }
+
+  ctx.globalAlpha=0.25;ctx.font="bold 11px monospace";ctx.textBaseline="top";
+  ctx.fillStyle="#00ff66";ctx.textAlign="center";
+  ctx.fillText("LEFT  [WASD]",AW/2,40);
+  ctx.fillStyle="#00e5ff";
+  ctx.fillText("RIGHT  [ARROWS]",AW+AW/2,40);
+  ctx.globalAlpha=1;
+}
+
+function drawTouchJoysticks(){
+  if(touchL.active){
+    ctx.globalAlpha=0.2;ctx.strokeStyle="#00ff66";ctx.lineWidth=2;
+    ctx.beginPath();ctx.arc(touchL.sx,touchL.sy,30,0,Math.PI*2);ctx.stroke();
+    ctx.globalAlpha=0.4;ctx.fillStyle="#00ff66";
+    const dx=touchL.cx-touchL.sx,dy=touchL.cy-touchL.sy;
+    const d=Math.sqrt(dx*dx+dy*dy);
+    const mx=d>30?touchL.sx+dx/d*30:touchL.cx;
+    const my=d>30?touchL.sy+dy/d*30:touchL.cy;
+    ctx.beginPath();ctx.arc(mx,my,10,0,Math.PI*2);ctx.fill();
+    ctx.globalAlpha=1;
+  }
+  if(touchR.active){
+    ctx.globalAlpha=0.2;ctx.strokeStyle="#00e5ff";ctx.lineWidth=2;
+    ctx.beginPath();ctx.arc(touchR.sx,touchR.sy,30,0,Math.PI*2);ctx.stroke();
+    ctx.globalAlpha=0.4;ctx.fillStyle="#00e5ff";
+    const dx=touchR.cx-touchR.sx,dy=touchR.cy-touchR.sy;
+    const d=Math.sqrt(dx*dx+dy*dy);
+    const mx=d>30?touchR.sx+dx/d*30:touchR.cx;
+    const my=d>30?touchR.sy+dy/d*30:touchR.cy;
+    ctx.beginPath();ctx.arc(mx,my,10,0,Math.PI*2);ctx.fill();
+    ctx.globalAlpha=1;
+  }
 }
 
 function drawStartScreen(){
@@ -500,11 +535,11 @@ function drawGameOverScreen(){
   ctx.fillText("Time Survived: "+timeAlive.toFixed(1)+"s",W/2,H*0.36);
   ctx.fillText("Score: "+Math.floor(score),W/2,H*0.42);
 
-  if(score>=bestScore){
+  if(isNewBestScore){
     ctx.fillStyle="#ffcc33";ctx.font="bold 16px monospace";
     ctx.fillText("NEW BEST SCORE!",W/2,H*0.50);
   }
-  if(timeAlive>=bestTime){
+  if(isNewBestTime){
     ctx.fillStyle="#ffcc33";ctx.font="bold 14px monospace";
     ctx.fillText("NEW BEST TIME!",W/2,H*0.55);
   }
@@ -567,15 +602,10 @@ canvas.addEventListener("click",e=>{
     if(p.x>=bx&&p.x<=bx+bw&&p.y>=by&&p.y<=by+bh){handleStartInput();return}
     handleStartInput();
   }else if(state==="over"){
-    const bx=W/2-100,by=H*0.74-22,bw=200,bh=44;
-    if(p.x>=bx&&p.x<=bx+bw&&p.y>=by&&p.y<=by+bh){handleStartInput();return}
+    handleStartInput();
   }
 });
 
-canvas.addEventListener("touchstart",e=>{
-  if(state==="menu"){handleStartInput()}
-  else if(state==="over"){handleStartInput()}
-},{passive:true});
 
 window.addEventListener("keydown",e=>{
   if(e.code==="Space"){
@@ -611,8 +641,10 @@ function loop(ts){
     const died=checkCollisions();
     if(died){
       state="over";
-      if(score>bestScore){bestScore=score;localStorage.setItem("neon-rift-best",Math.floor(bestScore))}
-      if(timeAlive>bestTime){bestTime=timeAlive;localStorage.setItem("neon-rift-best-time",timeAlive.toFixed(1))}
+      isNewBestScore=score>bestScore;
+      isNewBestTime=timeAlive>bestTime;
+      if(isNewBestScore){bestScore=score;localStorage.setItem("neon-rift-best",Math.floor(bestScore))}
+      if(isNewBestTime){bestTime=timeAlive;localStorage.setItem("neon-rift-best-time",timeAlive.toFixed(1))}
       const runs=+(localStorage.getItem("neon-rift-total-runs")||0)+1;
       localStorage.setItem("neon-rift-total-runs",""+runs);
     }

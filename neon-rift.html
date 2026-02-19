@@ -76,6 +76,7 @@ let shakeTimer = 0;
 let shakeIntensity = 0;
 let nearMissBonus = 0;
 let nearMissFlash = 0;
+let overTimer = 0;
 
 // ─── Particles ───
 let particles = [];
@@ -84,12 +85,13 @@ function spawnParticles(x, y, color, count, spread) {
   for (let i = 0; i < count; i++) {
     const angle = Math.random() * Math.PI * 2;
     const speed = 40 + Math.random() * spread;
+    const life = 0.4 + Math.random() * 0.5;
     particles.push({
       x, y,
       vx: Math.cos(angle) * speed,
       vy: Math.sin(angle) * speed,
-      life: 0.4 + Math.random() * 0.5,
-      maxLife: 0.4 + Math.random() * 0.5,
+      life,
+      maxLife: life,
       r: 1.5 + Math.random() * 2.5,
       color
     });
@@ -201,9 +203,11 @@ function spawnHazardInArena(arena) {
 
 // ─── Input ───
 const keys = {};
+const keysJustPressed = {};
 window.addEventListener('keydown', e => {
+  if (!keys[e.code]) keysJustPressed[e.code] = true;
   keys[e.code] = true;
-  if (e.code === 'Space') e.preventDefault();
+  if (e.code === 'Space' || e.code.startsWith('Arrow')) e.preventDefault();
 });
 window.addEventListener('keyup', e => { keys[e.code] = false; });
 
@@ -227,7 +231,7 @@ function screenToCanvas(tx, ty) {
 function handleTouchStart(e) {
   e.preventDefault();
   if (state === 'start') { startGame(); return; }
-  if (state === 'over') { startGame(); return; }
+  if (state === 'over' && overTimer > 1.0) { startGame(); return; }
   for (const t of e.changedTouches) {
     const p = screenToCanvas(t.clientX, t.clientY);
     const side = p.x < HALF ? 'left' : 'right';
@@ -263,7 +267,7 @@ function handleTouchEnd(e) {
 function getPlayerInput(player) {
   let ix = 0, iy = 0;
   if (player.arena === 'left') {
-    if (keys['KeyA'] || keys['ArrowLeft'] && false) ix -= 1;
+    if (keys['KeyA']) ix -= 1;
     if (keys['KeyD']) ix += 1;
     if (keys['KeyW']) iy -= 1;
     if (keys['KeyS']) iy += 1;
@@ -437,7 +441,8 @@ function checkCollisions() {
       shakeTimer = 0.3;
       shakeIntensity = 8;
     }
-    if (nearMiss) {
+    if (nearMiss && !h.nearMissAwarded) {
+      h.nearMissAwarded = true;
       nearMissBonus += 5;
       nearMissFlash = 0.3;
     }
@@ -456,13 +461,15 @@ function updateGame(dt) {
       localStorage.setItem('neon-rift-best-time', bestTime.toFixed(1));
     }
     state = 'over';
+    overTimer = 0;
     return;
   }
 
   gameTime += dt;
   score = Math.floor(gameTime) + nearMissBonus;
 
-  if (keys['Space']) triggerRiftPulse();
+  if (keysJustPressed['Space']) triggerRiftPulse();
+  Object.keys(keysJustPressed).forEach(k => delete keysJustPressed[k]);
   riftCooldown = Math.max(0, riftCooldown - dt);
 
   updatePlayer(playerL, dt);
@@ -787,12 +794,14 @@ function drawGameOverScreen() {
   ctx.fillText(`Difficulty Tier Reached: ${diffTier}`, HALF, 350);
   ctx.fillText(`Near-Miss Bonus: +${nearMissBonus}`, HALF, 375);
 
-  const pulse = 0.5 + Math.sin(performance.now() / 300) * 0.5;
-  ctx.globalAlpha = pulse;
-  ctx.fillStyle = '#ffcc00';
-  ctx.font = 'bold 18px "Courier New", monospace';
-  ctx.fillText('PRESS ANY KEY OR TAP TO RESTART', HALF, H - 60);
-  ctx.globalAlpha = 1;
+  if (overTimer > 1.0) {
+    const pulse = 0.5 + Math.sin(performance.now() / 300) * 0.5;
+    ctx.globalAlpha = pulse;
+    ctx.fillStyle = '#ffcc00';
+    ctx.font = 'bold 18px "Courier New", monospace';
+    ctx.fillText('PRESS ANY KEY OR TAP TO RESTART', HALF, H - 60);
+    ctx.globalAlpha = 1;
+  }
 }
 
 function drawGame() {
@@ -828,6 +837,30 @@ function drawGame() {
 
   drawHUD();
 
+  // Mobile touch joystick indicators
+  for (const side of ['left', 'right']) {
+    const t = touches[side];
+    if (!t) continue;
+    ctx.globalAlpha = 0.2;
+    ctx.strokeStyle = side === 'left' ? '#00ffcc' : '#ff6600';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(t.sx, t.sy, 30, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.globalAlpha = 0.4;
+    ctx.fillStyle = side === 'left' ? '#00ffcc' : '#ff6600';
+    ctx.beginPath();
+    const dx = t.cx - t.sx;
+    const dy = t.cy - t.sy;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    const clampDist = Math.min(dist, 30);
+    const nx = dist > 0 ? dx / dist * clampDist : 0;
+    const ny = dist > 0 ? dy / dist * clampDist : 0;
+    ctx.arc(t.sx + nx, t.sy + ny, 10, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+
   ctx.restore();
 }
 
@@ -850,8 +883,8 @@ resize();
 window.addEventListener('keydown', function onFirst(e) {
   if (state === 'start') {
     startGame();
-  } else if (state === 'over') {
-    if (e.code !== 'Space') startGame();
+  } else if (state === 'over' && overTimer > 1.0) {
+    startGame();
   }
 });
 
@@ -872,6 +905,9 @@ function frame(ts) {
     if (state === 'game') drawGame();
     else drawGameOverScreen();
   } else if (state === 'over') {
+    overTimer += dt;
+    updateParticles(dt);
+    shakeTimer = Math.max(0, shakeTimer - dt);
     drawGame();
     drawGameOverScreen();
   }

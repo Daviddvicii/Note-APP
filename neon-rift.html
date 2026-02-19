@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Neon Rift Split</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body {
+  width: 100%; height: 100%;
+  overflow: hidden;
+  background: #0a0a12;
+  font-family: 'Courier New', monospace;
+  touch-action: none;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+#gc {
+  display: block;
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  image-rendering: pixelated;
+}
+/* CRT scanline overlay */
+#crt {
+  pointer-events: none;
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0,0,0,0.06) 0px,
+    rgba(0,0,0,0.06) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  z-index: 10;
+}
+</style>
+</head>
+<body>
+<canvas id="gc"></canvas>
+<div id="crt"></div>
+<script>
+'use strict';
+
+// ─── Constants ───
+const W = 900, H = 600;
+const HALF = W / 2;
+const ARENA_W = HALF - 10;  // padding from center divider
+const PLAYER_R = 12;
+const PLAYER_SPEED = 220;
+const FRICTION = 0.88;
+const DASH_SPEED = 600;
+const DASH_DUR = 0.12;
+const RIFT_COOLDOWN = 6;
+const NEAR_MISS_DIST = 8;
+
+const canvas = document.getElementById('gc');
+const ctx = canvas.getContext('2d');
+canvas.width = W;
+canvas.height = H;
+
+// ─── State ───
+let state = 'start'; // start | game | over
+let score = 0;
+let bestScore = parseInt(localStorage.getItem('neon-rift-best')) || 0;
+let bestTime = parseFloat(localStorage.getItem('neon-rift-best-time')) || 0;
+let totalRuns = parseInt(localStorage.getItem('neon-rift-total-runs')) || 0;
+let gameTime = 0;
+let diffTier = 1;
+let riftCooldown = 0;
+let shakeTimer = 0;
+let shakeIntensity = 0;
+let nearMissBonus = 0;
+let nearMissFlash = 0;
+
+// ─── Particles ───
+let particles = [];
+
+function spawnParticles(x, y, color, count, spread) {
+  for (let i = 0; i < count; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = 40 + Math.random() * spread;
+    particles.push({
+      x, y,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      life: 0.4 + Math.random() * 0.5,
+      maxLife: 0.4 + Math.random() * 0.5,
+      r: 1.5 + Math.random() * 2.5,
+      color
+    });
+  }
+}
+
+function updateParticles(dt) {
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    p.x += p.vx * dt;
+    p.y += p.vy * dt;
+    p.vx *= 0.96;
+    p.vy *= 0.96;
+    p.life -= dt;
+    if (p.life <= 0) particles.splice(i, 1);
+  }
+}
+
+function drawParticles() {
+  for (const p of particles) {
+    const a = Math.max(0, p.life / p.maxLife);
+    ctx.globalAlpha = a;
+    ctx.fillStyle = p.color;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.r * a, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+
+// ─── Players ───
+function makePlayer(arena) {
+  return {
+    x: ARENA_W / 2,
+    y: H * 0.75,
+    vx: 0, vy: 0,
+    arena, // 'left' | 'right'
+    r: PLAYER_R,
+    alive: true,
+    dashTimer: 0,
+    dashVx: 0, dashVy: 0,
+    trail: []
+  };
+}
+
+let playerL, playerR;
+
+// ─── Hazards ───
+let hazards = [];
+let hazardSpawnTimer = 0;
+
+function getDiffScale() {
+  const t = gameTime;
+  return {
+    spawnInterval: Math.max(0.35, 1.8 - t * 0.012),
+    telegraphMul: Math.max(0.55, 1.0 - t * 0.004),
+    speedMul: 1.0 + t * 0.008,
+    tier: Math.floor(t / 15) + 1
+  };
+}
+
+function spawnHazardInArena(arena) {
+  const diff = getDiffScale();
+  const type = Math.random() < 0.55 ? 'dart' : 'laser';
+  const target = arena === 'left' ? playerL : playerR;
+
+  if (type === 'dart') {
+    const side = Math.floor(Math.random() * 4);
+    let sx, sy;
+    if (side === 0) { sx = 0; sy = Math.random() * H; }
+    else if (side === 1) { sx = ARENA_W; sy = Math.random() * H; }
+    else if (side === 2) { sx = Math.random() * ARENA_W; sy = 0; }
+    else { sx = Math.random() * ARENA_W; sy = H; }
+
+    const dx = target.x - sx;
+    const dy = target.y - sy;
+    const len = Math.sqrt(dx * dx + dy * dy) || 1;
+    const speed = (280 + Math.random() * 100) * diff.speedMul;
+
+    hazards.push({
+      type: 'dart',
+      arena,
+      phase: 'telegraph',
+      timer: 0,
+      telegraphDur: 0.6 * diff.telegraphMul,
+      activeDur: 2.0,
+      x: sx, y: sy,
+      tx: target.x, ty: target.y,
+      vx: (dx / len) * speed,
+      vy: (dy / len) * speed,
+      r: 6
+    });
+  } else {
+    const horizontal = Math.random() < 0.5;
+    const pos = 40 + Math.random() * (horizontal ? (H - 80) : (ARENA_W - 80));
+    hazards.push({
+      type: 'laser',
+      arena,
+      phase: 'telegraph',
+      timer: 0,
+      telegraphDur: 0.9 * diff.telegraphMul,
+      activeDur: 0.35,
+      horizontal,
+      pos,
+      thickness: 6
+    });
+  }
+}
+
+// ─── Input ───
+const keys = {};
+window.addEventListener('keydown', e => {
+  keys[e.code] = true;
+  if (e.code === 'Space') e.preventDefault();
+});
+window.addEventListener('keyup', e => { keys[e.code] = false; });
+
+// Touch state
+const touches = { left: null, right: null };
+let touchStartPos = { left: null, right: null };
+
+canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
+canvas.addEventListener('touchcancel', handleTouchEnd, { passive: false });
+
+function screenToCanvas(tx, ty) {
+  const rect = canvas.getBoundingClientRect();
+  return {
+    x: (tx - rect.left) / rect.width * W,
+    y: (ty - rect.top) / rect.height * H
+  };
+}
+
+function handleTouchStart(e) {
+  e.preventDefault();
+  if (state === 'start') { startGame(); return; }
+  if (state === 'over') { startGame(); return; }
+  for (const t of e.changedTouches) {
+    const p = screenToCanvas(t.clientX, t.clientY);
+    const side = p.x < HALF ? 'left' : 'right';
+    touches[side] = { id: t.identifier, sx: p.x, sy: p.y, cx: p.x, cy: p.y };
+    touchStartPos[side] = { x: p.x, y: p.y, time: performance.now() };
+  }
+}
+
+function handleTouchMove(e) {
+  e.preventDefault();
+  for (const t of e.changedTouches) {
+    const p = screenToCanvas(t.clientX, t.clientY);
+    for (const side of ['left', 'right']) {
+      if (touches[side] && touches[side].id === t.identifier) {
+        touches[side].cx = p.x;
+        touches[side].cy = p.y;
+      }
+    }
+  }
+}
+
+function handleTouchEnd(e) {
+  e.preventDefault();
+  for (const t of e.changedTouches) {
+    for (const side of ['left', 'right']) {
+      if (touches[side] && touches[side].id === t.identifier) {
+        touches[side] = null;
+      }
+    }
+  }
+}
+
+function getPlayerInput(player) {
+  let ix = 0, iy = 0;
+  if (player.arena === 'left') {
+    if (keys['KeyA'] || keys['ArrowLeft'] && false) ix -= 1;
+    if (keys['KeyD']) ix += 1;
+    if (keys['KeyW']) iy -= 1;
+    if (keys['KeyS']) iy += 1;
+    if (touches.left) {
+      const dx = touches.left.cx - touches.left.sx;
+      const dy = touches.left.cy - touches.left.sy;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist > 8) {
+        ix = dx / dist;
+        iy = dy / dist;
+      }
+    }
+  } else {
+    if (keys['ArrowLeft']) ix -= 1;
+    if (keys['ArrowRight']) ix += 1;
+    if (keys['ArrowUp']) iy -= 1;
+    if (keys['ArrowDown']) iy += 1;
+    if (touches.right) {
+      const dx = touches.right.cx - touches.right.sx;
+      const dy = touches.right.cy - touches.right.sy;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist > 8) {
+        ix = dx / dist;
+        iy = dy / dist;
+      }
+    }
+  }
+  const len = Math.sqrt(ix * ix + iy * iy);
+  if (len > 1) { ix /= len; iy /= len; }
+  return { ix, iy };
+}
+
+// ─── Game Logic ───
+function startGame() {
+  state = 'game';
+  score = 0;
+  gameTime = 0;
+  riftCooldown = 0;
+  shakeTimer = 0;
+  nearMissBonus = 0;
+  nearMissFlash = 0;
+  hazards = [];
+  particles = [];
+  hazardSpawnTimer = 0;
+  playerL = makePlayer('left');
+  playerR = makePlayer('right');
+  totalRuns++;
+  localStorage.setItem('neon-rift-total-runs', totalRuns);
+}
+
+function triggerRiftPulse() {
+  if (riftCooldown > 0) return;
+  const tmpX = playerL.x;
+  const tmpY = playerL.y;
+  playerL.x = playerR.x;
+  playerL.y = playerR.y;
+  playerR.x = tmpX;
+  playerR.y = tmpY;
+  riftCooldown = RIFT_COOLDOWN;
+  // Visual feedback
+  const lOff = 0;
+  const rOff = HALF;
+  spawnParticles(playerL.x + lOff, playerL.y, '#ff00ff', 15, 120);
+  spawnParticles(playerR.x + rOff, playerR.y, '#00ffff', 15, 120);
+  shakeTimer = 0.15;
+  shakeIntensity = 4;
+}
+
+function updatePlayer(p, dt) {
+  const { ix, iy } = getPlayerInput(p);
+
+  if (p.dashTimer > 0) {
+    p.dashTimer -= dt;
+    p.x += p.dashVx * dt;
+    p.y += p.dashVy * dt;
+  } else {
+    p.vx += ix * PLAYER_SPEED * 3 * dt;
+    p.vy += iy * PLAYER_SPEED * 3 * dt;
+    p.vx *= FRICTION;
+    p.vy *= FRICTION;
+    const spd = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
+    if (spd > PLAYER_SPEED) {
+      p.vx = (p.vx / spd) * PLAYER_SPEED;
+      p.vy = (p.vy / spd) * PLAYER_SPEED;
+    }
+    p.x += p.vx * dt;
+    p.y += p.vy * dt;
+  }
+
+  // Clamp to arena
+  p.x = Math.max(p.r, Math.min(ARENA_W - p.r, p.x));
+  p.y = Math.max(p.r + 30, Math.min(H - p.r, p.y));
+
+  // Trail
+  p.trail.push({ x: p.x, y: p.y, life: 0.3 });
+  if (p.trail.length > 20) p.trail.shift();
+  for (let i = p.trail.length - 1; i >= 0; i--) {
+    p.trail[i].life -= dt;
+    if (p.trail[i].life <= 0) p.trail.splice(i, 1);
+  }
+}
+
+function updateHazards(dt) {
+  const diff = getDiffScale();
+  diffTier = diff.tier;
+
+  hazardSpawnTimer -= dt;
+  if (hazardSpawnTimer <= 0) {
+    hazardSpawnTimer = diff.spawnInterval * (0.8 + Math.random() * 0.4);
+    spawnHazardInArena('left');
+    spawnHazardInArena('right');
+  }
+
+  for (let i = hazards.length - 1; i >= 0; i--) {
+    const h = hazards[i];
+    h.timer += dt;
+
+    if (h.phase === 'telegraph') {
+      if (h.timer >= h.telegraphDur) {
+        h.phase = 'active';
+        h.timer = 0;
+      }
+    } else if (h.phase === 'active') {
+      if (h.type === 'dart') {
+        h.x += h.vx * dt;
+        h.y += h.vy * dt;
+        if (h.x < -50 || h.x > ARENA_W + 50 || h.y < -50 || h.y > H + 50) {
+          hazards.splice(i, 1);
+          continue;
+        }
+      }
+      if (h.timer >= h.activeDur) {
+        hazards.splice(i, 1);
+        continue;
+      }
+    }
+  }
+}
+
+function checkCollisions() {
+  for (const h of hazards) {
+    if (h.phase !== 'active') continue;
+    const p = h.arena === 'left' ? playerL : playerR;
+    if (!p.alive) continue;
+
+    let hit = false;
+    let nearMiss = false;
+
+    if (h.type === 'dart') {
+      const dx = p.x - h.x;
+      const dy = p.y - h.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < p.r + h.r) hit = true;
+      else if (dist < p.r + h.r + NEAR_MISS_DIST) nearMiss = true;
+    } else if (h.type === 'laser') {
+      if (h.horizontal) {
+        const dist = Math.abs(p.y - h.pos);
+        if (dist < p.r + h.thickness / 2) hit = true;
+        else if (dist < p.r + h.thickness / 2 + NEAR_MISS_DIST) nearMiss = true;
+      } else {
+        const dist = Math.abs(p.x - h.pos);
+        if (dist < p.r + h.thickness / 2) hit = true;
+        else if (dist < p.r + h.thickness / 2 + NEAR_MISS_DIST) nearMiss = true;
+      }
+    }
+
+    if (hit) {
+      p.alive = false;
+      const ox = h.arena === 'left' ? 0 : HALF;
+      spawnParticles(p.x + ox, p.y, h.arena === 'left' ? '#00ffcc' : '#ff6600', 30, 200);
+      shakeTimer = 0.3;
+      shakeIntensity = 8;
+    }
+    if (nearMiss) {
+      nearMissBonus += 5;
+      nearMissFlash = 0.3;
+    }
+  }
+}
+
+function updateGame(dt) {
+  if (!playerL.alive || !playerR.alive) {
+    // End run
+    if (score > bestScore) {
+      bestScore = score;
+      localStorage.setItem('neon-rift-best', bestScore);
+    }
+    if (gameTime > bestTime) {
+      bestTime = gameTime;
+      localStorage.setItem('neon-rift-best-time', bestTime.toFixed(1));
+    }
+    state = 'over';
+    return;
+  }
+
+  gameTime += dt;
+  score = Math.floor(gameTime) + nearMissBonus;
+
+  if (keys['Space']) triggerRiftPulse();
+  riftCooldown = Math.max(0, riftCooldown - dt);
+
+  updatePlayer(playerL, dt);
+  updatePlayer(playerR, dt);
+  updateHazards(dt);
+  checkCollisions();
+  updateParticles(dt);
+
+  shakeTimer = Math.max(0, shakeTimer - dt);
+  nearMissFlash = Math.max(0, nearMissFlash - dt);
+}
+
+// ─── Drawing ───
+const gridOffset = { y: 0 };
+
+function drawGrid(xOff, w) {
+  ctx.strokeStyle = 'rgba(0,255,180,0.07)';
+  ctx.lineWidth = 1;
+  const spacing = 30;
+  const yShift = gridOffset.y % spacing;
+  for (let y = yShift; y < H; y += spacing) {
+    ctx.beginPath();
+    ctx.moveTo(xOff, y);
+    ctx.lineTo(xOff + w, y);
+    ctx.stroke();
+  }
+  for (let x = 0; x < w; x += spacing) {
+    ctx.beginPath();
+    ctx.moveTo(xOff + x, 0);
+    ctx.lineTo(xOff + x, H);
+    ctx.stroke();
+  }
+}
+
+function drawPlayer(p, xOff, color1, color2) {
+  // Trail
+  for (const t of p.trail) {
+    const a = t.life / 0.3;
+    ctx.globalAlpha = a * 0.3;
+    ctx.fillStyle = color1;
+    ctx.beginPath();
+    ctx.arc(xOff + t.x, t.y, p.r * a * 0.6, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+
+  // Glow
+  const grad = ctx.createRadialGradient(xOff + p.x, p.y, 0, xOff + p.x, p.y, p.r * 2.5);
+  grad.addColorStop(0, color1 + '40');
+  grad.addColorStop(1, 'transparent');
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  ctx.arc(xOff + p.x, p.y, p.r * 2.5, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Body
+  ctx.fillStyle = color1;
+  ctx.strokeStyle = color2;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(xOff + p.x, p.y, p.r, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+
+  // Inner ring
+  ctx.strokeStyle = '#fff';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.arc(xOff + p.x, p.y, p.r * 0.5, 0, Math.PI * 2);
+  ctx.stroke();
+}
+
+function drawHazards() {
+  for (const h of hazards) {
+    const xOff = h.arena === 'left' ? 0 : HALF;
+
+    if (h.type === 'dart') {
+      if (h.phase === 'telegraph') {
+        const progress = h.timer / h.telegraphDur;
+        const blink = Math.sin(progress * Math.PI * 8) > 0;
+        if (blink) {
+          ctx.strokeStyle = 'rgba(255,50,50,0.5)';
+          ctx.lineWidth = 1;
+          ctx.setLineDash([4, 6]);
+          ctx.beginPath();
+          ctx.moveTo(xOff + h.x, h.y);
+          ctx.lineTo(xOff + h.tx, h.ty);
+          ctx.stroke();
+          ctx.setLineDash([]);
+        }
+        // Spawn point indicator
+        ctx.fillStyle = `rgba(255,50,50,${0.3 + progress * 0.5})`;
+        ctx.beginPath();
+        ctx.arc(xOff + h.x, h.y, 4 + progress * 4, 0, Math.PI * 2);
+        ctx.fill();
+      } else {
+        // Active dart
+        const glow = ctx.createRadialGradient(xOff + h.x, h.y, 0, xOff + h.x, h.y, h.r * 3);
+        glow.addColorStop(0, 'rgba(255,80,40,0.6)');
+        glow.addColorStop(1, 'transparent');
+        ctx.fillStyle = glow;
+        ctx.beginPath();
+        ctx.arc(xOff + h.x, h.y, h.r * 3, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = '#ff4422';
+        ctx.strokeStyle = '#ffaa00';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(xOff + h.x, h.y, h.r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+      }
+    } else if (h.type === 'laser') {
+      if (h.phase === 'telegraph') {
+        const progress = h.timer / h.telegraphDur;
+        const blink = Math.sin(progress * Math.PI * 6) > 0;
+        const alpha = blink ? 0.15 + progress * 0.3 : 0.05;
+        ctx.strokeStyle = `rgba(255,255,0,${alpha})`;
+        ctx.lineWidth = h.thickness + 4;
+        ctx.beginPath();
+        if (h.horizontal) {
+          ctx.moveTo(xOff, h.pos);
+          ctx.lineTo(xOff + ARENA_W, h.pos);
+        } else {
+          ctx.moveTo(xOff + h.pos, 30);
+          ctx.lineTo(xOff + h.pos, H);
+        }
+        ctx.stroke();
+
+        // Warning dashes
+        ctx.setLineDash([3, 5]);
+        ctx.strokeStyle = `rgba(255,100,0,${alpha + 0.2})`;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        if (h.horizontal) {
+          ctx.moveTo(xOff, h.pos);
+          ctx.lineTo(xOff + ARENA_W, h.pos);
+        } else {
+          ctx.moveTo(xOff + h.pos, 30);
+          ctx.lineTo(xOff + h.pos, H);
+        }
+        ctx.stroke();
+        ctx.setLineDash([]);
+      } else {
+        // Active laser beam
+        const fade = 1 - h.timer / h.activeDur;
+        ctx.shadowColor = '#ffcc00';
+        ctx.shadowBlur = 15;
+        ctx.strokeStyle = `rgba(255,255,100,${fade})`;
+        ctx.lineWidth = h.thickness + 8;
+        ctx.beginPath();
+        if (h.horizontal) {
+          ctx.moveTo(xOff, h.pos);
+          ctx.lineTo(xOff + ARENA_W, h.pos);
+        } else {
+          ctx.moveTo(xOff + h.pos, 30);
+          ctx.lineTo(xOff + h.pos, H);
+        }
+        ctx.stroke();
+
+        ctx.strokeStyle = `rgba(255,255,255,${fade})`;
+        ctx.lineWidth = h.thickness;
+        ctx.beginPath();
+        if (h.horizontal) {
+          ctx.moveTo(xOff, h.pos);
+          ctx.lineTo(xOff + ARENA_W, h.pos);
+        } else {
+          ctx.moveTo(xOff + h.pos, 30);
+          ctx.lineTo(xOff + h.pos, H);
+        }
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+      }
+    }
+  }
+}
+
+function drawHUD() {
+  // Top bar background
+  ctx.fillStyle = 'rgba(0,0,0,0.7)';
+  ctx.fillRect(0, 0, W, 28);
+
+  ctx.fillStyle = '#00ffcc';
+  ctx.font = '13px "Courier New", monospace';
+  ctx.textAlign = 'left';
+  ctx.fillText(`SCORE: ${score}`, 10, 18);
+  ctx.fillText(`BEST: ${bestScore}`, 160, 18);
+
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#ffcc00';
+  ctx.fillText(`TIME: ${gameTime.toFixed(1)}s`, HALF, 18);
+
+  ctx.textAlign = 'right';
+  ctx.fillStyle = '#ff66ff';
+  ctx.fillText(`TIER ${diffTier}`, W - 10, 18);
+
+  // Rift Pulse cooldown
+  const riftReady = riftCooldown <= 0;
+  ctx.textAlign = 'center';
+  if (riftReady) {
+    ctx.fillStyle = '#ff00ff';
+    ctx.fillText('⚡ RIFT READY [SPACE]', HALF, H - 10);
+  } else {
+    ctx.fillStyle = '#555';
+    ctx.fillText(`RIFT: ${riftCooldown.toFixed(1)}s`, HALF, H - 10);
+  }
+
+  // Center divider
+  ctx.strokeStyle = 'rgba(255,0,255,0.3)';
+  ctx.lineWidth = 2;
+  ctx.setLineDash([6, 4]);
+  ctx.beginPath();
+  ctx.moveTo(HALF, 28);
+  ctx.lineTo(HALF, H);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Arena labels
+  ctx.globalAlpha = 0.25;
+  ctx.fillStyle = '#00ffcc';
+  ctx.font = '11px "Courier New", monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText('WASD', HALF / 2, 42);
+  ctx.fillStyle = '#ff6600';
+  ctx.fillText('ARROWS', HALF + HALF / 2, 42);
+  ctx.globalAlpha = 1;
+
+  // Near miss flash
+  if (nearMissFlash > 0) {
+    ctx.globalAlpha = nearMissFlash;
+    ctx.fillStyle = '#ffff00';
+    ctx.font = 'bold 16px "Courier New", monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('NEAR MISS! +5', HALF, H / 2 - 20);
+    ctx.globalAlpha = 1;
+  }
+}
+
+function drawStartScreen() {
+  ctx.fillStyle = '#0a0a12';
+  ctx.fillRect(0, 0, W, H);
+  drawGrid(0, W);
+
+  // Title
+  ctx.textAlign = 'center';
+  ctx.shadowColor = '#ff00ff';
+  ctx.shadowBlur = 20;
+  ctx.fillStyle = '#ff00ff';
+  ctx.font = 'bold 42px "Courier New", monospace';
+  ctx.fillText('NEON RIFT SPLIT', HALF, 150);
+  ctx.shadowBlur = 0;
+
+  ctx.fillStyle = '#00ffcc';
+  ctx.font = '16px "Courier New", monospace';
+  ctx.fillText('Split-screen survival — control two at once', HALF, 200);
+
+  // Controls
+  ctx.fillStyle = '#aaa';
+  ctx.font = '14px "Courier New", monospace';
+  const lines = [
+    '─── CONTROLS ───',
+    '',
+    'Left Player:  W A S D',
+    'Right Player: Arrow Keys',
+    'Rift Pulse:   SPACE (swap positions)',
+    '',
+    'Mobile: Touch left/right halves to control',
+    '',
+    '─── RULES ───',
+    '',
+    'Dodge hazards in both arenas.',
+    'If EITHER player dies, the run ends.',
+    'Survive as long as possible!',
+  ];
+  let ly = 250;
+  for (const line of lines) {
+    ctx.fillStyle = line.startsWith('───') ? '#ff66ff' : '#ccc';
+    ctx.fillText(line, HALF, ly);
+    ly += 20;
+  }
+
+  // Start prompt
+  const pulse = 0.5 + Math.sin(performance.now() / 300) * 0.5;
+  ctx.globalAlpha = pulse;
+  ctx.fillStyle = '#ffcc00';
+  ctx.font = 'bold 20px "Courier New", monospace';
+  ctx.fillText('PRESS ANY KEY OR TAP TO START', HALF, H - 50);
+  ctx.globalAlpha = 1;
+
+  if (bestScore > 0) {
+    ctx.fillStyle = '#888';
+    ctx.font = '12px "Courier New", monospace';
+    ctx.fillText(`Best: ${bestScore} pts | ${bestTime.toFixed(1)}s | Runs: ${totalRuns}`, HALF, H - 20);
+  }
+}
+
+function drawGameOverScreen() {
+  ctx.fillStyle = 'rgba(10,10,18,0.85)';
+  ctx.fillRect(0, 0, W, H);
+
+  ctx.textAlign = 'center';
+  ctx.shadowColor = '#ff0000';
+  ctx.shadowBlur = 20;
+  ctx.fillStyle = '#ff3333';
+  ctx.font = 'bold 36px "Courier New", monospace';
+  ctx.fillText('RIFT COLLAPSED', HALF, 180);
+  ctx.shadowBlur = 0;
+
+  ctx.fillStyle = '#00ffcc';
+  ctx.font = '18px "Courier New", monospace';
+  ctx.fillText(`Time: ${gameTime.toFixed(1)}s`, HALF, 240);
+  ctx.fillText(`Score: ${score}`, HALF, 270);
+
+  const isNew = score >= bestScore && score > 0;
+  ctx.fillStyle = isNew ? '#ffcc00' : '#888';
+  ctx.font = isNew ? 'bold 16px "Courier New", monospace' : '16px "Courier New", monospace';
+  ctx.fillText(isNew ? `★ NEW BEST! ★` : `Best: ${bestScore}`, HALF, 310);
+
+  ctx.fillStyle = '#aaa';
+  ctx.font = '13px "Courier New", monospace';
+  ctx.fillText(`Difficulty Tier Reached: ${diffTier}`, HALF, 350);
+  ctx.fillText(`Near-Miss Bonus: +${nearMissBonus}`, HALF, 375);
+
+  const pulse = 0.5 + Math.sin(performance.now() / 300) * 0.5;
+  ctx.globalAlpha = pulse;
+  ctx.fillStyle = '#ffcc00';
+  ctx.font = 'bold 18px "Courier New", monospace';
+  ctx.fillText('PRESS ANY KEY OR TAP TO RESTART', HALF, H - 60);
+  ctx.globalAlpha = 1;
+}
+
+function drawGame() {
+  // Apply screen shake
+  let sx = 0, sy = 0;
+  if (shakeTimer > 0) {
+    sx = (Math.random() - 0.5) * shakeIntensity * 2;
+    sy = (Math.random() - 0.5) * shakeIntensity * 2;
+  }
+  ctx.save();
+  ctx.translate(sx, sy);
+
+  // Background
+  ctx.fillStyle = '#0a0a12';
+  ctx.fillRect(0, 0, W, H);
+
+  // Left arena bg
+  ctx.fillStyle = 'rgba(0,255,200,0.02)';
+  ctx.fillRect(0, 28, HALF - 5, H - 28);
+
+  // Right arena bg
+  ctx.fillStyle = 'rgba(255,100,0,0.02)';
+  ctx.fillRect(HALF + 5, 28, HALF - 5, H - 28);
+
+  drawGrid(0, HALF - 5);
+  drawGrid(HALF + 5, HALF - 5);
+
+  drawHazards();
+  drawParticles();
+
+  if (playerL.alive) drawPlayer(playerL, 0, '#00ffcc', '#00aa88');
+  if (playerR.alive) drawPlayer(playerR, HALF, '#ff6600', '#ff9944');
+
+  drawHUD();
+
+  ctx.restore();
+}
+
+// ─── Responsive Scaling ───
+function resize() {
+  const dpr = 1;
+  const maxW = window.innerWidth;
+  const maxH = window.innerHeight;
+  const scaleX = maxW / W;
+  const scaleY = maxH / H;
+  const scale = Math.min(scaleX, scaleY);
+
+  canvas.style.width = (W * scale) + 'px';
+  canvas.style.height = (H * scale) + 'px';
+}
+window.addEventListener('resize', resize);
+resize();
+
+// ─── Start from keyboard ───
+window.addEventListener('keydown', function onFirst(e) {
+  if (state === 'start') {
+    startGame();
+  } else if (state === 'over') {
+    if (e.code !== 'Space') startGame();
+  }
+});
+
+// ─── Main Loop ───
+let lastTime = 0;
+
+function frame(ts) {
+  requestAnimationFrame(frame);
+  const dt = Math.min((ts - lastTime) / 1000, 0.05);
+  lastTime = ts;
+
+  gridOffset.y += dt * 20;
+
+  if (state === 'start') {
+    drawStartScreen();
+  } else if (state === 'game') {
+    updateGame(dt);
+    if (state === 'game') drawGame();
+    else drawGameOverScreen();
+  } else if (state === 'over') {
+    drawGame();
+    drawGameOverScreen();
+  }
+}
+
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

@@ -347,13 +347,13 @@ function spawnHazards(dt) {
   spawnTimerA -= dt;
   spawnTimerB -= dt;
 
-  if (spawnTimerA <= 0) {
+  if (spawnTimerA <= 0 && hazards.length < 80) {
     spawnTimerA = spawnInterval(1.8);
     spawnNeonDart(0, playerL);
     spawnNeonDart(1, playerR);
   }
 
-  if (spawnTimerB <= 0) {
+  if (spawnTimerB <= 0 && hazards.length < 80) {
     spawnTimerB = spawnInterval(3.5);
     if (elapsed > 5) {
       spawnLaserSweep(0);
@@ -587,6 +587,7 @@ function killPlayer(p) {
 
 // ─── Particles ───
 function spawnDeathParticles(p, color) {
+  while (particles.length > 200) particles.shift();
   for (let i = 0; i < 30; i++) {
     const a = Math.random() * Math.PI * 2;
     const spd = 60 + Math.random() * 200;
@@ -1106,8 +1107,7 @@ function loop(now) {
 
   if (state === "playing") {
     elapsed += dt;
-    score += Math.floor(dt * 10) / 10;
-    score = Math.round(score * 10) / 10;
+    score += dt;
     riftPulseCd = Math.max(0, riftPulseCd - dt);
     nearMissTimer = Math.max(0, nearMissTimer - dt);
     shakeTimer = Math.max(0, shakeTimer - dt);

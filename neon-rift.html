@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#050510">
+  <title>Neon Rift Split</title>
+  <style>
+    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    html,body{height:100%;margin:0;background:#050510;overflow:hidden;
+      font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+      touch-action:none;user-select:none;color:#fff}
+    #wrap{position:fixed;inset:0;display:flex;justify-content:center;align-items:center}
+    canvas{display:block}
+    .scanlines{position:fixed;inset:0;pointer-events:none;z-index:10;
+      background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.12) 2px,rgba(0,0,0,.12) 4px);
+      mix-blend-mode:overlay;opacity:.35}
+    .crt-glow{position:fixed;inset:-20px;pointer-events:none;z-index:9;
+      background:radial-gradient(ellipse at 50% 45%,rgba(0,255,200,.06),transparent 60%),
+                 radial-gradient(ellipse at 50% 55%,rgba(0,0,0,0),rgba(0,0,0,.5) 70%);
+      animation:flicker 5s infinite}
+    @keyframes flicker{0%,100%{opacity:.9}50%{opacity:.85}51%{opacity:.95}}
+  </style>
+</head>
+<body>
+  <div id="wrap"><canvas id="c"></canvas></div>
+  <div class="scanlines"></div>
+  <div class="crt-glow"></div>
+  <script src="neon-rift.js"></script>
+</body>
+</html>

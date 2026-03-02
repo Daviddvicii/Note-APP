@@ -1,0 +1,1101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Simulator</title>
+  <style>
+    :root {
+      --bg: #0f1320;
+      --panel: #171c2d;
+      --panel2: #1f2740;
+      --text: #e9eef8;
+      --muted: #9eb0d4;
+      --red: #e95050;
+      --blue: #50a3ff;
+      --accent: #7cf0d2;
+      --warn: #ffd166;
+      --ok: #8ef57a;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      background: radial-gradient(circle at 20% 20%, #19213a, var(--bg));
+      color: var(--text);
+      min-height: 100vh;
+    }
+    .app {
+      display: grid;
+      grid-template-columns: 320px 1fr 320px;
+      gap: 10px;
+      padding: 10px;
+      height: 100vh;
+      overflow: hidden;
+    }
+    .panel {
+      background: linear-gradient(180deg, var(--panel), var(--panel2));
+      border: 1px solid #2a355a;
+      border-radius: 10px;
+      padding: 10px;
+      overflow: auto;
+    }
+    h1, h2, h3 { margin: 6px 0 8px; }
+    h1 { font-size: 1.2rem; }
+    h2 { font-size: 1rem; color: var(--accent); }
+    h3 { font-size: 0.9rem; color: var(--muted); }
+    .row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+    .row > * { flex: 1; }
+    label { display: block; font-size: 0.8rem; color: var(--muted); margin-bottom: 3px; }
+    input, select, button {
+      width: 100%;
+      border-radius: 7px;
+      border: 1px solid #32406b;
+      background: #0f1730;
+      color: var(--text);
+      padding: 7px;
+      font-size: 0.9rem;
+    }
+    input[type="range"] { padding: 0; }
+    button {
+      cursor: pointer;
+      background: #1a2b54;
+      font-weight: 600;
+    }
+    button:hover { filter: brightness(1.08); }
+    button:disabled { opacity: 0.6; cursor: not-allowed; }
+    .split { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .teamBox {
+      border: 1px solid #33466f;
+      border-radius: 8px;
+      padding: 8px;
+      margin-bottom: 10px;
+    }
+    .team-red { border-color: #7a3333; }
+    .team-blue { border-color: #315f8f; }
+    .budget { font-size: 0.8rem; color: var(--warn); margin: 2px 0 8px; }
+    .unitRow { margin-bottom: 6px; }
+    .unitRow .name { font-size: 0.78rem; color: #d3dbef; }
+    .unitRow .meta { font-size: 0.72rem; color: var(--muted); display: flex; justify-content: space-between; }
+    .center {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+    #battleCanvas {
+      flex: 1;
+      width: 100%;
+      background: #0c1020;
+      border: 1px solid #31416f;
+      border-radius: 10px;
+      min-height: 320px;
+      touch-action: none;
+    }
+    .topline {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .pill { padding: 4px 8px; border-radius: 999px; background: #0f1835; border: 1px solid #2f406f; font-size: 0.8rem; }
+    .red { color: var(--red); }
+    .blue { color: var(--blue); }
+    .log {
+      max-height: 180px;
+      overflow: auto;
+      border: 1px solid #30406b;
+      border-radius: 8px;
+      background: #0d142b;
+      padding: 6px;
+      font-size: 0.78rem;
+      line-height: 1.3;
+    }
+    .log div { margin-bottom: 3px; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+    th, td { border-bottom: 1px solid #2f3e67; padding: 4px; text-align: left; }
+    .legendGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 8px; }
+    .legendItem { display: flex; align-items: center; gap: 6px; font-size: 0.75rem; color: var(--muted); }
+    .legendSwatch { width: 16px; height: 16px; border: 1px solid #6077ab; border-radius: 4px; background: #101a35; display:flex; align-items:center; justify-content:center; color:#dce7ff; font-size:0.66rem; }
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(10, 14, 25, 0.86);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+      padding: 16px;
+    }
+    .overlay.show { display: flex; }
+    .card {
+      width: min(780px, 100%);
+      max-height: 92vh;
+      overflow: auto;
+      background: linear-gradient(180deg, #1a223d, #121a31);
+      border: 1px solid #3a4f85;
+      border-radius: 12px;
+      padding: 14px;
+    }
+    .small { font-size: 0.76rem; color: var(--muted); }
+    @media (max-width: 1100px) {
+      .app { grid-template-columns: 280px 1fr; grid-template-rows: 1fr 320px; height: auto; min-height: 100vh; }
+      .rightPanel { grid-column: span 2; max-height: 320px; }
+    }
+    @media (max-width: 760px) {
+      .app { display: flex; flex-direction: column; height: auto; }
+      .panel, .center { min-height: 300px; }
+      #battleCanvas { min-height: 360px; height: 55vh; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="panel" id="leftPanel">
+      <h1>AI Simulator</h1>
+      <div class="small">Best: <span id="bestScore">-</span></div>
+      <div class="small">Deterministic replay: same seed + same config => same outcome.</div>
+      <h2>Match Config</h2>
+      <div class="row">
+        <div>
+          <label>Seed</label>
+          <input id="seedInput" type="number" value="12345" />
+        </div>
+        <div style="flex:0.9;align-self:end;">
+          <button id="randomSeedBtn">Random Seed</button>
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <label>Duration (sec)</label>
+          <input id="durationInput" type="number" min="10" max="1200" value="120" />
+        </div>
+        <div>
+          <label>Budget / Team</label>
+          <input id="budgetInput" type="number" min="20" max="400" value="100" />
+        </div>
+      </div>
+      <div class="row split">
+        <div>
+          <label>Map Width</label>
+          <input id="mapWInput" type="number" min="500" max="2400" value="900" />
+        </div>
+        <div>
+          <label>Map Height</label>
+          <input id="mapHInput" type="number" min="400" max="1800" value="600" />
+        </div>
+      </div>
+      <div>
+        <label>Obstacle Density: <span id="densityLabel">0.18</span></label>
+        <input id="densityInput" type="range" min="0" max="1" step="0.01" value="0.18" />
+      </div>
+      <div class="row split" style="margin-top:8px;">
+        <div>
+          <label>Victory Condition</label>
+          <select id="victoryInput">
+            <option value="control">Control Point</option>
+            <option value="elimination">Elimination</option>
+          </select>
+        </div>
+        <div>
+          <label>Fog of War (hook)</label>
+          <select id="fogInput">
+            <option value="off">Off</option>
+            <option value="on">On (hook)</option>
+          </select>
+        </div>
+      </div>
+      <div class="row split" style="margin-top:8px;">
+        <div>
+          <label>Debug Lines</label>
+          <select id="debugInput">
+            <option value="off">Off</option>
+            <option value="on">On</option>
+          </select>
+        </div>
+        <div style="align-self:end;">
+          <button id="startBtn">Start Simulation</button>
+        </div>
+      </div>
+      <h2>Teams</h2>
+      <div class="teamBox team-red" id="teamRedConfig"></div>
+      <div class="teamBox team-blue" id="teamBlueConfig"></div>
+    </aside>
+
+    <main class="center">
+      <div class="topline">
+        <span class="pill">State: <span id="simState">Ready</span></span>
+        <span class="pill">Control: <span id="controlOwner">Neutral</span></span>
+      </div>
+      <canvas id="battleCanvas" width="960" height="640"></canvas>
+    </main>
+
+    <aside class="panel rightPanel">
+      <h2>Telemetry</h2>
+      <div class="row split">
+        <div class="pill">Time: <span id="timerRem">120.0</span></div>
+        <div class="pill">CP Score: <span id="cpScore">0 - 0</span></div>
+      </div>
+      <table>
+        <thead><tr><th>Team</th><th>Alive</th><th>Total HP</th><th>Kills</th><th>Deaths</th></tr></thead>
+        <tbody>
+          <tr><td class="red">Red</td><td id="redAlive">0</td><td id="redHP">0</td><td id="redKills">0</td><td id="redDeaths">0</td></tr>
+          <tr><td class="blue">Blue</td><td id="blueAlive">0</td><td id="blueHP">0</td><td id="blueKills">0</td><td id="blueDeaths">0</td></tr>
+        </tbody>
+      </table>
+      <h3>Event Log</h3>
+      <div class="log" id="logBox"></div>
+      <h3>Notes</h3>
+      <div class="small">Optional hooks (not implemented): Fog of war reveal mask, timeline scrubber, result JSON export.</div>
+      <h3>Unit Shape Legend</h3>
+      <div class="legendGrid">
+        <div class="legendItem"><span class="legendSwatch">●</span>Infantry</div>
+        <div class="legendItem"><span class="legendSwatch">◆</span>Sniper</div>
+        <div class="legendItem"><span class="legendSwatch">▲</span>MG</div>
+        <div class="legendItem"><span class="legendSwatch">■</span>Tank</div>
+        <div class="legendItem"><span class="legendSwatch">✚</span>AT</div>
+      </div>
+    </aside>
+  </div>
+
+  <div class="overlay" id="endOverlay">
+    <div class="card">
+      <h2>Match Report</h2>
+      <div id="winnerLine"></div>
+      <div id="scoreLine" class="small" style="margin-bottom:10px;"></div>
+      <table id="statsTable"></table>
+      <div class="row" style="margin-top:10px;">
+        <button id="replayBtn">Replay same seed</button>
+        <button id="backBtn">Back to config</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (() => {
+      'use strict';
+
+      const UNIT_TYPES = {
+        Infantry: { cost: 5, hp: 100, range: 180, dps: 18, speed: 85, acc: 0.55, reloadDelay: 0.25, shotDamage: 18 },
+        Sniper: { cost: 10, hp: 70, range: 320, dps: 40, speed: 78, acc: 0.78, reloadDelay: 0.9, shotDamage: 48 },
+        MG: { cost: 9, hp: 110, range: 220, dps: 22, speed: 70, acc: 0.5, reloadDelay: 0.2, shotDamage: 10, suppress: true },
+        Tank: { cost: 20, hp: 320, range: 250, dps: 32, speed: 52, acc: 0.6, reloadDelay: 0.4, shotDamage: 24, tank: true },
+        AT: { cost: 12, hp: 90, range: 240, dps: 28, speed: 72, acc: 0.6, reloadDelay: 0.6, shotDamage: 24, antiTank: true },
+      };
+      const TEAM_KEYS = ['red', 'blue'];
+      const NATIONS = ['USA', 'Germany', 'USSR', 'Japan', 'UK'];
+      const AI_STYLES = ['Aggro', 'Balanced', 'Turtle', 'Guerrilla'];
+      const TYPE_LIST = Object.keys(UNIT_TYPES);
+
+      function mulberry32(seed) {
+        let t = seed >>> 0;
+        return function() {
+          t += 0x6D2B79F5;
+          let x = t;
+          x = Math.imul(x ^ (x >>> 15), x | 1);
+          x ^= x + Math.imul(x ^ (x >>> 7), x | 61);
+          return ((x ^ (x >>> 14)) >>> 0) / 4294967296;
+        };
+      }
+      const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+
+      const el = {
+        seedInput: document.getElementById('seedInput'), randomSeedBtn: document.getElementById('randomSeedBtn'),
+        durationInput: document.getElementById('durationInput'), budgetInput: document.getElementById('budgetInput'),
+        mapWInput: document.getElementById('mapWInput'), mapHInput: document.getElementById('mapHInput'),
+        densityInput: document.getElementById('densityInput'), densityLabel: document.getElementById('densityLabel'),
+        fogInput: document.getElementById('fogInput'), victoryInput: document.getElementById('victoryInput'), debugInput: document.getElementById('debugInput'),
+        startBtn: document.getElementById('startBtn'),
+        teamRedConfig: document.getElementById('teamRedConfig'), teamBlueConfig: document.getElementById('teamBlueConfig'),
+        bestScore: document.getElementById('bestScore'),
+        canvas: document.getElementById('battleCanvas'), simState: document.getElementById('simState'),
+        controlOwner: document.getElementById('controlOwner'), timerRem: document.getElementById('timerRem'), cpScore: document.getElementById('cpScore'),
+        redAlive: document.getElementById('redAlive'), redHP: document.getElementById('redHP'), redKills: document.getElementById('redKills'), redDeaths: document.getElementById('redDeaths'),
+        blueAlive: document.getElementById('blueAlive'), blueHP: document.getElementById('blueHP'), blueKills: document.getElementById('blueKills'), blueDeaths: document.getElementById('blueDeaths'),
+        logBox: document.getElementById('logBox'), endOverlay: document.getElementById('endOverlay'), winnerLine: document.getElementById('winnerLine'),
+        scoreLine: document.getElementById('scoreLine'), statsTable: document.getElementById('statsTable'), replayBtn: document.getElementById('replayBtn'), backBtn: document.getElementById('backBtn'),
+      };
+      const ctx = el.canvas.getContext('2d');
+
+      const configState = {
+        red: { nation: 'USA', style: 'Balanced', mix: { Infantry: 40, Sniper: 15, MG: 20, Tank: 15, AT: 10 } },
+        blue: { nation: 'Germany', style: 'Balanced', mix: { Infantry: 35, Sniper: 18, MG: 20, Tank: 15, AT: 12 } },
+      };
+
+      function createTeamConfigDom(teamKey, mount) {
+        const t = teamKey === 'red' ? 'Red' : 'Blue';
+        const team = configState[teamKey];
+        mount.innerHTML = `<h3>${t} Team</h3>
+          <div class="row split">
+            <div><label>Nation</label><select id="${teamKey}-nation"></select></div>
+            <div><label>AI Style</label><select id="${teamKey}-style"></select></div>
+          </div>
+          <div class="budget" id="${teamKey}-budgetView"></div>
+          <div id="${teamKey}-sliders"></div>`;
+        const nationSel = mount.querySelector(`#${teamKey}-nation`);
+        const styleSel = mount.querySelector(`#${teamKey}-style`);
+        NATIONS.forEach(n => nationSel.add(new Option(n, n)));
+        AI_STYLES.forEach(s => styleSel.add(new Option(s, s)));
+        nationSel.value = team.nation;
+        styleSel.value = team.style;
+        nationSel.onchange = () => team.nation = nationSel.value;
+        styleSel.onchange = () => team.style = styleSel.value;
+        const box = mount.querySelector(`#${teamKey}-sliders`);
+        TYPE_LIST.forEach(type => {
+          const row = document.createElement('div');
+          row.className = 'unitRow';
+          row.innerHTML = `<div class="name">${type}</div><input id="${teamKey}-${type}-s" type="range" min="0" max="100" value="${team.mix[type]}" />
+            <div class="meta"><span>pts alloc</span><span id="${teamKey}-${type}-v">${team.mix[type]}</span></div>`;
+          box.appendChild(row);
+          const slider = row.querySelector('input');
+          const label = row.querySelector(`#${teamKey}-${type}-v`);
+          slider.addEventListener('input', () => {
+            team.mix[type] = Number(slider.value);
+            label.textContent = slider.value;
+            updateBudgetPreview(teamKey);
+          });
+        });
+      }
+
+      function updateBudgetPreview(teamKey) {
+        const budget = Number(el.budgetInput.value) || 100;
+        const units = planUnitsFromMix(teamKey, budget, false);
+        const used = units.reduce((a, u) => a + u.cost, 0);
+        const v = document.getElementById(`${teamKey}-budgetView`);
+        v.textContent = `Projected units: ${units.length}, cost used: ${used}/${budget}`;
+      }
+
+      function planUnitsFromMix(teamKey, budget, applyTraits) {
+        const mix = configState[teamKey].mix;
+        const total = TYPE_LIST.reduce((s, k) => s + Math.max(0, mix[k]), 0) || 1;
+        const nation = configState[teamKey].nation;
+        const desired = [];
+        TYPE_LIST.forEach(type => {
+          const slice = (mix[type] / total) * budget;
+          let cost = UNIT_TYPES[type].cost;
+          if (applyTraits && nation === 'USSR' && (type === 'Infantry' || type === 'MG')) cost *= 0.92;
+          const count = Math.floor(slice / cost);
+          for (let i = 0; i < count; i++) desired.push({ type, cost });
+        });
+        desired.sort((a, b) => UNIT_TYPES[a.type].cost - UNIT_TYPES[b.type].cost);
+        let remaining = budget - desired.reduce((a, u) => a + u.cost, 0);
+        while (remaining >= 5) {
+          let added = false;
+          for (const type of TYPE_LIST) {
+            let c = UNIT_TYPES[type].cost;
+            if (applyTraits && nation === 'USSR' && (type === 'Infantry' || type === 'MG')) c *= 0.92;
+            if (c <= remaining) {
+              desired.push({ type, cost: c });
+              remaining -= c;
+              added = true;
+            }
+          }
+          if (!added) break;
+        }
+        return desired;
+      }
+
+      createTeamConfigDom('red', el.teamRedConfig);
+      createTeamConfigDom('blue', el.teamBlueConfig);
+
+      el.densityInput.oninput = () => el.densityLabel.textContent = Number(el.densityInput.value).toFixed(2);
+      el.budgetInput.oninput = () => { updateBudgetPreview('red'); updateBudgetPreview('blue'); };
+      updateBudgetPreview('red'); updateBudgetPreview('blue');
+
+      el.randomSeedBtn.onclick = () => {
+        el.seedInput.value = Math.floor(Math.random() * 1e9);
+      };
+
+      let game = null;
+      let raf = 0;
+      let prevTs = 0;
+      let acc = 0;
+      const STEP = 1 / 60;
+
+      class Simulator {
+        constructor(cfg) {
+          this.cfg = cfg;
+          this.rng = mulberry32(cfg.seed);
+          this.world = { w: cfg.mapW, h: cfg.mapH };
+          this.cp = { x: this.world.w / 2, y: this.world.h / 2, r: Math.min(this.world.w, this.world.h) * 0.11 };
+          this.units = [];
+          this.obstacles = [];
+          this.time = 0;
+          this.remaining = cfg.duration;
+          this.running = true;
+          this.log = [];
+          this.debugShots = [];
+          this.cpScore = { red: 0, blue: 0 };
+          this.cpOwner = 'neutral';
+          this.cpControlTime = { red: 0, blue: 0 };
+          this.teamStats = {
+            red: this.makeTeamStats(),
+            blue: this.makeTeamStats(),
+          };
+          this.nextUnitId = 1;
+          this.initMap();
+          this.spawnTeams();
+          this.logEvent('Match started.');
+        }
+
+        makeTeamStats() {
+          const byType = {};
+          TYPE_LIST.forEach(t => byType[t] = 0);
+          return { alive: 0, hp: 0, kills: 0, deaths: 0, shots: 0, hits: 0, moved: 0, cpTime: 0, killsByType: byType };
+        }
+
+        traitFor(team) {
+          return this.cfg.teams[team].nation;
+        }
+
+        styleFor(team) {
+          return this.cfg.teams[team].style;
+        }
+
+        traitApply(base, team, type) {
+          const nation = this.traitFor(team);
+          const s = { ...base };
+          if (nation === 'USA') { s.speed *= 1.08; s.sight = (s.sight || 360) * 1.06; }
+          else if (nation === 'Germany') { s.acc *= 1.08; s.reloadDelay *= 0.95; }
+          else if (nation === 'USSR') { if (type === 'Infantry') s.hp *= 1.10; }
+          else if (nation === 'Japan') { s.flankBias = 1.12; }
+          else if (nation === 'UK') { s.coverFactor = 0.66; s.cpMult = 1.06; }
+          return s;
+        }
+
+        initMap() {
+          const count = Math.floor(this.cfg.obstacleDensity * (this.world.w * this.world.h) / 13000);
+          const margin = 55;
+          const leftSpawn = { x: 0, y: 0, w: this.world.w * 0.2, h: this.world.h };
+          const rightSpawn = { x: this.world.w * 0.8, y: 0, w: this.world.w * 0.2, h: this.world.h };
+          for (let i = 0; i < count * 3 && this.obstacles.length < count; i++) {
+            const w = 34 + this.rng() * 95;
+            const h = 28 + this.rng() * 90;
+            const x = margin + this.rng() * (this.world.w - w - margin * 2);
+            const y = margin + this.rng() * (this.world.h - h - margin * 2);
+            const o = { x, y, w, h };
+            const cpPad = 45;
+            const cpRect = { x: this.cp.x - this.cp.r - cpPad, y: this.cp.y - this.cp.r - cpPad, w: this.cp.r * 2 + cpPad * 2, h: this.cp.r * 2 + cpPad * 2 };
+            if (rectOverlaps(o, leftSpawn) || rectOverlaps(o, rightSpawn) || rectOverlaps(o, cpRect)) continue;
+            if (this.obstacles.some(other => rectOverlaps(expandRect(o, 8), other))) continue;
+            this.obstacles.push(o);
+          }
+        }
+
+        spawnTeams() {
+          TEAM_KEYS.forEach(team => {
+            const units = planUnitsFromMix(team, this.cfg.budget, true);
+            const zone = team === 'red'
+              ? { x0: 20, x1: this.world.w * 0.18, y0: 20, y1: this.world.h - 20 }
+              : { x0: this.world.w * 0.82, x1: this.world.w - 20, y0: 20, y1: this.world.h - 20 };
+            units.forEach(u => this.addUnit(team, u.type, zone));
+          });
+          this.recalcTeamSummary();
+        }
+
+        addUnit(team, type, zone) {
+          const base = this.traitApply({ ...UNIT_TYPES[type], sight: 360, flankBias: 1, coverFactor: 0.72, cpMult: 1 }, team, type);
+          let x, y;
+          for (let i = 0; i < 24; i++) {
+            x = zone.x0 + this.rng() * (zone.x1 - zone.x0);
+            y = zone.y0 + this.rng() * (zone.y1 - zone.y0);
+            if (!this.pointBlocked(x, y) && !this.units.some(p => dist2(p.x, p.y, x, y) < 18 * 18)) break;
+          }
+          this.units.push({
+            id: this.nextUnitId++, team, type,
+            x, y, vx: 0, vy: 0,
+            hp: base.hp, maxHp: base.hp,
+            range: base.range, dps: base.dps, speed: base.speed, acc: base.acc,
+            reloadDelay: base.reloadDelay, shotDamage: base.shotDamage,
+            sight: base.sight, flankBias: base.flankBias,
+            coverFactor: base.coverFactor, cpMult: base.cpMult,
+            suppressUntil: 0, reloadTimer: this.rng() * 0.2,
+            alive: true, targetId: null, action: 'objective', decisionCd: this.rng() * 0.2,
+            waypoint: { x, y }, moved: 0,
+          });
+        }
+
+        pointBlocked(x, y) {
+          return this.obstacles.some(o => x >= o.x && x <= o.x + o.w && y >= o.y && y <= o.y + o.h);
+        }
+
+        logEvent(msg) {
+          this.log.push(`[${this.time.toFixed(1)}] ${msg}`);
+          if (this.log.length > 120) this.log.shift();
+        }
+
+        update(dt) {
+          if (!this.running) return;
+          this.time += dt;
+          this.remaining -= dt;
+
+          const aliveRed = this.units.some(u => u.alive && u.team === 'red');
+          const aliveBlue = this.units.some(u => u.alive && u.team === 'blue');
+
+          if (this.cfg.victory === 'elimination' && (!aliveRed || !aliveBlue)) {
+            this.finish(!aliveRed && !aliveBlue ? 'draw' : aliveRed ? 'red' : 'blue');
+            return;
+          }
+
+          for (const u of this.units) {
+            if (!u.alive) continue;
+            u.decisionCd -= dt;
+            u.reloadTimer -= dt;
+            if (u.decisionCd <= 0) {
+              u.decisionCd += 0.25;
+              this.decide(u);
+            }
+            this.act(u, dt);
+          }
+          this.resolveControlPoint(dt);
+          this.recalcTeamSummary();
+
+          if (this.remaining <= 0) {
+            const winner = this.cpScore.red === this.cpScore.blue ? (this.teamStats.red.kills === this.teamStats.blue.kills ? 'draw' : this.teamStats.red.kills > this.teamStats.blue.kills ? 'red' : 'blue') : (this.cpScore.red > this.cpScore.blue ? 'red' : 'blue');
+            this.finish(winner);
+          }
+          if (!this.units.some(u => u.alive && u.team === 'red') || !this.units.some(u => u.alive && u.team === 'blue')) {
+            const r = this.units.some(u => u.alive && u.team === 'red');
+            const b = this.units.some(u => u.alive && u.team === 'blue');
+            this.finish(r === b ? 'draw' : r ? 'red' : 'blue');
+          }
+        }
+
+        decide(u) {
+          const enemies = this.units.filter(e => e.alive && e.team !== u.team);
+          if (!enemies.length) return;
+          const visible = enemies.filter(e => dist2(u.x, u.y, e.x, e.y) <= u.sight * u.sight);
+          let bestTarget = null;
+          let bestTargetScore = -1e9;
+          for (const e of visible) {
+            const d = Math.sqrt(dist2(u.x, u.y, e.x, e.y));
+            const los = this.hasLOS(u.x, u.y, e.x, e.y);
+            let s = -d + (los ? 35 : -20) + (e.type === 'Tank' ? 5 : 0) + (e.hp < 50 ? 14 : 0);
+            if (u.type === 'AT' && e.type === 'Tank') s += 45;
+            if (s > bestTargetScore || (s === bestTargetScore && e.id < bestTarget.id)) { bestTargetScore = s; bestTarget = e; }
+          }
+
+          const style = this.styleFor(u.team);
+          const hpFrac = u.hp / u.maxHp;
+          const nearEnemies = enemies.filter(e => dist2(u.x, u.y, e.x, e.y) < 180 * 180).length;
+          const nearFriends = this.units.filter(f => f.alive && f.team === u.team && f.id !== u.id && dist2(u.x, u.y, f.x, f.y) < 180 * 180).length;
+          const outnumbered = nearEnemies > nearFriends + 1;
+
+          const util = { attack: -1e9, cover: -1e9, objective: -1e9, retreat: -1e9, flank: -1e9 };
+          if (bestTarget) {
+            const d = Math.sqrt(dist2(u.x, u.y, bestTarget.x, bestTarget.y));
+            const inRange = d <= u.range;
+            util.attack = (inRange ? 95 : 40) + (style === 'Aggro' ? 24 : 0) + (style === 'Balanced' ? 8 : -2);
+            if (style === 'Turtle') util.attack -= 8;
+          }
+          const coverPoint = this.findCoverPoint(u, bestTarget);
+          if (coverPoint) util.cover = 62 + (style === 'Turtle' ? 30 : 0) + (hpFrac < 0.55 ? 15 : 0);
+
+          const cpDist = Math.sqrt(dist2(u.x, u.y, this.cp.x, this.cp.y));
+          util.objective = (this.cfg.victory === 'control' ? 50 : 12) + clamp(100 - cpDist * 0.22, -30, 35) + (style === 'Turtle' ? 16 : 0);
+          util.retreat = (hpFrac < 0.25 ? 95 : 10) + (outnumbered ? 35 : 0) + (style === 'Guerrilla' ? 16 : 0);
+
+          if (bestTarget) util.flank = 42 + (style === 'Aggro' ? 20 : 0) + (style === 'Guerrilla' ? 26 : 0) + (this.traitFor(u.team) === 'Japan' ? 12 : 0);
+
+          let chosen = 'objective';
+          let top = -1e9;
+          for (const k of Object.keys(util)) {
+            if (util[k] > top || (util[k] === top && k < chosen)) { top = util[k]; chosen = k; }
+          }
+
+          u.action = chosen;
+          if (chosen === 'attack' && bestTarget) {
+            u.targetId = bestTarget.id;
+            u.waypoint = { x: bestTarget.x, y: bestTarget.y };
+          } else if (chosen === 'cover' && coverPoint) {
+            u.waypoint = coverPoint;
+          } else if (chosen === 'retreat') {
+            const dir = u.team === 'red' ? -1 : 1;
+            u.waypoint = { x: clamp(u.x + dir * -140, 12, this.world.w - 12), y: clamp(u.y + (this.rng() - 0.5) * 130, 12, this.world.h - 12) };
+          } else if (chosen === 'flank' && bestTarget) {
+            const ang = Math.atan2(bestTarget.y - u.y, bestTarget.x - u.x) + (this.rng() < 0.5 ? -1 : 1) * (0.75 + this.rng() * 0.7) * u.flankBias;
+            const d = 110 + this.rng() * 90;
+            u.waypoint = { x: clamp(bestTarget.x + Math.cos(ang) * d, 16, this.world.w - 16), y: clamp(bestTarget.y + Math.sin(ang) * d, 16, this.world.h - 16) };
+            u.targetId = bestTarget.id;
+          } else {
+            u.waypoint = { x: this.cp.x + (this.rng() - 0.5) * this.cp.r * 0.7, y: this.cp.y + (this.rng() - 0.5) * this.cp.r * 0.7 };
+          }
+        }
+
+        findCoverPoint(u, threat) {
+          if (!threat) return null;
+          let best = null;
+          let bestScore = -1e9;
+          for (const o of this.obstacles) {
+            const cx = clamp(u.x, o.x - 20, o.x + o.w + 20);
+            const cy = clamp(u.y, o.y - 20, o.y + o.h + 20);
+            const dx = threat.x - (o.x + o.w / 2);
+            const dy = threat.y - (o.y + o.h / 2);
+            const mag = Math.hypot(dx, dy) || 1;
+            const px = clamp((o.x + o.w / 2) - (dx / mag) * (Math.max(o.w, o.h) / 2 + 16), 12, this.world.w - 12);
+            const py = clamp((o.y + o.h / 2) - (dy / mag) * (Math.max(o.w, o.h) / 2 + 16), 12, this.world.h - 12);
+            const score = -Math.sqrt(dist2(u.x, u.y, px, py)) + (this.hasLOS(threat.x, threat.y, px, py) ? 0 : 80);
+            if (score > bestScore) { bestScore = score; best = { x: px, y: py }; }
+          }
+          return best;
+        }
+
+        act(u, dt) {
+          const target = u.targetId ? this.units.find(t => t.id === u.targetId && t.alive) : null;
+          let speed = u.speed;
+          if (u.suppressUntil > this.time) speed *= 0.8;
+
+          if (u.action === 'attack' && target) {
+            const d2v = dist2(u.x, u.y, target.x, target.y);
+            if (d2v <= u.range * u.range && this.hasLOS(u.x, u.y, target.x, target.y)) {
+              this.tryShoot(u, target);
+              if (d2v < (u.range * 0.75) ** 2) {
+                this.moveToward(u, { x: u.x - (target.x - u.x), y: u.y - (target.y - u.y) }, speed * 0.3, dt);
+              }
+              return;
+            }
+          }
+          this.moveToward(u, u.waypoint, speed, dt);
+
+          if (target && u.reloadTimer <= 0) {
+            const d = Math.sqrt(dist2(u.x, u.y, target.x, target.y));
+            if (d <= u.range && this.hasLOS(u.x, u.y, target.x, target.y)) this.tryShoot(u, target);
+          }
+        }
+
+        moveToward(u, wp, speed, dt) {
+          if (!wp) return;
+          const dx = wp.x - u.x, dy = wp.y - u.y;
+          const d = Math.hypot(dx, dy);
+          if (d < 2) return;
+          const nx = dx / d, ny = dy / d;
+          const step = Math.min(d, speed * dt);
+          let tx = u.x + nx * step;
+          let ty = u.y + ny * step;
+          if (this.pointBlocked(tx, ty)) {
+            if (!this.pointBlocked(u.x + nx * step, u.y)) { tx = u.x + nx * step; ty = u.y; }
+            else if (!this.pointBlocked(u.x, u.y + ny * step)) { tx = u.x; ty = u.y + ny * step; }
+            else {
+              const side = this.rng() < 0.5 ? 1 : -1;
+              tx = u.x + (-ny) * side * step;
+              ty = u.y + (nx) * side * step;
+              if (this.pointBlocked(tx, ty)) return;
+            }
+          }
+          tx = clamp(tx, 4, this.world.w - 4);
+          ty = clamp(ty, 4, this.world.h - 4);
+          u.moved += Math.hypot(tx - u.x, ty - u.y);
+          u.x = tx; u.y = ty;
+        }
+
+        tryShoot(u, t) {
+          if (u.reloadTimer > 0 || !t.alive) return;
+          const d = Math.sqrt(dist2(u.x, u.y, t.x, t.y));
+          if (d > u.range) return;
+          if (!this.hasLOS(u.x, u.y, t.x, t.y)) return;
+          u.reloadTimer = Math.max(0.08, u.reloadDelay);
+          this.teamStats[u.team].shots++;
+
+          const hasCover = this.hasCoverFrom(t, u);
+          const distFall = clamp(1 - (d / u.range) * 0.35, 0.55, 1);
+          let hitChance = u.acc * distFall * (hasCover ? t.coverFactor : 1);
+          hitChance = clamp(hitChance, 0.03, 0.98);
+          const didHit = this.rng() <= hitChance;
+          if (didHit) {
+            this.teamStats[u.team].hits++;
+            let dmg = u.shotDamage;
+            if (this.traitFor(u.team) === 'Japan' && d <= 120) dmg *= 1.10;
+            if (u.type !== 'AT' && t.type === 'Tank') dmg *= 0.65;
+            if (u.type === 'AT' && t.type === 'Tank') dmg *= 1.8;
+            t.hp -= dmg;
+            if (u.type === 'MG') t.suppressUntil = Math.max(t.suppressUntil, this.time + 0.6);
+            if (t.hp <= 0 && t.alive) {
+              t.alive = false;
+              this.teamStats[u.team].kills++;
+              this.teamStats[t.team].deaths++;
+              this.teamStats[u.team].killsByType[u.type]++;
+              this.logEvent(`${cap(u.team)} ${u.type} killed ${cap(t.team)} ${t.type}`);
+            }
+          }
+          if (this.cfg.debug) this.debugShots.push({ x1: u.x, y1: u.y, x2: t.x, y2: t.y, t: 0.12, hit: didHit });
+        }
+
+        hasLOS(x1, y1, x2, y2) {
+          for (const o of this.obstacles) {
+            if (lineRectIntersect(x1, y1, x2, y2, o)) return false;
+          }
+          return true;
+        }
+
+        hasCoverFrom(target, attacker) {
+          const ax = attacker.x, ay = attacker.y, tx = target.x, ty = target.y;
+          const vx = tx - ax, vy = ty - ay;
+          const vmag = Math.hypot(vx, vy) || 1;
+          const nx = vx / vmag, ny = vy / vmag;
+          for (const o of this.obstacles) {
+            const nearestX = clamp(tx, o.x, o.x + o.w);
+            const nearestY = clamp(ty, o.y, o.y + o.h);
+            const dNear = Math.hypot(tx - nearestX, ty - nearestY);
+            if (dNear > 26) continue;
+            const ox = (o.x + o.w / 2) - tx;
+            const oy = (o.y + o.h / 2) - ty;
+            const dot = ox * nx + oy * ny;
+            if (dot < 0) return true;
+          }
+          return false;
+        }
+
+        resolveControlPoint(dt) {
+          const inRed = this.units.filter(u => u.alive && u.team === 'red' && dist2(u.x, u.y, this.cp.x, this.cp.y) <= this.cp.r * this.cp.r).length;
+          const inBlue = this.units.filter(u => u.alive && u.team === 'blue' && dist2(u.x, u.y, this.cp.x, this.cp.y) <= this.cp.r * this.cp.r).length;
+          const prev = this.cpOwner;
+          if (inRed > inBlue) this.cpOwner = 'red';
+          else if (inBlue > inRed) this.cpOwner = 'blue';
+          else this.cpOwner = 'neutral';
+          if (this.cpOwner !== prev && this.cpOwner !== 'neutral') this.logEvent(`${cap(this.cpOwner)} captured control point`);
+
+          if (this.cfg.victory === 'control') {
+            if (this.cpOwner === 'red') {
+              const mult = this.units.find(u => u.team === 'red')?.cpMult || 1;
+              this.cpScore.red += dt * mult;
+              this.cpControlTime.red += dt;
+            }
+            if (this.cpOwner === 'blue') {
+              const mult = this.units.find(u => u.team === 'blue')?.cpMult || 1;
+              this.cpScore.blue += dt * mult;
+              this.cpControlTime.blue += dt;
+            }
+          }
+        }
+
+        recalcTeamSummary() {
+          for (const tm of TEAM_KEYS) {
+            let alive = 0, hp = 0, moved = 0;
+            for (const u of this.units) {
+              if (u.team !== tm) continue;
+              if (u.alive) { alive++; hp += Math.max(0, u.hp); }
+              moved += u.moved;
+            }
+            this.teamStats[tm].alive = alive;
+            this.teamStats[tm].hp = Math.round(hp);
+            this.teamStats[tm].moved = moved;
+            this.teamStats[tm].cpTime = this.cpControlTime[tm];
+          }
+        }
+
+        finish(winner) {
+          if (!this.running) return;
+          this.running = false;
+          this.winner = winner;
+          this.recalcTeamSummary();
+          this.logEvent(`Match ended. Winner: ${winner === 'draw' ? 'Draw' : cap(winner)}`);
+        }
+      }
+
+      function rectOverlaps(a, b) {
+        return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+      }
+      function expandRect(r, p) { return { x: r.x - p, y: r.y - p, w: r.w + p * 2, h: r.h + p * 2 }; }
+      function lineRectIntersect(x1, y1, x2, y2, r) {
+        return lineSegIntersect(x1, y1, x2, y2, r.x, r.y, r.x + r.w, r.y) ||
+          lineSegIntersect(x1, y1, x2, y2, r.x + r.w, r.y, r.x + r.w, r.y + r.h) ||
+          lineSegIntersect(x1, y1, x2, y2, r.x + r.w, r.y + r.h, r.x, r.y + r.h) ||
+          lineSegIntersect(x1, y1, x2, y2, r.x, r.y + r.h, r.x, r.y);
+      }
+      function lineSegIntersect(x1, y1, x2, y2, x3, y3, x4, y4) {
+        const den = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
+        if (Math.abs(den) < 1e-8) return false;
+        const t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / den;
+        const u = -((x1 - x2) * (y1 - y3) - (y1 - y2) * (x1 - x3)) / den;
+        return t >= 0 && t <= 1 && u >= 0 && u <= 1;
+      }
+      function dist2(x1, y1, x2, y2) { const dx = x2 - x1, dy = y2 - y1; return dx * dx + dy * dy; }
+      function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+      function buildConfig() {
+        return {
+          seed: Number(el.seedInput.value) || 1,
+          duration: clamp(Number(el.durationInput.value) || 120, 10, 3600),
+          budget: clamp(Number(el.budgetInput.value) || 100, 20, 600),
+          mapW: clamp(Number(el.mapWInput.value) || 900, 500, 3000),
+          mapH: clamp(Number(el.mapHInput.value) || 600, 400, 2200),
+          obstacleDensity: clamp(Number(el.densityInput.value) || 0.18, 0, 1),
+          fog: el.fogInput.value,
+          victory: el.victoryInput.value,
+          debug: el.debugInput.value === 'on',
+          teams: {
+            red: { nation: configState.red.nation, style: configState.red.style },
+            blue: { nation: configState.blue.nation, style: configState.blue.style },
+          },
+        };
+      }
+
+      function startSimulation(cfgOverride = null) {
+        const cfg = cfgOverride || buildConfig();
+        game = new Simulator(cfg);
+        prevTs = 0;
+        acc = 0;
+        el.simState.textContent = 'Running';
+        el.endOverlay.classList.remove('show');
+        loop(0);
+      }
+
+      function loop(ts) {
+        if (!game) return;
+        if (!prevTs) prevTs = ts;
+        let delta = (ts - prevTs) / 1000;
+        prevTs = ts;
+        delta = Math.min(0.05, delta);
+        acc += delta;
+        while (acc >= STEP) {
+          game.update(STEP);
+          acc -= STEP;
+        }
+        render();
+        updateTelemetry();
+        if (game.running) raf = requestAnimationFrame(loop);
+        else showEndReport();
+      }
+
+      function render() {
+        if (!game) return;
+        const cw = el.canvas.clientWidth;
+        const ch = el.canvas.clientHeight;
+        if (el.canvas.width !== cw || el.canvas.height !== ch) { el.canvas.width = cw; el.canvas.height = ch; }
+
+        ctx.clearRect(0, 0, cw, ch);
+        const bgGrad = ctx.createLinearGradient(0, 0, 0, ch);
+        bgGrad.addColorStop(0, '#131b35');
+        bgGrad.addColorStop(1, '#0c1222');
+        ctx.fillStyle = bgGrad;
+        ctx.fillRect(0, 0, cw, ch);
+
+        const scaleX = cw / game.world.w;
+        const scaleY = ch / game.world.h;
+
+        ctx.strokeStyle = 'rgba(67, 95, 150, 0.22)';
+        for (let x = 0; x < game.world.w; x += 80) {
+          ctx.beginPath(); ctx.moveTo(x * scaleX, 0); ctx.lineTo(x * scaleX, ch); ctx.stroke();
+        }
+        for (let y = 0; y < game.world.h; y += 80) {
+          ctx.beginPath(); ctx.moveTo(0, y * scaleY); ctx.lineTo(cw, y * scaleY); ctx.stroke();
+        }
+
+        for (const o of game.obstacles) {
+          const g = ctx.createLinearGradient(o.x * scaleX, o.y * scaleY, (o.x + o.w) * scaleX, (o.y + o.h) * scaleY);
+          g.addColorStop(0, '#36496f');
+          g.addColorStop(1, '#2a3958');
+          ctx.fillStyle = g;
+          ctx.fillRect(o.x * scaleX, o.y * scaleY, o.w * scaleX, o.h * scaleY);
+          ctx.strokeStyle = '#6580b8';
+          ctx.strokeRect(o.x * scaleX, o.y * scaleY, o.w * scaleX, o.h * scaleY);
+        }
+
+        ctx.beginPath();
+        ctx.arc(game.cp.x * scaleX, game.cp.y * scaleY, game.cp.r * ((scaleX + scaleY) / 2), 0, Math.PI * 2);
+        ctx.fillStyle = game.cpOwner === 'red' ? 'rgba(233,80,80,0.18)' : game.cpOwner === 'blue' ? 'rgba(80,163,255,0.18)' : 'rgba(210,210,210,0.12)';
+        ctx.fill();
+        ctx.strokeStyle = '#b5c6ef';
+        ctx.stroke();
+
+        if (game.cfg.debug) {
+          game.debugShots = game.debugShots.filter(s => (s.t -= STEP) > 0);
+          for (const s of game.debugShots) {
+            ctx.strokeStyle = s.hit ? 'rgba(142,245,122,0.65)' : 'rgba(255,120,120,0.55)';
+            ctx.beginPath();
+            ctx.moveTo(s.x1 * scaleX, s.y1 * scaleY);
+            ctx.lineTo(s.x2 * scaleX, s.y2 * scaleY);
+            ctx.stroke();
+          }
+        }
+
+        for (const u of game.units) {
+          if (!u.alive) continue;
+          const x = u.x * scaleX, y = u.y * scaleY;
+          const teamColor = u.team === 'red' ? '#ff6a6a' : '#72b8ff';
+          const teamDark = u.team === 'red' ? '#7e2626' : '#1d4f81';
+          const teamGlow = u.team === 'red' ? 'rgba(255,95,95,0.45)' : 'rgba(114,184,255,0.45)';
+          const size = u.type === 'Tank' ? 9.2 : 6.4;
+          const suppressed = u.suppressUntil > game.time;
+          drawUnitShape(ctx, u.type, x, y, size, teamColor, teamDark, teamGlow, suppressed);
+
+          const hpFrac = Math.max(0, u.hp / u.maxHp);
+          const hpw = 20;
+          const hpx = x - hpw / 2;
+          const hpy = y - (u.type === 'Tank' ? 16 : 14);
+          let hpColor = '#74f07a';
+          if (hpFrac < 0.65) hpColor = '#ffd166';
+          if (hpFrac < 0.35) hpColor = '#ff6b6b';
+          ctx.fillStyle = 'rgba(0,0,0,0.55)';
+          ctx.fillRect(hpx - 1, hpy - 1, hpw + 2, 5);
+          ctx.fillStyle = hpColor;
+          ctx.fillRect(hpx, hpy, hpw * hpFrac, 3);
+
+          if (game.cfg.debug && u.waypoint) {
+            ctx.strokeStyle = 'rgba(220,220,255,0.18)';
+            ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(u.waypoint.x * scaleX, u.waypoint.y * scaleY); ctx.stroke();
+          }
+        }
+      }
+
+      function drawUnitShape(ctx, type, x, y, s, fill, stroke, glow, suppressed) {
+        const glyph = { Infantry: 'I', Sniper: 'S', MG: 'M', Tank: 'T', AT: 'A' }[type] || '?';
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.globalAlpha = suppressed ? 0.55 : 1;
+        ctx.fillStyle = fill;
+        ctx.strokeStyle = stroke;
+        ctx.lineWidth = 1.5;
+        ctx.shadowColor = glow;
+        ctx.shadowBlur = 7;
+
+        if (type === 'Infantry') {
+          ctx.beginPath();
+          ctx.arc(0, 0, s * 0.78, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+        } else if (type === 'Sniper') {
+          polygon(ctx, 0, 0, s * 0.92, 4, 0);
+          ctx.fill();
+          ctx.stroke();
+        } else if (type === 'MG') {
+          ctx.beginPath();
+          ctx.moveTo(0, -s);
+          ctx.lineTo(s * 0.9, s * 0.8);
+          ctx.lineTo(-s * 0.9, s * 0.8);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+        } else if (type === 'Tank') {
+          ctx.beginPath();
+          ctx.rect(-s * 0.82, -s * 0.82, s * 1.64, s * 1.64);
+          ctx.fill();
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.moveTo(0, 0);
+          ctx.lineTo(s * 1.35, 0);
+          ctx.strokeStyle = '#ebf3ff';
+          ctx.lineWidth = 1.9;
+          ctx.stroke();
+        } else if (type === 'AT') {
+          ctx.strokeStyle = fill;
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.moveTo(-s * 0.85, 0);
+          ctx.lineTo(s * 0.85, 0);
+          ctx.moveTo(0, -s * 0.85);
+          ctx.lineTo(0, s * 0.85);
+          ctx.stroke();
+          ctx.strokeStyle = stroke;
+          ctx.lineWidth = 1.2;
+          ctx.beginPath();
+          ctx.moveTo(-s * 0.85, 0);
+          ctx.lineTo(s * 0.85, 0);
+          ctx.moveTo(0, -s * 0.85);
+          ctx.lineTo(0, s * 0.85);
+          ctx.stroke();
+        }
+
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = '#f3f7ff';
+        ctx.font = 'bold 8px system-ui, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(glyph, 0, 0.5);
+        ctx.restore();
+      }
+
+      function polygon(ctx, x, y, r, sides, rot = 0) {
+        ctx.beginPath();
+        for (let i = 0; i < sides; i++) {
+          const a = rot + (i / sides) * Math.PI * 2;
+          const px = x + Math.cos(a) * r;
+          const py = y + Math.sin(a) * r;
+          if (i === 0) ctx.moveTo(px, py);
+          else ctx.lineTo(px, py);
+        }
+        ctx.closePath();
+      }
+
+      function updateTelemetry() {
+        if (!game) return;
+        el.timerRem.textContent = Math.max(0, game.remaining).toFixed(1);
+        el.cpScore.textContent = `${game.cpScore.red.toFixed(1)} - ${game.cpScore.blue.toFixed(1)}`;
+        el.controlOwner.textContent = cap(game.cpOwner);
+
+        el.redAlive.textContent = game.teamStats.red.alive;
+        el.redHP.textContent = game.teamStats.red.hp;
+        el.redKills.textContent = game.teamStats.red.kills;
+        el.redDeaths.textContent = game.teamStats.red.deaths;
+
+        el.blueAlive.textContent = game.teamStats.blue.alive;
+        el.blueHP.textContent = game.teamStats.blue.hp;
+        el.blueKills.textContent = game.teamStats.blue.kills;
+        el.blueDeaths.textContent = game.teamStats.blue.deaths;
+
+        const logs = game.log.slice(-10).reverse();
+        el.logBox.innerHTML = logs.map(l => `<div>${l}</div>`).join('');
+      }
+
+      function scoreForBest(g) {
+        if (g.cfg.victory === 'control') return (g.cpScore.red - g.cpScore.blue) + (g.teamStats.red.kills - g.teamStats.blue.kills) * 0.01;
+        return (g.winner === 'red' ? 1 : g.winner === 'blue' ? -1 : 0) + (g.teamStats.red.kills - g.teamStats.blue.kills) * 0.01;
+      }
+
+      function showEndReport() {
+        cancelAnimationFrame(raf);
+        el.simState.textContent = 'Finished';
+        const g = game;
+        const winnerTxt = g.winner === 'draw' ? 'Draw' : `${cap(g.winner)} Wins`;
+        el.winnerLine.innerHTML = `<strong>${winnerTxt}</strong>`;
+        el.scoreLine.textContent = `Control score: ${g.cpScore.red.toFixed(1)} - ${g.cpScore.blue.toFixed(1)} | Kills: ${g.teamStats.red.kills} - ${g.teamStats.blue.kills}`;
+
+        function acc(team) { return team.shots ? ((team.hits / team.shots) * 100).toFixed(1) + '%' : '0%'; }
+        function avgMove(team, key) {
+          const totalUnits = g.units.filter(u => u.team === key).length || 1;
+          return (team.moved / totalUnits).toFixed(1);
+        }
+
+        el.statsTable.innerHTML = `<thead><tr><th>Metric</th><th class="red">Red</th><th class="blue">Blue</th></tr></thead><tbody>
+          <tr><td>Accuracy</td><td>${acc(g.teamStats.red)} (${g.teamStats.red.hits}/${g.teamStats.red.shots})</td><td>${acc(g.teamStats.blue)} (${g.teamStats.blue.hits}/${g.teamStats.blue.shots})</td></tr>
+          <tr><td>Kills</td><td>${g.teamStats.red.kills}</td><td>${g.teamStats.blue.kills}</td></tr>
+          <tr><td>Deaths</td><td>${g.teamStats.red.deaths}</td><td>${g.teamStats.blue.deaths}</td></tr>
+          <tr><td>Avg distance moved</td><td>${avgMove(g.teamStats.red, 'red')}</td><td>${avgMove(g.teamStats.blue, 'blue')}</td></tr>
+          <tr><td>Time controlling point (s)</td><td>${g.teamStats.red.cpTime.toFixed(1)}</td><td>${g.teamStats.blue.cpTime.toFixed(1)}</td></tr>
+          <tr><td>Kills by type</td><td>${TYPE_LIST.map(t => `${t}:${g.teamStats.red.killsByType[t]}`).join(', ')}</td><td>${TYPE_LIST.map(t => `${t}:${g.teamStats.blue.killsByType[t]}`).join(', ')}</td></tr>
+        </tbody>`;
+        el.endOverlay.classList.add('show');
+
+        const best = Number(localStorage.getItem('ai-sim-best') || '-Infinity');
+        const score = scoreForBest(g);
+        if (score > best) {
+          localStorage.setItem('ai-sim-best', String(score));
+          readBest();
+        }
+      }
+
+      function readBest() {
+        const v = localStorage.getItem('ai-sim-best');
+        el.bestScore.textContent = (v === null ? '-' : Number(v).toFixed(2));
+      }
+      readBest();
+
+      let replayCfg = null;
+      el.startBtn.onclick = () => {
+        replayCfg = buildConfig();
+        startSimulation(replayCfg);
+      };
+      el.replayBtn.onclick = () => {
+        if (!replayCfg) return;
+        startSimulation({ ...replayCfg, teams: { red: { ...replayCfg.teams.red }, blue: { ...replayCfg.teams.blue } } });
+      };
+      el.backBtn.onclick = () => {
+        el.endOverlay.classList.remove('show');
+      };
+
+      render();
+    })();
+  </script>
+</body>
+</html>

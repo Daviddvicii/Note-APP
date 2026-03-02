@@ -347,6 +347,12 @@
           <span class="label"><span>⚔️ Neon Arena</span></span>
           <span class="best-badge">BEST <b data-best-for="arena">—</b></span>
         </a>
+
+        <!-- AI Simulator (added, no other games removed) -->
+        <a class="retro-btn" href="./ai-simulator.html" data-id="ai-sim" data-best-key="ai-sim-best">
+          <span class="label"><span>🤖 AI Simulator</span></span>
+          <span class="best-badge">BEST <b data-best-for="ai-sim">—</b></span>
+        </a>
       </nav>
 
       <p class="menu-hint">
@@ -360,17 +366,19 @@
       function parseBestValue(raw) {
         if (raw == null) return null;
 
-        // numeric
+        // numeric (keep decimals if any)
         const n = Number(raw);
-        if (!Number.isNaN(n) && Number.isFinite(n)) return Math.floor(n);
+        if (!Number.isNaN(n) && Number.isFinite(n)) {
+          return Number.isInteger(n) ? n : Math.round(n * 100) / 100;
+        }
 
         // JSON common fields
         try {
           const obj = JSON.parse(raw);
-          if (obj && typeof obj.best === "number") return Math.floor(obj.best);
-          if (obj && typeof obj.highScore === "number") return Math.floor(obj.highScore);
-          if (obj && typeof obj.score === "number") return Math.floor(obj.score);
-          if (obj && typeof obj.bestScore === "number") return Math.floor(obj.bestScore);
+          if (obj && typeof obj.best === "number") return Number.isInteger(obj.best) ? obj.best : Math.round(obj.best * 100) / 100;
+          if (obj && typeof obj.highScore === "number") return Number.isInteger(obj.highScore) ? obj.highScore : Math.round(obj.highScore * 100) / 100;
+          if (obj && typeof obj.score === "number") return Number.isInteger(obj.score) ? obj.score : Math.round(obj.score * 100) / 100;
+          if (obj && typeof obj.bestScore === "number") return Number.isInteger(obj.bestScore) ? obj.bestScore : Math.round(obj.bestScore * 100) / 100;
         } catch (_) {}
 
         return null;
@@ -454,7 +462,13 @@
           if (!target) return;
 
           const found = findBestForGame(id, primaryKey);
-          target.textContent = found ? String(found.best) : "—";
+
+          // ai-sim uses decimal best; keep it pretty
+          if (found) {
+            target.textContent = id === "ai-sim" ? Number(found.best).toFixed(2) : String(found.best);
+          } else {
+            target.textContent = "—";
+          }
         });
       }
 

@@ -115,6 +115,9 @@
     .log div { margin-bottom: 3px; }
     table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
     th, td { border-bottom: 1px solid #2f3e67; padding: 4px; text-align: left; }
+    .legendGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 8px; }
+    .legendItem { display: flex; align-items: center; gap: 6px; font-size: 0.75rem; color: var(--muted); }
+    .legendSwatch { width: 16px; height: 16px; border: 1px solid #6077ab; border-radius: 4px; background: #101a35; display:flex; align-items:center; justify-content:center; color:#dce7ff; font-size:0.66rem; }
     .overlay {
       position: fixed;
       inset: 0;
@@ -152,6 +155,7 @@
     <aside class="panel" id="leftPanel">
       <h1>AI Simulator</h1>
       <div class="small">Best: <span id="bestScore">-</span></div>
+      <div class="small">Deterministic replay: same seed + same config => same outcome.</div>
       <h2>Match Config</h2>
       <div class="row">
         <div>
@@ -244,6 +248,14 @@
       <div class="log" id="logBox"></div>
       <h3>Notes</h3>
       <div class="small">Optional hooks (not implemented): Fog of war reveal mask, timeline scrubber, result JSON export.</div>
+      <h3>Unit Shape Legend</h3>
+      <div class="legendGrid">
+        <div class="legendItem"><span class="legendSwatch">●</span>Infantry</div>
+        <div class="legendItem"><span class="legendSwatch">◆</span>Sniper</div>
+        <div class="legendItem"><span class="legendSwatch">▲</span>MG</div>
+        <div class="legendItem"><span class="legendSwatch">■</span>Tank</div>
+        <div class="legendItem"><span class="legendSwatch">✚</span>AT</div>
+      </div>
     </aside>
   </div>
 
@@ -689,7 +701,8 @@
           const distFall = clamp(1 - (d / u.range) * 0.35, 0.55, 1);
           let hitChance = u.acc * distFall * (hasCover ? t.coverFactor : 1);
           hitChance = clamp(hitChance, 0.03, 0.98);
-          if (this.rng() <= hitChance) {
+          const didHit = this.rng() <= hitChance;
+          if (didHit) {
             this.teamStats[u.team].hits++;
             let dmg = u.shotDamage;
             if (this.traitFor(u.team) === 'Japan' && d <= 120) dmg *= 1.10;
@@ -705,7 +718,7 @@
               this.logEvent(`${cap(u.team)} ${u.type} killed ${cap(t.team)} ${t.type}`);
             }
           }
-          if (this.cfg.debug) this.debugShots.push({ x1: u.x, y1: u.y, x2: t.x, y2: t.y, t: 0.12, hit: this.rng() < hitChance });
+          if (this.cfg.debug) this.debugShots.push({ x1: u.x, y1: u.y, x2: t.x, y2: t.y, t: 0.12, hit: didHit });
         }
 
         hasLOS(x1, y1, x2, y2) {
@@ -845,12 +858,6 @@
         else showEndReport();
       }
 
-      function worldToCanvas(x, y) {
-        const sx = el.canvas.width / game.world.w;
-        const sy = el.canvas.height / game.world.h;
-        return { x: x * sx, y: y * sy, sx, sy };
-      }
-
       function render() {
         if (!game) return;
         const cw = el.canvas.clientWidth;
@@ -858,13 +865,16 @@
         if (el.canvas.width !== cw || el.canvas.height !== ch) { el.canvas.width = cw; el.canvas.height = ch; }
 
         ctx.clearRect(0, 0, cw, ch);
-        ctx.fillStyle = '#10162b';
+        const bgGrad = ctx.createLinearGradient(0, 0, 0, ch);
+        bgGrad.addColorStop(0, '#131b35');
+        bgGrad.addColorStop(1, '#0c1222');
+        ctx.fillStyle = bgGrad;
         ctx.fillRect(0, 0, cw, ch);
 
         const scaleX = cw / game.world.w;
         const scaleY = ch / game.world.h;
 
-        ctx.strokeStyle = '#27365d';
+        ctx.strokeStyle = 'rgba(67, 95, 150, 0.22)';
         for (let x = 0; x < game.world.w; x += 80) {
           ctx.beginPath(); ctx.moveTo(x * scaleX, 0); ctx.lineTo(x * scaleX, ch); ctx.stroke();
         }
@@ -873,9 +883,12 @@
         }
 
         for (const o of game.obstacles) {
-          ctx.fillStyle = '#334262';
+          const g = ctx.createLinearGradient(o.x * scaleX, o.y * scaleY, (o.x + o.w) * scaleX, (o.y + o.h) * scaleY);
+          g.addColorStop(0, '#36496f');
+          g.addColorStop(1, '#2a3958');
+          ctx.fillStyle = g;
           ctx.fillRect(o.x * scaleX, o.y * scaleY, o.w * scaleX, o.h * scaleY);
-          ctx.strokeStyle = '#556c99';
+          ctx.strokeStyle = '#6580b8';
           ctx.strokeRect(o.x * scaleX, o.y * scaleY, o.w * scaleX, o.h * scaleY);
         }
 
@@ -900,19 +913,113 @@
         for (const u of game.units) {
           if (!u.alive) continue;
           const x = u.x * scaleX, y = u.y * scaleY;
-          ctx.fillStyle = u.team === 'red' ? '#ff6a6a' : '#72b8ff';
-          const r = u.type === 'Tank' ? 7 : 4.5;
-          ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+          const teamColor = u.team === 'red' ? '#ff6a6a' : '#72b8ff';
+          const teamDark = u.team === 'red' ? '#7e2626' : '#1d4f81';
+          const teamGlow = u.team === 'red' ? 'rgba(255,95,95,0.45)' : 'rgba(114,184,255,0.45)';
+          const size = u.type === 'Tank' ? 9.2 : 6.4;
+          const suppressed = u.suppressUntil > game.time;
+          drawUnitShape(ctx, u.type, x, y, size, teamColor, teamDark, teamGlow, suppressed);
 
-          const hpw = 12;
-          ctx.fillStyle = '#000a'; ctx.fillRect(x - hpw / 2, y - 11, hpw, 3);
-          ctx.fillStyle = '#8ef57a'; ctx.fillRect(x - hpw / 2, y - 11, hpw * (u.hp / u.maxHp), 3);
+          const hpFrac = Math.max(0, u.hp / u.maxHp);
+          const hpw = 20;
+          const hpx = x - hpw / 2;
+          const hpy = y - (u.type === 'Tank' ? 16 : 14);
+          let hpColor = '#74f07a';
+          if (hpFrac < 0.65) hpColor = '#ffd166';
+          if (hpFrac < 0.35) hpColor = '#ff6b6b';
+          ctx.fillStyle = 'rgba(0,0,0,0.55)';
+          ctx.fillRect(hpx - 1, hpy - 1, hpw + 2, 5);
+          ctx.fillStyle = hpColor;
+          ctx.fillRect(hpx, hpy, hpw * hpFrac, 3);
 
           if (game.cfg.debug && u.waypoint) {
             ctx.strokeStyle = 'rgba(220,220,255,0.18)';
             ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(u.waypoint.x * scaleX, u.waypoint.y * scaleY); ctx.stroke();
           }
         }
+      }
+
+      function drawUnitShape(ctx, type, x, y, s, fill, stroke, glow, suppressed) {
+        const glyph = { Infantry: 'I', Sniper: 'S', MG: 'M', Tank: 'T', AT: 'A' }[type] || '?';
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.globalAlpha = suppressed ? 0.55 : 1;
+        ctx.fillStyle = fill;
+        ctx.strokeStyle = stroke;
+        ctx.lineWidth = 1.5;
+        ctx.shadowColor = glow;
+        ctx.shadowBlur = 7;
+
+        if (type === 'Infantry') {
+          ctx.beginPath();
+          ctx.arc(0, 0, s * 0.78, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+        } else if (type === 'Sniper') {
+          polygon(ctx, 0, 0, s * 0.92, 4, 0);
+          ctx.fill();
+          ctx.stroke();
+        } else if (type === 'MG') {
+          ctx.beginPath();
+          ctx.moveTo(0, -s);
+          ctx.lineTo(s * 0.9, s * 0.8);
+          ctx.lineTo(-s * 0.9, s * 0.8);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+        } else if (type === 'Tank') {
+          ctx.beginPath();
+          ctx.rect(-s * 0.82, -s * 0.82, s * 1.64, s * 1.64);
+          ctx.fill();
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.moveTo(0, 0);
+          ctx.lineTo(s * 1.35, 0);
+          ctx.strokeStyle = '#ebf3ff';
+          ctx.lineWidth = 1.9;
+          ctx.stroke();
+        } else if (type === 'AT') {
+          ctx.strokeStyle = fill;
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.moveTo(-s * 0.85, 0);
+          ctx.lineTo(s * 0.85, 0);
+          ctx.moveTo(0, -s * 0.85);
+          ctx.lineTo(0, s * 0.85);
+          ctx.stroke();
+          ctx.strokeStyle = stroke;
+          ctx.lineWidth = 1.2;
+          ctx.beginPath();
+          ctx.moveTo(-s * 0.85, 0);
+          ctx.lineTo(s * 0.85, 0);
+          ctx.moveTo(0, -s * 0.85);
+          ctx.lineTo(0, s * 0.85);
+          ctx.stroke();
+          ctx.fillStyle = 'rgba(243,247,255,0.92)';
+          ctx.beginPath();
+          ctx.arc(0, 0, 1.25, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = '#f3f7ff';
+        ctx.font = 'bold 8px system-ui, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(glyph, 0, 0.5);
+        ctx.restore();
+      }
+
+      function polygon(ctx, x, y, r, sides, rot = 0) {
+        ctx.beginPath();
+        for (let i = 0; i < sides; i++) {
+          const a = rot + (i / sides) * Math.PI * 2;
+          const px = x + Math.cos(a) * r;
+          const py = y + Math.sin(a) * r;
+          if (i === 0) ctx.moveTo(px, py);
+          else ctx.lineTo(px, py);
+        }
+        ctx.closePath();
       }
 
       function updateTelemetry() {

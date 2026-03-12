@@ -143,8 +143,6 @@
         width: 100%;
         max-width: 420px;
         z-index: 12;
-
-        /* ✅ FIX (safety): make children stretch full width */
         align-items: stretch;
       }
 
@@ -154,11 +152,8 @@
         align-items: center;
         justify-content: space-between;
         gap: 12px;
-
-        /* ✅ FIX (main): force equal width on mobile */
         width: 100%;
         box-sizing: border-box;
-
         padding: 14px 16px 14px 38px;
         border: 1px solid var(--dim);
         border-radius: 12px;
@@ -330,25 +325,21 @@
           <span class="best-badge">BEST <b data-best-for="beatdrop">—</b></span>
         </a>
 
-        <!-- Neon Rage Dodge -->
         <a class="retro-btn" href="./neon-dodge.html" data-id="neon-dodge" data-best-key="neon-rage-dodge-best">
           <span class="label"><span>⚡ Neon Rage Dodge</span></span>
           <span class="best-badge">BEST <b data-best-for="neon-dodge">—</b></span>
         </a>
 
-        <!-- Neon Rift Split -->
         <a class="retro-btn" href="./neon-rift-split.html" data-id="neon-rift-split" data-best-key="neon-rift-best">
           <span class="label"><span>🧠 Neon Rift Split</span></span>
           <span class="best-badge">BEST <b data-best-for="neon-rift-split">—</b></span>
         </a>
 
-        <!-- Neon Arena (separate game) -->
         <a class="retro-btn" href="./neon-arena.html" data-id="arena" data-best-key="arena-best">
           <span class="label"><span>⚔️ Neon Arena</span></span>
           <span class="best-badge">BEST <b data-best-for="arena">—</b></span>
         </a>
 
-        <!-- AI Simulator (added, no other games removed) -->
         <a class="retro-btn" href="./ai-simulator.html" data-id="ai-sim" data-best-key="ai-sim-best">
           <span class="label"><span>🤖 AI Simulator</span></span>
           <span class="best-badge">BEST <b data-best-for="ai-sim">—</b></span>
@@ -362,17 +353,14 @@
     </div>
 
     <script>
-      // ===== Robust BEST detector =====
       function parseBestValue(raw) {
         if (raw == null) return null;
 
-        // numeric (keep decimals if any)
         const n = Number(raw);
         if (!Number.isNaN(n) && Number.isFinite(n)) {
           return Number.isInteger(n) ? n : Math.round(n * 100) / 100;
         }
 
-        // JSON common fields
         try {
           const obj = JSON.parse(raw);
           if (obj && typeof obj.best === "number") return Number.isInteger(obj.best) ? obj.best : Math.round(obj.best * 100) / 100;
@@ -406,17 +394,14 @@
           `best-${id}`,
           `highscore-${id}`,
           `${id}-hiscore`,
-          // extra common variants
           `${id}-best-score`,
           `${id}_best_score`,
           `${id}-bestscore`,
         ];
 
-        // 1) primary key + common patterns
         let hit = tryKeys([primaryKey, ...common]);
         if (hit) return hit;
 
-        // 2) scan localStorage for something related
         const idLower = id.toLowerCase();
         const candidates = [];
         for (let i = 0; i < localStorage.length; i++) {
@@ -429,7 +414,6 @@
           if (looksRelated) candidates.push(k);
         }
 
-        // prioritize best-like keys first
         candidates.sort((a, b) => {
           const al = a.toLowerCase();
           const bl = b.toLowerCase();
@@ -445,7 +429,7 @@
         });
 
         hit = tryKeys(candidates);
-        return hit; // may be null
+        return hit;
       }
 
       const items = Array.from(document.querySelectorAll(".retro-btn"));
@@ -462,8 +446,6 @@
           if (!target) return;
 
           const found = findBestForGame(id, primaryKey);
-
-          // ai-sim uses decimal best; keep it pretty
           if (found) {
             target.textContent = id === "ai-sim" ? Number(found.best).toFixed(2) : String(found.best);
           } else {
@@ -475,14 +457,12 @@
       refreshAllBest();
       window.addEventListener("focus", refreshAllBest);
 
-      // ===== Arcade navigation =====
       let index = 0;
       function updateActive() {
         items.forEach((el, i) => el.classList.toggle("active", i === index));
       }
       updateActive();
 
-      // ===== WebAudio: BGM + SFX + mute toggle =====
       let audioReady = false;
       let audioCtx = null;
       let master = null;

@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <title>Neon Life Forge</title>
+  <style>
+    :root {
+      --bg: #05050b;
+      --panel: #0d1020;
+      --panel-2: #0a0d18;
+      --cyan: #00f2ff;
+      --magenta: #ff00d9;
+      --lime: #39ff14;
+      --yellow: #fff56b;
+      --red: #ff3a5f;
+      --text: #dbe7ff;
+      --muted: #91a2c8;
+      --glow-cyan: 0 0 16px rgba(0, 242, 255, 0.5);
+      --glow-magenta: 0 0 16px rgba(255, 0, 217, 0.45);
+      --glow-lime: 0 0 16px rgba(57, 255, 20, 0.45);
+      --scanline-a: rgba(15, 15, 20, 0);
+      --scanline-b: rgba(0, 0, 0, 0.22);
+      --font: "Courier New", Courier, monospace;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; background: radial-gradient(circle at 50% 0%, #0b1530 0%, var(--bg) 45%, #030307 100%); color: var(--text); font-family: var(--font); }
+    body { overflow-x: hidden; }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: 999;
+      pointer-events: none;
+      background:
+        linear-gradient(var(--scanline-a) 50%, var(--scanline-b) 50%),
+        linear-gradient(90deg, rgba(255, 0, 0, 0.04), rgba(0, 255, 255, 0.02), rgba(0, 0, 255, 0.04));
+      background-size: 100% 4px, 4px 100%;
+      opacity: 0.85;
+    }
+
+    .app { max-width: 1080px; margin: 20px auto; padding: 14px; position: relative; z-index: 1; }
+    .panel {
+      background: linear-gradient(180deg, var(--panel) 0%, var(--panel-2) 100%);
+      border: 1px solid rgba(0, 242, 255, 0.55);
+      box-shadow: inset 0 0 22px rgba(0, 242, 255, 0.08), 0 0 20px rgba(0, 242, 255, 0.08);
+      border-radius: 8px;
+      padding: 14px;
+      margin-bottom: 12px;
+      position: relative;
+      overflow: hidden;
+    }
+    .panel::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+      opacity: 0.8;
+    }
+
+    .title {
+      margin: 0;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--cyan);
+      text-shadow: var(--glow-cyan);
+      font-size: clamp(1.5rem, 3.6vw, 2.8rem);
+      animation: titlePulse 3s ease-in-out infinite;
+    }
+    @keyframes titlePulse {
+      0%,100% { text-shadow: 0 0 8px rgba(0,242,255,.45), 0 0 20px rgba(0,242,255,.22); }
+      50% { text-shadow: 0 0 12px rgba(255,0,217,.4), 0 0 28px rgba(0,242,255,.35); }
+    }
+
+    .glitch { position: relative; }
+    .glitch::before, .glitch::after {
+      content: attr(data-text);
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      opacity: .6;
+    }
+    .glitch::before { color: var(--magenta); transform: translate(1px,0); clip-path: inset(0 0 50% 0); }
+    .glitch::after { color: var(--cyan); transform: translate(-1px,0); clip-path: inset(50% 0 0 0); }
+
+    .grid { display: grid; grid-template-columns: 1.15fr 1fr; gap: 12px; align-items: start; }
+    .start-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .hidden { display: none !important; }
+
+    input, button, select {
+      width: 100%;
+      border-radius: 6px;
+      border: 1px solid rgba(0,242,255,.6);
+      background: #03070f;
+      color: var(--text);
+      font: inherit;
+      padding: 10px;
+      outline: none;
+    }
+    input:focus { border-color: var(--magenta); box-shadow: var(--glow-magenta); }
+
+    .btn {
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      transition: .18s transform, .18s box-shadow, .18s background;
+      background: linear-gradient(180deg, rgba(255,0,217,.12), rgba(255,0,217,.02));
+      color: #ffd7f8;
+      border-color: rgba(255,0,217,.7);
+    }
+    .btn:hover { transform: translateY(-1px); box-shadow: 0 0 16px rgba(255,0,217,.35); background: rgba(255,0,217,.2); }
+    .btn:active { transform: translateY(1px) scale(.99); }
+    .btn.alt { border-color: rgba(57,255,20,.8); color: #d9ffd1; background: linear-gradient(180deg, rgba(57,255,20,.12), rgba(57,255,20,.02)); }
+    .btn.alt:hover { box-shadow: var(--glow-lime); }
+    .btn.warn { border-color: rgba(255,58,95,.8); color: #ffd3dd; background: linear-gradient(180deg, rgba(255,58,95,.12), rgba(255,58,95,.02)); }
+
+    .chips { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 8px; }
+    .chip.active { border-color: var(--lime); box-shadow: var(--glow-lime); color: #d9ffd1; }
+
+    .hud { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; font-size: .92rem; color: var(--muted); }
+    .badge {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 4px;
+      border: 1px solid rgba(255,58,95,.85);
+      background: rgba(255,58,95,.2);
+      color: #ffe3ea;
+      font-size: .74rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      animation: badgeBlink 1.6s linear infinite;
+    }
+    @keyframes badgeBlink { 0%,48%,100%{opacity:1} 50%,52%{opacity:.4} }
+
+    .stats-wrap { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px; }
+    .stat {
+      border-left: 3px solid var(--cyan);
+      background: rgba(0,242,255,.05);
+      padding: 8px;
+      border-radius: 4px;
+    }
+    .stat-head { display: flex; justify-content: space-between; font-size: .9rem; margin-bottom: 6px; }
+    .bar { height: 10px; background: #192030; border: 1px solid #2a3450; border-radius: 4px; overflow: hidden; }
+    .bar > span {
+      display: block;
+      height: 100%;
+      width: 0;
+      background: linear-gradient(90deg, var(--cyan), var(--magenta));
+      transition: width .35s ease;
+      box-shadow: 0 0 12px rgba(0,242,255,.55);
+    }
+    .alloc { display: flex; align-items: center; justify-content: space-between; margin-top: 6px; gap: 6px; }
+    .alloc button { width: 34px; padding: 5px; font-size: 1rem; line-height: 1; }
+
+    #event-choices { display: grid; grid-template-columns: 1fr; gap: 8px; margin-top: 10px; }
+    #log { height: 210px; overflow-y: auto; border: 1px solid #2a3144; padding: 8px; background: rgba(0,0,0,.25); border-radius: 6px; }
+    .log-entry { border-left: 2px solid var(--magenta); padding-left: 8px; margin-bottom: 7px; font-size: .86rem; color: #d2dcfb; }
+    .flash { animation: flash .45s ease; }
+    @keyframes flash { 0%{box-shadow: 0 0 0 transparent} 40%{box-shadow: 0 0 28px rgba(57,255,20,.45)} 100%{box-shadow: 0 0 0 transparent} }
+
+    .ending-card { border: 1px solid rgba(255,245,107,.7); box-shadow: 0 0 18px rgba(255,245,107,.18), inset 0 0 16px rgba(255,245,107,.08); }
+
+    @media (max-width: 900px) {
+      .grid { grid-template-columns: 1fr; }
+      .stats-wrap { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 600px) {
+      .app { padding: 10px; margin: 8px auto; }
+      .start-grid { grid-template-columns: 1fr; }
+      .chips { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section id="screen-start" class="screen panel">
+      <h1 class="title glitch" data-text="NEON LIFE FORGE">NEON LIFE FORGE</h1>
+      <p style="margin:.35rem 0 1rem;color:var(--muted)">Forge your fate through 12 rounds in a city that eats the weak.</p>
+      <div id="dev-badge" class="badge hidden">Developer Mode Active</div>
+      <div class="start-grid">
+        <div>
+          <label for="nameInput">Subject Name</label>
+          <input id="nameInput" maxlength="24" placeholder="ANON_01" />
+        </div>
+        <div>
+          <label for="seedInput">Chrono Seed</label>
+          <div style="display:flex;gap:8px;">
+            <input id="seedInput" placeholder="RANDOM" />
+            <button id="seedBtn" class="btn" style="max-width:80px">RND</button>
+          </div>
+        </div>
+      </div>
+      <p style="margin:.8rem 0 .4rem;color:var(--muted)">Choose archetype:</p>
+      <div id="archetypes" class="chips"></div>
+      <button id="startBtn" class="btn alt" style="margin-top:10px">Start Run</button>
+      <div class="panel" style="margin-top:10px;border-color:rgba(255,0,217,.6)">
+        <div style="font-size:.88rem">Best Ending: <span id="saveBestEnding">None</span></div>
+        <div style="font-size:.88rem">Highest Stat Sum: <span id="saveBestSum">0</span></div>
+        <div style="font-size:.88rem">Recent Run: <span id="saveRecent">None</span></div>
+      </div>
+    </section>
+
+    <section id="screen-game" class="screen hidden">
+      <div class="grid">
+        <div>
+          <div class="panel">
+            <div class="hud">
+              <div><strong id="playerName">SUBJECT</strong></div>
+              <div>Round <span id="roundView">1</span>/12</div>
+              <div>Title: <span id="growthTitle" style="color:var(--lime)">Rookie</span></div>
+            </div>
+          </div>
+          <div class="panel" id="statsPanel">
+            <div class="hud" style="margin-bottom:8px">
+              <div>Points: <span id="pointsView" style="color:var(--yellow)">0</span></div>
+              <button id="devEventBtn" class="btn warn hidden" style="max-width:210px;padding:6px 10px">Dev: Force Random Event</button>
+            </div>
+            <div class="stats-wrap" id="statsWrap"></div>
+            <button id="confirmAllocBtn" class="btn alt" style="margin-top:10px">Forge Evolution</button>
+          </div>
+        </div>
+        <div>
+          <div class="panel" id="eventPanel">
+            <h2 id="eventTitle" style="margin:0 0 8px;color:var(--magenta)">Event Feed</h2>
+            <p id="eventText" style="margin:0;color:var(--text)">Allocate points then forge your next event.</p>
+            <div id="event-choices"></div>
+          </div>
+          <div class="panel">
+            <h3 style="margin-top:0;color:var(--cyan)">Neon Log</h3>
+            <div id="log"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="screen-end" class="screen hidden">
+      <div class="panel ending-card">
+        <h2 style="margin-top:0;color:var(--yellow)">Sequence Complete</h2>
+        <h1 id="endingName" class="title" style="font-size:clamp(1.35rem,3vw,2.1rem)">Lost in Static</h1>
+        <p id="endingText" style="color:var(--text)"></p>
+        <p><strong>Final Growth Title:</strong> <span id="finalGrowth"></span></p>
+        <p><strong>Important Events:</strong> <span id="finalFlags"></span></p>
+        <pre id="finalStats" style="white-space:pre-wrap;background:rgba(0,0,0,.3);padding:10px;border-radius:6px;border:1px solid #2f3850"></pre>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button id="replayBtn" class="btn alt">Replay</button>
+          <button id="exportBtn" class="btn">Export JSON</button>
+          <button id="copyBtn" class="btn">Copy JSON</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // ===================== CONFIG =====================
+    const CONFIG = {
+      ROUNDS: 12,
+      BASE_POINTS: 5,
+      DEV_START_POINTS: 30,
+      DEV_ROUND_POINTS: 16,
+      STATS: ["Power", "Mind", "Charm", "Speed", "Grit", "Luck", "Chaos"],
+      MAX_BAR: 40
+    };
+
+    const ARCHETYPES = {
+      "Street Kid": { Power: 3, Mind: 2, Charm: 3, Speed: 4, Grit: 3, Luck: 2, Chaos: 1 },
+      "Lab Genius": { Power: 1, Mind: 6, Charm: 1, Speed: 2, Grit: 2, Luck: 3, Chaos: 2 },
+      "Arena Fighter": { Power: 6, Mind: 1, Charm: 1, Speed: 3, Grit: 5, Luck: 1, Chaos: 1 },
+      "Lost Soul": { Power: 1, Mind: 2, Charm: 2, Speed: 2, Grit: 1, Luck: 5, Chaos: 5 }
+    };
+
+    // ===================== SEEDED RNG =====================
+    function hashString(str) {
+      let h = 2166136261 >>> 0;
+      for (let i = 0; i < str.length; i++) {
+        h ^= str.charCodeAt(i);
+        h = Math.imul(h, 16777619);
+      }
+      return (h >>> 0) || 1;
+    }
+
+    function createRng(seedString) {
+      let seed = hashString(seedString);
+      return {
+        next() {
+          seed ^= seed << 13;
+          seed ^= seed >>> 17;
+          seed ^= seed << 5;
+          return (seed >>> 0) / 4294967296;
+        },
+        int(max) { return Math.floor(this.next() * max); },
+        chance(p) { return this.next() < p; }
+      };
+    }
+
+    // ===================== STATE =====================
+    const state = {
+      mode: "start", // start | playing | ending
+      devMode: false,
+      name: "",
+      seed: "",
+      rng: null,
+      round: 1,
+      points: 0,
+      selectedArchetype: null,
+      stats: {},
+      pending: {},
+      growthTitle: "Rookie",
+      flags: {},
+      history: [],
+      currentEvent: null,
+      runSummary: null
+    };
+
+    const $ = (id) => document.getElementById(id);
+
+    // ===================== EVENTS =====================
+    const EVENTS = [
+      {
+        id: "pit_fight",
+        title: "Pit Fight Protocol",
+        text: "A chrome-jawed bruiser steps into the cage and points at you.",
+        choices: [
+          {
+            label: "Stand and strike",
+            resolve: (s, r) => checkStat(s, "Power", 12) || checkStat(s, "Grit", 10)
+              ? fx({ msg: "You leave the pit dripping in spotlight and blood.", stats: { Power: +3, Grit: +2 }, flags: ["won_pit"] })
+              : fx({ msg: "You swing wide and crash hard.", stats: { Grit: -3, Power: -1 } })
+          },
+          {
+            label: "Dance and counter",
+            resolve: (s, r) => (checkStat(s, "Speed", 10) && r.chance(0.8))
+              ? fx({ msg: "Your motion becomes myth.", stats: { Speed: +4, Charm: +1 } })
+              : fx({ msg: "A glancing hit rattles your nerve.", stats: { Grit: -2 } })
+          }
+        ]
+      },
+      {
+        id: "mainframe",
+        title: "Mainframe Lock",
+        text: "A corporate vault blinks behind quantum ice.",
+        choices: [
+          {
+            label: "Silent breach",
+            resolve: (s, r) => checkStat(s, "Mind", 11)
+              ? fx({ msg: "You splice through blackwall in complete silence.", stats: { Mind: +3, Luck: +2 }, flags: ["hacked_vault"] })
+              : fx({ msg: "Counter-intrusion tags your signature.", stats: { Mind: -2, Chaos: +2 } })
+          },
+          {
+            label: "Chaos pulse attack",
+            resolve: (s, r) => highChaosRoll(s, r)
+              ? fx({ msg: "The vault explodes open and showers you in cred.", stats: { Chaos: +3, Luck: +4, Mind: +2 }, flags: ["chaos_hack"] })
+              : fx({ msg: "Feedback storm chars your implants.", stats: { Mind: -4, Grit: -2, Chaos: +1 } })
+          }
+        ]
+      },
+      {
+        id: "neon_idol",
+        title: "Neon Idol Offer",
+        text: "A talent broker offers fame in exchange for your authenticity.",
+        choices: [
+          {
+            label: "Take the contract",
+            resolve: (s, r) => checkStat(s, "Charm", 10)
+              ? fx({ msg: "Your face lights every tower in the district.", stats: { Charm: +5, Luck: +2, Grit: -2 }, flags: ["idol_contract"] })
+              : fx({ msg: "They laugh you off the stage.", stats: { Charm: -2, Grit: +1 } })
+          },
+          {
+            label: "Stay underground",
+            resolve: () => fx({ msg: "Respect in the alleys beats applause in a cage.", stats: { Grit: +2, Chaos: +1 } })
+          }
+        ]
+      },
+      {
+        id: "black_clinic",
+        title: "Black Clinic Upgrade",
+        text: "A surgeon offers unsanctioned chrome enhancements.",
+        choices: [
+          {
+            label: "Install combat rig",
+            resolve: () => fx({ msg: "Muscle fibers hum like engines.", stats: { Power: +4, Speed: +2, Mind: -1 }, flags: ["chrome_rig"] })
+          },
+          {
+            label: "Decline and heal naturally",
+            resolve: () => fx({ msg: "You walk away with your code intact.", stats: { Grit: +2, Mind: +1 } })
+          }
+        ]
+      },
+      {
+        id: "ghost_market",
+        title: "Ghost Market",
+        text: "Digital phantoms auction stolen identities.",
+        choices: [
+          {
+            label: "Buy a lucky identity",
+            resolve: (s, r) => r.chance(0.65 + Math.min(0.2, s.stats.Luck / 100))
+              ? fx({ msg: "The identity comes loaded with hidden credits.", stats: { Luck: +4, Charm: +1 } })
+              : fx({ msg: "Identity burns out and drags you with it.", stats: { Luck: -3, Chaos: +2 } })
+          },
+          {
+            label: "Rob the auction",
+            resolve: (s, r) => (checkStat(s, "Speed", 9) && checkStat(s, "Chaos", 8))
+              ? fx({ msg: "You become rumor. Nobody saw you leave.", stats: { Speed: +3, Chaos: +3 }, flags: ["ghost_thief"] })
+              : fx({ msg: "Security drones pin you to the floor.", stats: { Grit: -3, Speed: -2 } })
+          }
+        ]
+      },
+      {
+        id: "riot_line",
+        title: "Riot Line",
+        text: "Crowds surge as security mechs lock shields in the rain.",
+        choices: [
+          {
+            label: "Lead the charge",
+            resolve: (s, r) => (checkStat(s, "Power", 10) && checkStat(s, "Grit", 10))
+              ? fx({ msg: "Your roar breaks the line.", stats: { Power: +2, Grit: +4 }, flags: ["riot_leader"] })
+              : fx({ msg: "The line does not bend.", stats: { Grit: -3, Power: -1 } })
+          },
+          {
+            label: "Guide civilians out",
+            resolve: () => fx({ msg: "You pull strangers from the crush and earn quiet loyalty.", stats: { Charm: +2, Grit: +2 } })
+          }
+        ]
+      },
+      {
+        id: "data_plague",
+        title: "Data Plague",
+        text: "A memetic virus crawls through local implants.",
+        choices: [
+          {
+            label: "Quarantine nodes",
+            resolve: (s, r) => checkStat(s, "Mind", 13)
+              ? fx({ msg: "You isolate the corruption in minutes.", stats: { Mind: +4, Luck: +1 }, flags: ["saved_sector"] })
+              : fx({ msg: "The virus bites back.", stats: { Mind: -3, Chaos: +2 } })
+          },
+          {
+            label: "Absorb the signal",
+            resolve: (s, r) => highChaosRoll(s, r)
+              ? fx({ msg: "Your thoughts become dangerous and brilliant.", stats: { Chaos: +5, Mind: +3 }, flags: ["plague_savant"] })
+              : fx({ msg: "The noise shatters your focus.", stats: { Mind: -4, Grit: -2, Chaos: +1 } })
+          }
+        ]
+      },
+      {
+        id: "sky_race",
+        title: "Skyway Sprint",
+        text: "Courier gangs race hoverbikes above live traffic.",
+        choices: [
+          {
+            label: "Race for keeps",
+            resolve: (s, r) => (checkStat(s, "Speed", 11) || (checkStat(s, "Luck", 11) && r.chance(0.6)))
+              ? fx({ msg: "You carve neon streaks through storm clouds.", stats: { Speed: +4, Luck: +2 }, flags: ["sky_champ"] })
+              : fx({ msg: "You spin out and eat sparks.", stats: { Speed: -3, Grit: -1 } })
+          },
+          {
+            label: "Bet on chaos rider",
+            resolve: (s, r) => highChaosRoll(s, r)
+              ? fx({ msg: "The impossible line pays huge.", stats: { Luck: +5, Chaos: +2 } })
+              : fx({ msg: "House wins. You pay in pain.", stats: { Luck: -3, Grit: -2 } })
+          }
+        ]
+      },
+      {
+        id: "mirror_duel",
+        title: "Mirror Duel",
+        text: "A copy of you appears in reflective chrome and challenges your identity.",
+        choices: [
+          {
+            label: "Outthink your copy",
+            resolve: (s, r) => checkStat(s, "Mind", 12)
+              ? fx({ msg: "You rewrite the duel's logic and absorb the echo.", stats: { Mind: +3, Charm: +1 }, flags: ["faced_self"] })
+              : fx({ msg: "The copy predicts every move.", stats: { Mind: -2, Chaos: +1 } })
+          },
+          {
+            label: "Shatter the mirror",
+            resolve: (s, r) => checkStat(s, "Power", 11)
+              ? fx({ msg: "Glass rain. No reflection remains.", stats: { Power: +3, Chaos: +1 } })
+              : fx({ msg: "Shards cut deep.", stats: { Grit: -2, Power: -1 } })
+          }
+        ]
+      },
+      {
+        id: "boardroom",
+        title: "Boardroom Ambush",
+        text: "Executives summon you to a room with no exits.",
+        choices: [
+          {
+            label: "Negotiate dominance",
+            resolve: (s, r) => (checkStat(s, "Charm", 12) && checkStat(s, "Mind", 10))
+              ? fx({ msg: "They sign terms in trembling hands.", stats: { Charm: +4, Mind: +2 }, flags: ["corp_deal"] })
+              : fx({ msg: "They play you and erase your leverage.", stats: { Charm: -2, Luck: -1 } })
+          },
+          {
+            label: "Threaten with force",
+            resolve: (s, r) => checkStat(s, "Power", 13)
+              ? fx({ msg: "The board obeys your silhouette.", stats: { Power: +2, Grit: +2 }, flags: ["corp_fear"] })
+              : fx({ msg: "Security routes you out in cuffs.", stats: { Power: -2, Grit: -2 } })
+          }
+        ]
+      },
+      {
+        id: "drift_shrine",
+        title: "Shrine in the Drift",
+        text: "A forgotten AI priest offers a ritual of alignment.",
+        choices: [
+          {
+            label: "Meditate in signal",
+            resolve: () => fx({ msg: "Noise fades. Intent sharpens.", stats: { Mind: +2, Grit: +2, Chaos: -1 } })
+          },
+          {
+            label: "Corrupt the shrine",
+            resolve: (s, r) => highChaosRoll(s, r)
+              ? fx({ msg: "The priest kneels and grants forbidden scripts.", stats: { Chaos: +4, Power: +2, Mind: +1 }, flags: ["void_script"] })
+              : fx({ msg: "Static lashes your nervous system.", stats: { Chaos: +1, Grit: -3 } })
+          }
+        ]
+      },
+      {
+        id: "underground_school",
+        title: "Underground School",
+        text: "Kids in a tunnel ask you to teach survival.",
+        choices: [
+          {
+            label: "Teach combat",
+            resolve: () => fx({ msg: "Their stance steadies under your eye.", stats: { Power: +2, Grit: +2 }, flags: ["mentor"] })
+          },
+          {
+            label: "Teach code and signal",
+            resolve: () => fx({ msg: "Tiny hands dance across cracked terminals.", stats: { Mind: +3, Charm: +1 }, flags: ["mentor"] })
+          }
+        ]
+      },
+      {
+        id: "midnight_broadcast",
+        title: "Midnight Broadcast",
+        text: "Pirate frequencies ask for a voice that can move a city.",
+        choices: [
+          {
+            label: "Speak hope",
+            resolve: (s, r) => checkStat(s, "Charm", 11)
+              ? fx({ msg: "Your words become a district anthem.", stats: { Charm: +4, Luck: +2 }, flags: ["broadcast_star"] })
+              : fx({ msg: "Dead air. Nobody stays tuned.", stats: { Charm: -2 } })
+          },
+          {
+            label: "Speak rage",
+            resolve: () => fx({ msg: "The city shakes and remembers your name.", stats: { Chaos: +2, Grit: +2, Power: +1 } })
+          }
+        ]
+      },
+      {
+        id: "synth_pet",
+        title: "Synth Pet",
+        text: "A stray drone-cat follows you with glowing eyes.",
+        choices: [
+          {
+            label: "Adopt it",
+            resolve: () => fx({ msg: "It hacks doors and purrs in machine code.", stats: { Luck: +3, Charm: +1 }, flags: ["synth_pet"] })
+          },
+          {
+            label: "Scavenge its core",
+            resolve: () => fx({ msg: "Efficient, cruel, effective.", stats: { Mind: +2, Chaos: +2, Charm: -1 } })
+          }
+        ]
+      },
+      {
+        id: "ghost_love",
+        title: "Ghost Love",
+        text: "An old flame returns as a partial hologram.",
+        choices: [
+          {
+            label: "Reconnect",
+            resolve: (s, r) => checkStat(s, "Charm", 9)
+              ? fx({ msg: "You remember who you were beneath the chrome.", stats: { Charm: +3, Grit: +2 }, flags: ["found_love"] })
+              : fx({ msg: "Distance wins.", stats: { Grit: -1, Luck: -1 } })
+          },
+          {
+            label: "Let the signal fade",
+            resolve: () => fx({ msg: "You choose velocity over memory.", stats: { Speed: +2, Mind: +1 } })
+          }
+        ]
+      },
+      {
+        id: "final_gauntlet",
+        title: "Neon Gauntlet",
+        text: "A twelve-gate challenge appears in your path. No reruns.",
+        choices: [
+          {
+            label: "Run it clean",
+            resolve: (s, r) => totalStats(s) >= 95
+              ? fx({ msg: "You clear every gate and enter legend.", stats: { Power: +2, Mind: +2, Charm: +2, Speed: +2, Grit: +2, Luck: +2 }, flags: ["gauntlet_clear"] })
+              : fx({ msg: "The gauntlet chews you and spits sparks.", stats: { Grit: -3, Luck: -2 } })
+          },
+          {
+            label: "Overclock chaos",
+            resolve: (s, r) => highChaosRoll(s, r)
+              ? fx({ msg: "Reality bends and lets you pass.", stats: { Chaos: +6, Luck: +2 }, flags: ["chaos_master"] })
+              : fx({ msg: "Overclock meltdown.", stats: { Chaos: +2, Mind: -3, Grit: -3 } })
+          }
+        ]
+      }
+    ];
+
+    // ===================== ENDINGS =====================
+    const ENDINGS = [
+      { name: "Corporate God", desc: "You rewrote policy, profit, and reality from the top floor.", check: s => s.devMode },
+      { name: "Glitch Prophet", desc: "You speak in static and whole crowds still understand.", check: s => s.stats.Chaos >= 35 && s.flags.void_script },
+      { name: "Neon Titan", desc: "Steel shutters drop when your footsteps are heard.", check: s => s.stats.Power >= 34 && s.stats.Grit >= 24 },
+      { name: "Chrome King", desc: "Body and will are equal parts alloy and storm.", check: s => s.flags.chrome_rig && s.stats.Power >= 30 },
+      { name: "Void Runner", desc: "You escaped flesh and now sprint through pure signal.", check: s => s.stats.Mind >= 34 && s.flags.hacked_vault },
+      { name: "Digital Ghost", desc: "You exist everywhere and nowhere in the network.", check: s => s.stats.Speed >= 28 && s.stats.Mind >= 24 && s.flags.ghost_thief },
+      { name: "Neon Idol", desc: "You became the city's favorite hallucination.", check: s => s.stats.Charm >= 32 && s.flags.idol_contract },
+      { name: "Street Saint", desc: "Kids survive because your name still carries shelter.", check: s => s.flags.mentor && s.stats.Grit >= 22 && s.stats.Charm >= 20 },
+      { name: "Broken Legend", desc: "You won enough battles to become a warning story.", check: s => s.flags.won_pit && s.stats.Grit < 10 },
+      { name: "Burned Out", desc: "You burned hot, fast, and hollow.", check: s => totalStats(s) < 70 && s.stats.Chaos > 20 },
+      { name: "Lost in Static", desc: "You survived the city, but the city erased your echo.", check: s => true }
+    ];
+
+    // ===================== HELPERS =====================
+    function checkStat(s, stat, threshold) { return s.stats[stat] >= threshold; }
+    function totalStats(s) { return CONFIG.STATS.reduce((acc, k) => acc + s.stats[k], 0); }
+    function highChaosRoll(s, rng) {
+      const chaos = s.stats.Chaos;
+      const luck = s.stats.Luck;
+      const p = Math.min(0.9, 0.18 + chaos * 0.018 + luck * 0.006);
+      return rng.chance(p);
+    }
+    function fx({ msg, stats = {}, flags = [] }) { return { msg, stats, flags }; }
+
+    // ===================== RENDER / UI =====================
+    function switchScreen(mode) {
+      state.mode = mode;
+      $("screen-start").classList.toggle("hidden", mode !== "start");
+      $("screen-game").classList.toggle("hidden", mode !== "playing");
+      $("screen-end").classList.toggle("hidden", mode !== "ending");
+    }
+
+    function buildArchetypes() {
+      const wrap = $("archetypes");
+      wrap.innerHTML = "";
+      Object.keys(ARCHETYPES).forEach(name => {
+        const b = document.createElement("button");
+        b.className = "btn chip";
+        b.textContent = name;
+        b.addEventListener("click", () => {
+          state.selectedArchetype = name;
+          [...wrap.children].forEach(c => c.classList.remove("active"));
+          b.classList.add("active");
+        });
+        wrap.appendChild(b);
+      });
+    }
+
+    function renderStats() {
+      const wrap = $("statsWrap");
+      wrap.innerHTML = "";
+      CONFIG.STATS.forEach(stat => {
+        const box = document.createElement("div");
+        box.className = "stat";
+        const value = state.stats[stat] ?? 0;
+        const pending = state.pending[stat] || 0;
+        const width = Math.min(100, Math.round((value / CONFIG.MAX_BAR) * 100));
+        box.innerHTML = `
+          <div class="stat-head"><span>${stat}</span><strong>${value}</strong></div>
+          <div class="bar"><span style="width:${width}%"></span></div>
+          <div class="alloc">
+            <button class="btn" data-stat="${stat}" data-dir="-1">-</button>
+            <span id="pend_${stat}">+${pending}</span>
+            <button class="btn" data-stat="${stat}" data-dir="1">+</button>
+          </div>
+        `;
+        wrap.appendChild(box);
+      });
+      wrap.querySelectorAll("button[data-stat]").forEach(btn => {
+        btn.addEventListener("click", () => adjustStat(btn.dataset.stat, Number(btn.dataset.dir)));
+      });
+    }
+
+    function uiPulse(el) {
+      el.classList.remove("flash");
+      void el.offsetWidth;
+      el.classList.add("flash");
+    }
+
+    function updateHud() {
+      $("playerName").textContent = state.name;
+      $("roundView").textContent = String(state.round);
+      $("pointsView").textContent = String(state.points);
+      $("growthTitle").textContent = state.growthTitle;
+      CONFIG.STATS.forEach(stat => {
+        const e = document.getElementById(`pend_${stat}`);
+        if (e) e.textContent = `+${state.pending[stat] || 0}`;
+      });
+      $("devEventBtn").classList.toggle("hidden", !state.devMode);
+      $("dev-badge").classList.toggle("hidden", !state.devMode);
+    }
+
+    function log(msg) {
+      state.history.push(msg);
+      const el = document.createElement("div");
+      el.className = "log-entry";
+      el.textContent = `> ${msg}`;
+      $("log").prepend(el);
+    }
+
+    function showEvent(event) {
+      state.currentEvent = event;
+      $("eventTitle").textContent = event.title;
+      $("eventText").textContent = event.text;
+      const c = $("event-choices");
+      c.innerHTML = "";
+      event.choices.forEach((ch, idx) => {
+        const b = document.createElement("button");
+        b.className = "btn";
+        b.textContent = ch.label;
+        b.addEventListener("click", () => resolveChoice(idx));
+        c.appendChild(b);
+      });
+    }
+
+    // ===================== GAME LOGIC =====================
+    function enableDevMode() {
+      state.devMode = true;
+      localStorage.setItem("nlf_devMode", "true");
+      $("dev-badge").classList.remove("hidden");
+    }
+
+    function startGame() {
+      const nameRaw = $("nameInput").value.trim() || `SUBJECT_${Math.floor(Math.random() * 999)}`;
+      const seedRaw = $("seedInput").value.trim() || Math.random().toString(36).slice(2, 10).toUpperCase();
+
+      if (nameRaw.toUpperCase() === "NEONGOD" || seedRaw.toUpperCase() === "NEONGOD") enableDevMode();
+      if (!state.selectedArchetype) { alert("Choose an archetype first."); return; }
+
+      state.name = nameRaw;
+      state.seed = seedRaw;
+      state.rng = createRng(seedRaw);
+      state.round = 1;
+      state.flags = {};
+      state.history = [];
+      state.pending = {};
+      state.stats = { ...ARCHETYPES[state.selectedArchetype] };
+      state.points = state.devMode ? CONFIG.DEV_START_POINTS : CONFIG.BASE_POINTS + 1;
+      state.growthTitle = "Rookie";
+
+      switchScreen("playing");
+      $("log").innerHTML = "";
+      renderStats();
+      evaluateGrowth();
+      updateHud();
+      log(`Run initiated for ${state.name} with seed ${state.seed}.`);
+      showEvent({ title: "Ready", text: "Allocate your points, then click Forge Evolution.", choices: [] });
+    }
+
+    function adjustStat(stat, delta) {
+      if (!state.pending[stat]) state.pending[stat] = 0;
+      if (delta > 0 && state.points > 0) {
+        state.pending[stat] += 1;
+        state.points -= 1;
+      } else if (delta < 0 && state.pending[stat] > 0) {
+        state.pending[stat] -= 1;
+        state.points += 1;
+      }
+      updateHud();
+    }
+
+    function confirmAllocation() {
+      if (state.mode !== "playing") return;
+      CONFIG.STATS.forEach(stat => {
+        const inc = state.pending[stat] || 0;
+        state.stats[stat] += inc;
+      });
+      state.pending = {};
+      renderStats();
+      evaluateGrowth(true);
+      updateHud();
+      uiPulse($("statsPanel"));
+
+      const event = pickEvent();
+      showEvent(event);
+    }
+
+    function pickEvent() {
+      // deterministic sequence based on seed + choices
+      const idx = state.rng.int(EVENTS.length);
+      return EVENTS[idx];
+    }
+
+    function resolveChoice(choiceIdx) {
+      const event = state.currentEvent;
+      if (!event || !event.choices?.[choiceIdx]) return;
+      const choice = event.choices[choiceIdx];
+      const res = choice.resolve(state, state.rng);
+
+      Object.entries(res.stats || {}).forEach(([stat, amount]) => {
+        state.stats[stat] = Math.max(0, state.stats[stat] + amount);
+      });
+      (res.flags || []).forEach(f => { state.flags[f] = true; });
+      log(`${event.title}: ${res.msg}`);
+
+      evaluateGrowth(true);
+      renderStats();
+      advanceRound();
+    }
+
+    function advanceRound() {
+      if (state.round >= CONFIG.ROUNDS) {
+        endGame();
+        return;
+      }
+      state.round += 1;
+      const luckBonus = Math.floor(state.stats.Luck / 9);
+      state.points = state.devMode ? CONFIG.DEV_ROUND_POINTS : (CONFIG.BASE_POINTS + luckBonus);
+      updateHud();
+      $("eventTitle").textContent = "Round Ready";
+      $("eventText").textContent = "Allocate points, then forge the next event.";
+      $("event-choices").innerHTML = "";
+    }
+
+    function evaluateGrowth(withPulse = false) {
+      const s = state.stats;
+      let t = "Rookie";
+      if (s.Power >= 10 || s.Grit >= 10) t = "Scrapper";
+      if (s.Speed >= 12 && s.Charm >= 10) t = "Street Ghost";
+      if (s.Mind >= 14) t = "Code Adept";
+      if (s.Power >= 16 && s.Grit >= 14) t = "Arena Beast";
+      if (s.Charm >= 16) t = "Charmer";
+      if (s.Chaos >= 16) t = "Glitch Walker";
+      if (s.Mind >= 20 && s.Power >= 14 && s.Grit >= 12) t = "Neon Knight";
+      if (state.flags.chaos_master && s.Chaos >= 24) t = "Quantum Wraith";
+      const changed = state.growthTitle !== t;
+      state.growthTitle = t;
+      if (changed) log(`Evolution shift: ${t}`);
+      if (changed && withPulse) uiPulse($("eventPanel"));
+    }
+
+    function evaluateEnding() {
+      for (const ending of ENDINGS) {
+        if (ending.check(state)) return ending;
+      }
+      return ENDINGS[ENDINGS.length - 1];
+    }
+
+    function endGame() {
+      const ending = evaluateEnding();
+      const summary = {
+        name: state.name,
+        seed: state.seed,
+        rounds: CONFIG.ROUNDS,
+        growthTitle: state.growthTitle,
+        ending: ending.name,
+        endingDesc: ending.desc,
+        stats: { ...state.stats },
+        total: totalStats(state),
+        flags: Object.keys(state.flags),
+        history: [...state.history],
+        devMode: state.devMode,
+        timestamp: new Date().toISOString()
+      };
+      state.runSummary = summary;
+
+      $("endingName").textContent = ending.name;
+      $("endingText").textContent = ending.desc;
+      $("finalGrowth").textContent = state.growthTitle;
+      $("finalFlags").textContent = summary.flags.length ? summary.flags.join(", ") : "None";
+      $("finalStats").textContent = JSON.stringify({ stats: summary.stats, total: summary.total, seed: summary.seed }, null, 2);
+
+      saveProgress(summary);
+      loadSavesToStart();
+      switchScreen("ending");
+    }
+
+    // ===================== SAVE / LOAD =====================
+    function saveProgress(summary) {
+      const bestSum = Number(localStorage.getItem("nlf_bestSum") || 0);
+      if (summary.total > bestSum) localStorage.setItem("nlf_bestSum", String(summary.total));
+      localStorage.setItem("nlf_bestEnding", summary.ending);
+      localStorage.setItem("nlf_recentRun", `${summary.name} / ${summary.ending} / Σ${summary.total}`);
+      localStorage.setItem("nlf_recentJson", JSON.stringify(summary));
+    }
+
+    function loadSavesToStart() {
+      $("saveBestEnding").textContent = localStorage.getItem("nlf_bestEnding") || "None";
+      $("saveBestSum").textContent = localStorage.getItem("nlf_bestSum") || "0";
+      $("saveRecent").textContent = localStorage.getItem("nlf_recentRun") || "None";
+    }
+
+    // ===================== EXPORT =====================
+    function exportJson() {
+      const payload = JSON.stringify(state.runSummary || {}, null, 2);
+      const blob = new Blob([payload], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "neon-life-forge-run.json";
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    async function copyJson() {
+      const payload = JSON.stringify(state.runSummary || {}, null, 2);
+      try {
+        await navigator.clipboard.writeText(payload);
+        log("Run JSON copied to clipboard.");
+      } catch {
+        log("Clipboard blocked: use Export JSON.");
+      }
+    }
+
+    // ===================== BOOT =====================
+    function randomSeed() {
+      $("seedInput").value = Math.random().toString(36).slice(2, 10).toUpperCase();
+    }
+
+    function boot() {
+      buildArchetypes();
+      loadSavesToStart();
+
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("dev") === "1" || localStorage.getItem("nlf_devMode") === "true") enableDevMode();
+
+      $("seedBtn").addEventListener("click", randomSeed);
+      $("startBtn").addEventListener("click", startGame);
+      $("confirmAllocBtn").addEventListener("click", confirmAllocation);
+      $("devEventBtn").addEventListener("click", () => showEvent(EVENTS[Math.floor(Math.random() * EVENTS.length)]));
+      $("replayBtn").addEventListener("click", () => window.location.href = window.location.pathname + (state.devMode ? "?dev=1" : ""));
+      $("exportBtn").addEventListener("click", exportJson);
+      $("copyBtn").addEventListener("click", copyJson);
+    }
+
+    boot();
+  </script>
+</body>
+</html>

@@ -1,0 +1,1039 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Future City Mixer</title>
+  <style>
+    :root {
+      --bg: #f4f8ff;
+      --panel: #ffffff;
+      --text: #1d2a3b;
+      --muted: #5f6f85;
+      --line: #d9e3f2;
+      --accent: #1f8cff;
+      --shadow: 0 10px 30px rgba(26, 52, 92, 0.12);
+      --r: 18px;
+      --green: #43c37a;
+      --blue: #5aa8ff;
+      --yellow: #ffc857;
+      --pink: #ff7db5;
+      --purple: #9a7dff;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "Inter", "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", system-ui, -apple-system, sans-serif;
+      background: radial-gradient(circle at 10% 0%, #ffffff 0%, #f4f8ff 45%, #eef4ff 100%);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    .app {
+      width: min(1200px, 96vw);
+      margin: 24px auto 36px;
+      display: grid;
+      gap: 20px;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--r);
+      box-shadow: var(--shadow);
+      padding: 20px;
+    }
+
+    .hero h1 {
+      margin: 0;
+      font-size: clamp(1.6rem, 3.5vw, 2.4rem);
+      letter-spacing: 0.02em;
+    }
+
+    .hero p {
+      margin: 8px 0 0;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .equation {
+      margin-top: 16px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      padding: 12px;
+      border: 1px dashed var(--line);
+      border-radius: 12px;
+      background: #f9fbff;
+    }
+
+    .token {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: white;
+      padding: 6px 10px;
+      font-size: 0.92rem;
+    }
+
+    .glyph { width: 20px; height: 20px; position: relative; display: inline-block; }
+    .shape-circle { background: var(--blue); border-radius: 50%; }
+    .shape-square { background: var(--yellow); }
+    .shape-triangle {
+      width: 0; height: 0;
+      border-left: 10px solid transparent;
+      border-right: 10px solid transparent;
+      border-bottom: 18px solid var(--pink);
+    }
+    .shape-semi { background: var(--purple); border-radius: 10px 10px 0 0; height: 10px; margin-top: 10px; }
+    .shape-arch {
+      border: 4px solid var(--green);
+      border-bottom: 0;
+      border-radius: 14px 14px 0 0;
+      width: 20px;
+      height: 14px;
+      margin-top: 6px;
+      background: transparent;
+    }
+
+    .eq-op { color: var(--muted); font-weight: 700; }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 1.05fr 1.15fr;
+      gap: 20px;
+    }
+
+    .controls-grid {
+      display: grid;
+      gap: 14px;
+    }
+
+    .cat {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px;
+      background: #fcfdff;
+    }
+
+    .cat h3 {
+      margin: 0 0 8px;
+      font-size: 0.98rem;
+      color: #354862;
+    }
+
+    .options {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .opt {
+      border: 1px solid #cfdaeb;
+      background: white;
+      border-radius: 12px;
+      padding: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 44px;
+      cursor: pointer;
+      transition: 0.2s ease;
+      font-size: 0.88rem;
+    }
+
+    .opt:hover { transform: translateY(-1px); border-color: #9bb7dd; }
+    .opt.active {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(31, 140, 255, 0.14);
+      background: #f0f7ff;
+      color: #11457f;
+      font-weight: 600;
+    }
+
+    .buttons {
+      margin-top: 12px;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    button {
+      border: 0;
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-weight: 600;
+      cursor: pointer;
+      color: white;
+      background: linear-gradient(135deg, #2f8dff, #4b6dff);
+      transition: 0.2s;
+    }
+
+    button:hover { transform: translateY(-1px); filter: brightness(1.03); }
+    button.secondary { background: linear-gradient(135deg, #7b8ea9, #5f7088); }
+
+    .result h2 { margin: 0 0 10px; font-size: 1.2rem; }
+
+    .result-card {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 12px;
+      background: linear-gradient(180deg, #ffffff, #f8fbff);
+    }
+
+    #sceneCanvas {
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      border-radius: 12px;
+      border: 1px solid #d0ddf0;
+      display: block;
+      background: #dff0ff;
+    }
+
+    .city-title {
+      margin: 10px 0 6px;
+      font-size: clamp(1.2rem, 2.5vw, 1.7rem);
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    .commentary {
+      display: grid;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .commentary p {
+      margin: 0;
+      line-height: 1.6;
+      color: #33465f;
+      background: #fff;
+      border: 1px solid #dbe6f6;
+      border-radius: 10px;
+      padding: 10px;
+      font-size: 0.95rem;
+    }
+
+    .summary {
+      margin-top: 10px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .summary span {
+      background: #eaf2ff;
+      color: #35527d;
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 0.82rem;
+      border: 1px solid #cedef5;
+    }
+
+    .recent h3 { margin: 0 0 10px; }
+    .recent-list { display: grid; gap: 8px; }
+    .recent-item {
+      border: 1px solid #d8e4f5;
+      border-radius: 10px;
+      padding: 10px;
+      background: #fbfdff;
+      cursor: pointer;
+    }
+    .recent-item strong { display: block; }
+    .recent-item small { color: #60738f; }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      border: 0;
+    }
+
+    @media (max-width: 980px) {
+      .layout { grid-template-columns: 1fr; }
+      .buttons { grid-template-columns: 1fr; }
+      .options { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <section class="panel hero">
+      <h1>Future City Mixer｜未來城市混合器</h1>
+      <p>Create speculative urban futures by combining terrain, climate, infrastructure, public function, and users. Co-design like a museum installation.</p>
+      <div id="equationRow" class="equation"></div>
+    </section>
+
+    <div class="layout">
+      <section class="panel controls">
+        <div id="selectionRows" class="controls-grid"></div>
+        <div class="buttons">
+          <button id="randomBtn" type="button">Random Mix</button>
+          <button id="generateBtn" type="button">Generate My Future City</button>
+          <button id="regenBtn" type="button" class="secondary">Regenerate Commentary</button>
+          <button id="downloadBtn" type="button" class="secondary">Download Image</button>
+          <button id="copyBtn" type="button" class="secondary">Copy Summary</button>
+          <button id="resetBtn" type="button" class="secondary">Start Over</button>
+        </div>
+      </section>
+
+      <section class="panel result">
+        <h2>Exhibit Outcome</h2>
+        <div class="result-card">
+          <canvas id="sceneCanvas" width="1600" height="900" aria-label="Generated city illustration"></canvas>
+          <div id="cityTitle" class="city-title">—</div>
+          <div class="commentary">
+            <p id="zhComment">—</p>
+            <p id="enComment">—</p>
+          </div>
+          <div id="summaryTags" class="summary"></div>
+        </div>
+      </section>
+    </div>
+
+    <section class="panel recent">
+      <h3>Recent Creations</h3>
+      <div id="recentList" class="recent-list"></div>
+    </section>
+
+    <canvas id="shareCanvas" class="sr-only" width="1400" height="1900"></canvas>
+  </div>
+
+  <script>
+    // =========================
+    // constants / data
+    // =========================
+    const categories = [
+      {
+        key: 'terrain',
+        label: '1) Terrain / Urban Setting',
+        shape: 'arch',
+        options: ['High-tech City', 'Mountain Village', 'Island', 'Rural Area / Countryside', 'Plain']
+      },
+      {
+        key: 'climate',
+        label: '2) Climate',
+        shape: 'circle',
+        options: ['Tropical / Subtropical', 'Temperate', 'Desert', 'Polar']
+      },
+      {
+        key: 'infrastructure',
+        label: '3) Base Infrastructure',
+        shape: 'square',
+        options: ['Parking Lot', 'Power Plant', 'Incinerator', 'Gas Station', 'Sheet Metal Factory', 'Old Apartment', 'School', 'Hospital']
+      },
+      {
+        key: 'function',
+        label: '4) Reimagined Public Function',
+        shape: 'triangle',
+        options: ['Park', 'Library', 'Swimming Pool', 'Botanical Garden', 'Art Museum', 'Farm', 'Sports Stadium', 'Ski Resort']
+      },
+      {
+        key: 'users',
+        label: '5) Primary Users',
+        shape: 'semi',
+        options: ['Everyone', 'Children', 'Older Adults']
+      }
+    ];
+
+    const shapeClass = {
+      arch: 'shape-arch',
+      circle: 'shape-circle',
+      square: 'shape-square',
+      triangle: 'shape-triangle',
+      semi: 'shape-semi'
+    };
+
+    const LS_KEY = 'futureCityMixerRecentV1';
+
+    // =========================
+    // state
+    // =========================
+    const state = {
+      selections: {},
+      result: null,
+      recent: []
+    };
+
+    const el = {
+      selectionRows: document.getElementById('selectionRows'),
+      equationRow: document.getElementById('equationRow'),
+      sceneCanvas: document.getElementById('sceneCanvas'),
+      shareCanvas: document.getElementById('shareCanvas'),
+      cityTitle: document.getElementById('cityTitle'),
+      zhComment: document.getElementById('zhComment'),
+      enComment: document.getElementById('enComment'),
+      summaryTags: document.getElementById('summaryTags'),
+      recentList: document.getElementById('recentList'),
+      randomBtn: document.getElementById('randomBtn'),
+      generateBtn: document.getElementById('generateBtn'),
+      regenBtn: document.getElementById('regenBtn'),
+      downloadBtn: document.getElementById('downloadBtn'),
+      copyBtn: document.getElementById('copyBtn'),
+      resetBtn: document.getElementById('resetBtn')
+    };
+
+    // =========================
+    // icon generation
+    // =========================
+    function glyph(shape) {
+      return `<span class="glyph ${shapeClass[shape]}"></span>`;
+    }
+
+    function renderEquation() {
+      const parts = [];
+      categories.forEach((cat, idx) => {
+        const val = state.selections[cat.key] || '...';
+        parts.push(`<span class="token">${glyph(cat.shape)}<span>${val}</span></span>`);
+        if (idx < categories.length - 1) parts.push('<span class="eq-op">+</span>');
+      });
+      parts.push('<span class="eq-op">=</span>');
+      parts.push(`<span class="token"><span class="glyph shape-circle"></span><span>${state.result?.title || 'Future City'}</span></span>`);
+      el.equationRow.innerHTML = parts.join('');
+    }
+
+    // =========================
+    // UI rendering and interaction
+    // =========================
+    function renderSelectors() {
+      el.selectionRows.innerHTML = categories.map(cat => {
+        const opts = cat.options.map(opt => {
+          const active = state.selections[cat.key] === opt ? 'active' : '';
+          return `<button type="button" class="opt ${active}" data-cat="${cat.key}" data-opt="${opt.replace(/"/g, '&quot;')}">
+            ${glyph(cat.shape)}<span>${opt}</span>
+          </button>`;
+        }).join('');
+        return `<div class="cat"><h3>${cat.label}</h3><div class="options">${opts}</div></div>`;
+      }).join('');
+
+      el.selectionRows.querySelectorAll('.opt').forEach(btn => {
+        btn.addEventListener('click', () => {
+          state.selections[btn.dataset.cat] = btn.dataset.opt;
+          renderSelectors();
+          renderEquation();
+        });
+      });
+    }
+
+    function randomMix() {
+      categories.forEach(cat => {
+        state.selections[cat.key] = cat.options[Math.floor(Math.random() * cat.options.length)];
+      });
+      renderSelectors();
+      generate();
+    }
+
+    function startOver() {
+      state.selections = {};
+      state.result = null;
+      el.cityTitle.textContent = '—';
+      el.zhComment.textContent = '—';
+      el.enComment.textContent = '—';
+      el.summaryTags.innerHTML = '';
+      drawPlaceholder();
+      renderSelectors();
+      renderEquation();
+    }
+
+    // =========================
+    // title generator
+    // =========================
+    function generateTitle(sel) {
+      const terrainWords = {
+        'High-tech City': ['Future', 'Quantum', 'Civic Tech'],
+        'Mountain Village': ['Mountain', 'Terrace', 'Ridge'],
+        'Island': ['Harbor', 'Island', 'Tidal'],
+        'Rural Area / Countryside': ['Rural', 'Field', 'Meadow'],
+        'Plain': ['Horizon', 'Openland', 'Prairie']
+      };
+      const climateWords = {
+        'Tropical / Subtropical': ['Bloom', 'Canopy', 'Monsoon'],
+        'Temperate': ['Commons', 'Seasonal', 'Balance'],
+        'Desert': ['Oasis', 'Solar', 'Dune'],
+        'Polar': ['Aurora', 'Ice', 'Polar']
+      };
+      const functionWords = {
+        'Park': ['Green Loop', 'Park District'],
+        'Library': ['Learning Commons', 'Knowledge Hub'],
+        'Swimming Pool': ['Water Forum', 'Blue Plaza'],
+        'Botanical Garden': ['Living Garden', 'Botanic Commons'],
+        'Art Museum': ['Culture Atelier', 'Museum Quarter'],
+        'Farm': ['Food Campus', 'Agri Commons'],
+        'Sports Stadium': ['Athletic Commons', 'Stadium Ring'],
+        'Ski Resort': ['Snow Commons', 'Slope Forum']
+      };
+      const a = pick(terrainWords[sel.terrain]);
+      const b = pick(climateWords[sel.climate]);
+      const c = pick(functionWords[sel.function]);
+      return `${a} ${b} ${c}`;
+    }
+
+    // =========================
+    // commentary generator
+    // =========================
+    function generateCommentary(sel) {
+      const infraMap = {
+        'Parking Lot': ['a former parking lot', '舊有停車場'],
+        'Power Plant': ['an aging power plant', '既有發電廠'],
+        'Incinerator': ['an incinerator complex', '舊焚化設施'],
+        'Gas Station': ['a gas station node', '加油站據點'],
+        'Sheet Metal Factory': ['a sheet-metal factory', '板金工廠'],
+        'Old Apartment': ['an old apartment block', '老公寓群'],
+        'School': ['a school campus', '學校基地'],
+        'Hospital': ['a hospital precinct', '醫院園區']
+      };
+
+      const lifestyle = {
+        'Everyone': ['intergenerational civic life', '共融的日常城市生活'],
+        'Children': ['playful learning and safe mobility', '安全、可探索的兒童學習生活'],
+        'Older Adults': ['slow mobility, rest, and social care', '緩行、休憩與社會照護導向的生活節奏']
+      };
+
+      const climateValue = {
+        'Tropical / Subtropical': ['stormwater landscapes and shaded microclimates', '透過雨洪調節與遮蔭微氣候提升韌性'],
+        'Temperate': ['seasonal flexibility and long-term comfort', '以四季適應策略維持長期舒適與彈性'],
+        'Desert': ['water-sensitive design and solar stewardship', '以節水策略與太陽能治理回應乾燥環境'],
+        'Polar': ['heat-sharing networks and compact winter urbanism', '透過共享熱能與緊湊冬季空間提升宜居性']
+      };
+
+      const functionValue = {
+        'Park': ['public ecological corridors', '公共生態廊道'],
+        'Library': ['open knowledge and lifelong education', '開放知識與終身學習'],
+        'Swimming Pool': ['health infrastructure and social gathering', '健康基礎設施與社交凝聚'],
+        'Botanical Garden': ['urban biodiversity and climate literacy', '城市生物多樣性與氣候教育'],
+        'Art Museum': ['cultural memory and creative economy', '文化記憶與創意經濟'],
+        'Farm': ['local food cycles and productive landscape', '在地食物循環與生產型地景'],
+        'Sports Stadium': ['collective wellness and civic festivals', '群體健康與公民活動場景'],
+        'Ski Resort': ['winter recreation and adaptive tourism', '冬季休閒與調適型觀光']
+      };
+
+      const zh = `本方案把${infraMap[sel.infrastructure][1]}轉譯為「${sel.function}」導向的公共核心，並結合${sel.terrain}的空間條件，建立更可親近的未來城市界面。此配置支持${lifestyle[sel.users][1]}，讓日常通行、學習與社交在同一個場域連續發生。面對${sel.climate}，設計強化${climateValue[sel.climate][1]}，同時以${functionValue[sel.function][1]}創造社會與環境雙重價值。`;
+
+      const en = `This concept retools ${infraMap[sel.infrastructure][0]} into a ${sel.function}-based civic anchor, calibrated to the spatial logic of ${sel.terrain}. It supports ${lifestyle[sel.users][0]}, so movement, learning, and social exchange can happen in one coherent daily environment. Under a ${sel.climate} climate, the plan emphasizes ${climateValue[sel.climate][0]} while delivering ${functionValue[sel.function][0]} as combined social and environmental value.`;
+
+      return { zh, en };
+    }
+
+    // =========================
+    // city illustration generator
+    // =========================
+    function drawScene(sel) {
+      const c = el.sceneCanvas;
+      const ctx = c.getContext('2d');
+      const w = c.width;
+      const h = c.height;
+
+      const palette = {
+        'Tropical / Subtropical': { skyTop: '#9ad6ff', skyBot: '#e8fbff', ground: '#8bd191', accent: '#3fbf86' },
+        'Temperate': { skyTop: '#a8cfff', skyBot: '#f4fbff', ground: '#9ecf8f', accent: '#5c88d8' },
+        'Desert': { skyTop: '#ffd39e', skyBot: '#fff2d9', ground: '#d9bc84', accent: '#d1874a' },
+        'Polar': { skyTop: '#b6d9ff', skyBot: '#f2fbff', ground: '#d7e7f7', accent: '#70a8de' }
+      }[sel.climate];
+
+      const sky = ctx.createLinearGradient(0, 0, 0, h * 0.62);
+      sky.addColorStop(0, palette.skyTop);
+      sky.addColorStop(1, palette.skyBot);
+      ctx.fillStyle = sky;
+      ctx.fillRect(0, 0, w, h);
+
+      drawAtmosphere(ctx, w, h, sel.climate);
+      drawTerrain(ctx, w, h, sel.terrain, palette);
+      drawSkyline(ctx, w, h, sel);
+      drawLandmark(ctx, w, h, sel, palette.accent);
+      drawPublicElements(ctx, w, h, sel);
+      drawPeopleHints(ctx, w, h, sel.users);
+      drawVegetation(ctx, w, h, sel);
+    }
+
+    function drawAtmosphere(ctx, w, h, climate) {
+      ctx.save();
+      if (climate === 'Polar') {
+        for (let i = 0; i < 180; i++) {
+          ctx.fillStyle = `rgba(255,255,255,${Math.random() * 0.6})`;
+          ctx.fillRect(Math.random() * w, Math.random() * h * 0.7, 2, 2);
+        }
+      } else if (climate === 'Desert') {
+        ctx.fillStyle = 'rgba(255,255,255,0.2)';
+        for (let i = 0; i < 5; i++) {
+          ctx.beginPath();
+          ctx.ellipse(w * (0.15 + i * 0.2), h * 0.15 + i * 4, 130, 26, 0.2, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      } else {
+        for (let i = 0; i < 6; i++) {
+          ctx.fillStyle = 'rgba(255,255,255,0.35)';
+          ctx.beginPath();
+          ctx.ellipse(w * (0.12 + i * 0.16), h * (0.14 + (i % 2) * 0.03), 90, 30, 0, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+      ctx.restore();
+    }
+
+    function drawTerrain(ctx, w, h, terrain, palette) {
+      const groundY = h * 0.62;
+      if (terrain === 'Island') {
+        ctx.fillStyle = '#66b5e8';
+        ctx.fillRect(0, groundY - 30, w, h - groundY + 30);
+        ctx.fillStyle = '#8cd7ff';
+        for (let i = 0; i < 4; i++) ctx.fillRect(0, groundY + i * 26, w, 8);
+        ctx.fillStyle = '#d2c39c';
+        ctx.beginPath();
+        ctx.ellipse(w * 0.5, groundY + 30, w * 0.38, 110, 0, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (terrain === 'Mountain Village') {
+        const colors = ['#90aac6', '#7f98b4', '#6e89a7'];
+        colors.forEach((col, i) => {
+          ctx.fillStyle = col;
+          ctx.beginPath();
+          ctx.moveTo(0, h * (0.62 - i * 0.05));
+          for (let x = 0; x <= w; x += 120) {
+            const y = h * (0.58 - i * 0.06) + Math.sin((x + i * 90) * 0.01) * (40 + i * 10);
+            ctx.lineTo(x, y);
+          }
+          ctx.lineTo(w, h);
+          ctx.lineTo(0, h);
+          ctx.closePath();
+          ctx.fill();
+        });
+      } else if (terrain === 'Rural Area / Countryside') {
+        ctx.fillStyle = '#97c986';
+        ctx.fillRect(0, groundY - 10, w, h - groundY + 10);
+        ctx.fillStyle = '#7db46e';
+        for (let i = 0; i < 7; i++) {
+          ctx.fillRect(i * (w / 7), groundY + (i % 2) * 20, w / 8, 80);
+        }
+      } else if (terrain === 'Plain') {
+        const g = ctx.createLinearGradient(0, groundY, 0, h);
+        g.addColorStop(0, '#9fd18f');
+        g.addColorStop(1, '#7fb975');
+        ctx.fillStyle = g;
+        ctx.fillRect(0, groundY - 20, w, h - groundY + 20);
+      } else {
+        ctx.fillStyle = palette.ground;
+        ctx.fillRect(0, groundY - 20, w, h - groundY + 20);
+      }
+    }
+
+    function drawSkyline(ctx, w, h, sel) {
+      const baseY = h * 0.62;
+      const count = sel.terrain === 'High-tech City' ? 26 : 16;
+      for (let i = 0; i < count; i++) {
+        const bw = 35 + Math.random() * 55;
+        let bh = 90 + Math.random() * 180;
+        if (sel.terrain === 'High-tech City') bh += 90;
+        if (sel.terrain === 'Rural Area / Countryside') bh *= 0.45;
+        if (sel.terrain === 'Mountain Village') bh *= 0.7;
+        const x = i * (w / count) + Math.random() * 18;
+        const y = baseY - bh;
+        const tone = 130 + Math.floor(Math.random() * 60);
+        ctx.fillStyle = `rgb(${tone - 15}, ${tone}, ${tone + 25})`;
+        roundRect(ctx, x, y, bw, bh, 6, true, false);
+        ctx.fillStyle = 'rgba(255,255,255,0.25)';
+        for (let r = 0; r < bh - 20; r += 16) {
+          ctx.fillRect(x + 6, y + 8 + r, bw - 12, 3);
+        }
+      }
+    }
+
+    function drawLandmark(ctx, w, h, sel, accent) {
+      const cx = w * 0.52;
+      const cy = h * 0.67;
+      ctx.save();
+      ctx.shadowColor = 'rgba(0,0,0,0.16)';
+      ctx.shadowBlur = 18;
+      ctx.fillStyle = '#f8fcff';
+      ctx.strokeStyle = accent;
+      ctx.lineWidth = 6;
+
+      const fn = sel.function;
+      if (fn === 'Sports Stadium') {
+        ctx.beginPath();
+        ctx.ellipse(cx, cy + 30, 220, 90, 0, 0, Math.PI * 2);
+        ctx.fill(); ctx.stroke();
+        ctx.beginPath();
+        ctx.ellipse(cx, cy + 30, 130, 48, 0, 0, Math.PI * 2);
+        ctx.stroke();
+      } else if (fn === 'Botanical Garden') {
+        for (let i = 0; i < 3; i++) {
+          ctx.beginPath();
+          ctx.arc(cx - 90 + i * 90, cy + 10, 70, Math.PI, 0);
+          ctx.stroke();
+        }
+        ctx.fillRect(cx - 160, cy + 10, 320, 36);
+      } else if (fn === 'Art Museum') {
+        ctx.beginPath();
+        ctx.moveTo(cx - 180, cy + 40);
+        ctx.lineTo(cx - 40, cy - 110);
+        ctx.lineTo(cx + 170, cy + 40);
+        ctx.closePath();
+        ctx.fill(); ctx.stroke();
+      } else if (fn === 'Library') {
+        roundRect(ctx, cx - 170, cy - 80, 340, 140, 24, true, true);
+        ctx.strokeStyle = '#8ba5c8';
+        for (let i = -130; i <= 130; i += 52) ctx.strokeRect(cx + i, cy - 45, 36, 75);
+      } else if (fn === 'Swimming Pool') {
+        ctx.fillStyle = '#9edfff';
+        ctx.strokeStyle = '#53a7d7';
+        roundRect(ctx, cx - 180, cy - 20, 360, 120, 50, true, true);
+      } else if (fn === 'Farm') {
+        ctx.fillStyle = '#9fca7d';
+        roundRect(ctx, cx - 180, cy - 10, 360, 100, 24, true, false);
+        ctx.strokeStyle = '#eaf5e2';
+        for (let i = -150; i <= 150; i += 40) {
+          ctx.beginPath(); ctx.moveTo(cx + i, cy); ctx.lineTo(cx + i + 30, cy + 75); ctx.stroke();
+        }
+      } else if (fn === 'Ski Resort') {
+        ctx.strokeStyle = '#8fb8e4';
+        ctx.beginPath();
+        ctx.moveTo(cx - 160, cy + 70);
+        ctx.lineTo(cx - 40, cy - 80);
+        ctx.lineTo(cx + 70, cy + 45);
+        ctx.lineTo(cx + 180, cy - 60);
+        ctx.stroke();
+        roundRect(ctx, cx - 70, cy + 40, 140, 70, 14, true, true);
+      } else {
+        roundRect(ctx, cx - 190, cy - 15, 380, 100, 40, true, true);
+        ctx.fillStyle = 'rgba(255,255,255,0.7)';
+        for (let i = 0; i < 6; i++) {
+          ctx.beginPath();
+          ctx.arc(cx - 130 + i * 52, cy + 33, 10, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+      ctx.restore();
+    }
+
+    function drawPublicElements(ctx, w, h, sel) {
+      const y = h * 0.78;
+      ctx.save();
+      if (sel.users === 'Children') {
+        ctx.fillStyle = 'rgba(255, 121, 167, 0.9)';
+        for (let i = 0; i < 9; i++) ctx.fillRect(180 + i * 140, y + Math.sin(i) * 8, 18, 18);
+      } else if (sel.users === 'Older Adults') {
+        ctx.fillStyle = '#d9e7f7';
+        for (let i = 0; i < 6; i++) roundRect(ctx, 220 + i * 200, y, 120, 18, 9, true, false);
+      } else {
+        ctx.fillStyle = '#b7d8ff';
+        for (let i = 0; i < 8; i++) {
+          ctx.beginPath();
+          ctx.arc(170 + i * 170, y + (i % 2 ? 12 : 0), 13, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+      ctx.restore();
+    }
+
+    function drawPeopleHints(ctx, w, h, users) {
+      const baseY = h * 0.84;
+      const count = users === 'Everyone' ? 14 : users === 'Children' ? 10 : 8;
+      for (let i = 0; i < count; i++) {
+        const x = 120 + i * ((w - 240) / count) + Math.random() * 12;
+        const scale = users === 'Children' ? 0.8 : users === 'Older Adults' ? 1 : 0.95;
+        ctx.fillStyle = 'rgba(44,72,112,0.7)';
+        ctx.beginPath();
+        ctx.arc(x, baseY - 14 * scale, 4 * scale, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillRect(x - 2 * scale, baseY - 10 * scale, 4 * scale, 14 * scale);
+      }
+    }
+
+    function drawVegetation(ctx, w, h, sel) {
+      const lush = sel.climate === 'Tropical / Subtropical' || sel.function === 'Botanical Garden' || sel.terrain === 'Rural Area / Countryside';
+      const trees = lush ? 22 : sel.climate === 'Desert' ? 6 : 12;
+      for (let i = 0; i < trees; i++) {
+        const x = 80 + i * ((w - 160) / trees);
+        const y = h * (0.73 + Math.random() * 0.14);
+        ctx.fillStyle = '#6b8f58';
+        ctx.fillRect(x, y, 6, 20);
+        ctx.fillStyle = lush ? '#4caf6b' : '#7a9e6a';
+        ctx.beginPath();
+        ctx.arc(x + 3, y - 2, 14 + Math.random() * 8, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    function drawPlaceholder() {
+      const ctx = el.sceneCanvas.getContext('2d');
+      const w = el.sceneCanvas.width;
+      const h = el.sceneCanvas.height;
+      const g = ctx.createLinearGradient(0, 0, 0, h);
+      g.addColorStop(0, '#dbeeff');
+      g.addColorStop(1, '#f4faff');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, w, h);
+      ctx.fillStyle = '#7296bf';
+      ctx.font = '700 48px Inter, sans-serif';
+      ctx.fillText('Select 5 attributes and generate', 370, 460);
+    }
+
+    // =========================
+    // share card rendering
+    // =========================
+    function renderShareCard(result) {
+      const c = el.shareCanvas;
+      const ctx = c.getContext('2d');
+      const w = c.width;
+      const h = c.height;
+      ctx.clearRect(0, 0, w, h);
+
+      const bg = ctx.createLinearGradient(0, 0, 0, h);
+      bg.addColorStop(0, '#f8fbff');
+      bg.addColorStop(1, '#edf4ff');
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, w, h);
+
+      ctx.fillStyle = '#1f2e44';
+      ctx.font = '700 48px Inter, sans-serif';
+      ctx.fillText('Future City Mixer｜未來城市混合器', 70, 92);
+
+      // Equation row
+      let x = 70;
+      const y = 140;
+      categories.forEach((cat, i) => {
+        tokenCard(ctx, x, y, result.selections[cat.key], cat.shape);
+        x += 240;
+        if (i < categories.length - 1) {
+          ctx.fillStyle = '#5d6f88';
+          ctx.font = '700 34px Inter';
+          ctx.fillText('+', x - 22, y + 34);
+        }
+      });
+
+      ctx.fillStyle = '#5d6f88';
+      ctx.font = '700 34px Inter';
+      ctx.fillText('=', 1240, y + 34);
+
+      ctx.fillStyle = '#153253';
+      ctx.font = '700 54px Inter';
+      wrapText(ctx, result.title, 70, 260, 1260, 62);
+
+      ctx.drawImage(el.sceneCanvas, 70, 320, 1260, 710);
+
+      ctx.fillStyle = '#2a3e5a';
+      ctx.font = '600 30px "Noto Sans TC", sans-serif';
+      wrapText(ctx, result.zh, 70, 1080, 1260, 42);
+      ctx.font = '500 28px Inter, sans-serif';
+      wrapText(ctx, result.en, 70, 1280, 1260, 40);
+
+      ctx.fillStyle = '#35527d';
+      ctx.font = '600 26px Inter, sans-serif';
+      let sy = 1510;
+      categories.forEach(cat => {
+        ctx.fillText(`${cat.label.replace(/\d\) /, '')}: ${result.selections[cat.key]}`, 70, sy);
+        sy += 48;
+      });
+
+      ctx.fillStyle = '#60779a';
+      ctx.font = '500 20px Inter';
+      ctx.fillText('Generated locally in browser • No external APIs', 70, h - 30);
+    }
+
+    function tokenCard(ctx, x, y, text, shape) {
+      roundRect(ctx, x, y, 210, 54, 27, true, false, '#ffffff', '#c7d8f0');
+      drawShape(ctx, x + 18, y + 16, shape);
+      ctx.fillStyle = '#2f4668';
+      ctx.font = '500 18px Inter';
+      ctx.fillText(shortText(text, 18), x + 50, y + 34);
+    }
+
+    function drawShape(ctx, x, y, shape) {
+      ctx.save();
+      if (shape === 'circle') {
+        ctx.fillStyle = '#5aa8ff';
+        ctx.beginPath(); ctx.arc(x + 10, y + 10, 10, 0, Math.PI * 2); ctx.fill();
+      } else if (shape === 'square') {
+        ctx.fillStyle = '#ffc857'; ctx.fillRect(x, y, 20, 20);
+      } else if (shape === 'triangle') {
+        ctx.fillStyle = '#ff7db5';
+        ctx.beginPath(); ctx.moveTo(x + 10, y); ctx.lineTo(x + 20, y + 20); ctx.lineTo(x, y + 20); ctx.closePath(); ctx.fill();
+      } else if (shape === 'semi') {
+        ctx.fillStyle = '#9a7dff';
+        ctx.beginPath(); ctx.arc(x + 10, y + 10, 10, Math.PI, 0); ctx.fill();
+      } else {
+        ctx.strokeStyle = '#43c37a'; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.arc(x + 10, y + 12, 9, Math.PI, 0); ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    // =========================
+    // export/download helpers
+    // =========================
+    function downloadCard() {
+      if (!state.result) return;
+      renderShareCard(state.result);
+      const url = el.shareCanvas.toDataURL('image/png');
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${state.result.title.replace(/[^a-z0-9]+/gi, '_').toLowerCase() || 'future_city'}.png`;
+      a.click();
+    }
+
+    async function copySummary() {
+      if (!state.result) return;
+      const txt = [
+        state.result.title,
+        ...categories.map(c => `${c.label.replace(/\d\) /, '')}: ${state.result.selections[c.key]}`),
+        '',
+        state.result.zh,
+        '',
+        state.result.en
+      ].join('\n');
+      try {
+        await navigator.clipboard.writeText(txt);
+        el.copyBtn.textContent = 'Copied!';
+        setTimeout(() => (el.copyBtn.textContent = 'Copy Summary'), 1200);
+      } catch {
+        alert('Clipboard unavailable.');
+      }
+    }
+
+    // =========================
+    // localStorage save/load
+    // =========================
+    function saveRecent(result) {
+      state.recent.unshift(result);
+      state.recent = state.recent.slice(0, 5);
+      localStorage.setItem(LS_KEY, JSON.stringify(state.recent));
+      renderRecent();
+    }
+
+    function loadRecent() {
+      try {
+        state.recent = JSON.parse(localStorage.getItem(LS_KEY) || '[]');
+      } catch {
+        state.recent = [];
+      }
+      renderRecent();
+    }
+
+    function renderRecent() {
+      if (!state.recent.length) {
+        el.recentList.innerHTML = '<small>No creations yet.</small>';
+        return;
+      }
+      el.recentList.innerHTML = state.recent.map((r, i) => {
+        return `<button type="button" class="recent-item" data-idx="${i}">
+          <strong>${r.title}</strong>
+          <small>${r.selections.terrain} • ${r.selections.climate} • ${r.selections.function}</small>
+        </button>`;
+      }).join('');
+
+      el.recentList.querySelectorAll('.recent-item').forEach(item => {
+        item.addEventListener('click', () => {
+          const r = state.recent[Number(item.dataset.idx)];
+          state.selections = { ...r.selections };
+          state.result = { ...r };
+          renderSelectors();
+          renderEquation();
+          updateResultUI();
+          drawScene(state.selections);
+        });
+      });
+    }
+
+    // =========================
+    // generation flow
+    // =========================
+    function validateSelections() {
+      return categories.every(c => state.selections[c.key]);
+    }
+
+    function generate(regenOnly = false) {
+      if (!validateSelections()) {
+        alert('Please select one option from each of the 5 categories.');
+        return;
+      }
+
+      const title = state.result && regenOnly ? state.result.title : generateTitle(state.selections);
+      const commentary = generateCommentary(state.selections);
+      drawScene(state.selections);
+
+      state.result = {
+        title,
+        zh: commentary.zh,
+        en: commentary.en,
+        selections: { ...state.selections },
+        ts: Date.now()
+      };
+
+      updateResultUI();
+      renderEquation();
+      if (!regenOnly) saveRecent(state.result);
+    }
+
+    function updateResultUI() {
+      if (!state.result) return;
+      el.cityTitle.textContent = state.result.title;
+      el.zhComment.textContent = state.result.zh;
+      el.enComment.textContent = state.result.en;
+      el.summaryTags.innerHTML = categories.map(c => `<span>${c.label.replace(/\d\) /, '')}: ${state.result.selections[c.key]}</span>`).join('');
+    }
+
+    // =========================
+    // utility
+    // =========================
+    function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+    function shortText(str, n) { return str.length > n ? str.slice(0, n - 1) + '…' : str; }
+
+    function wrapText(ctx, text, x, y, maxW, lh) {
+      const words = text.split(' ');
+      let line = '';
+      let yy = y;
+      for (let i = 0; i < words.length; i++) {
+        const test = line + words[i] + ' ';
+        if (ctx.measureText(test).width > maxW && i > 0) {
+          ctx.fillText(line, x, yy);
+          line = words[i] + ' ';
+          yy += lh;
+        } else line = test;
+      }
+      ctx.fillText(line, x, yy);
+      return yy;
+    }
+
+    function roundRect(ctx, x, y, w, h, r, fill, stroke, fillStyle, strokeStyle) {
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.arcTo(x + w, y, x + w, y + h, r);
+      ctx.arcTo(x + w, y + h, x, y + h, r);
+      ctx.arcTo(x, y + h, x, y, r);
+      ctx.arcTo(x, y, x + w, y, r);
+      if (fill) {
+        if (fillStyle) ctx.fillStyle = fillStyle;
+        ctx.fill();
+      }
+      if (stroke) {
+        if (strokeStyle) ctx.strokeStyle = strokeStyle;
+        ctx.stroke();
+      }
+    }
+
+    // =========================
+    // init
+    // =========================
+    el.randomBtn.addEventListener('click', randomMix);
+    el.generateBtn.addEventListener('click', () => generate(false));
+    el.regenBtn.addEventListener('click', () => generate(true));
+    el.downloadBtn.addEventListener('click', downloadCard);
+    el.copyBtn.addEventListener('click', copySummary);
+    el.resetBtn.addEventListener('click', startOver);
+
+    loadRecent();
+    renderSelectors();
+    drawPlaceholder();
+    randomMix(); // auto-generate first valid combination
+  </script>
+</body>
+</html>

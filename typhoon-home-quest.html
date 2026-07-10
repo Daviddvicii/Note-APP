@@ -79,7 +79,7 @@ ul{padding-left:20px;margin-top:8px;color:var(--muted);line-height:1.8}
 .screenshot-hint{background:rgba(255,255,255,.12);border:2px dashed #fde68a;border-radius:16px;padding:10px;margin-top:12px;color:#fff}
 .safety-tip-box{
   margin-top:12px;
-  padding:12px;
+  padding:14px;
   border-radius:16px;
   background:rgba(56,189,248,.12);
   border:2px solid rgba(56,189,248,.45);
@@ -89,13 +89,19 @@ ul{padding-left:20px;margin-top:8px;color:var(--muted);line-height:1.8}
 .safety-tip-box b{
   color:#fde68a;
   display:block;
-  margin-bottom:6px;
+  margin-bottom:8px;
 }
-.safety-tip-box ul{
-  margin:6px 0 0;
-  padding-left:20px;
-  color:#e0f2fe;
-  line-height:1.65;
+.safety-tip-en{
+  font-size:17px;
+  font-weight:900;
+  color:#fff;
+  line-height:1.45;
+  margin-bottom:8px;
+}
+.safety-tip-zh{
+  font-size:15px;
+  color:#dbeafe;
+  line-height:1.55;
 }
 </style>
 </head>
@@ -217,31 +223,86 @@ const badItems = [
 ];
 
 const typhoonSafetyTips = [
-  "Stay indoors. Your house is not a boring box; it is your safety base.",
-  "Do not play near rivers. The water is not a water park today.",
-  "Stay away from windows. Flying objects do not knock politely.",
-  "Charge your phone early. A full battery is a tiny superhero.",
-  "Prepare water, snacks, and a flashlight before the storm gets serious.",
-  "If the power goes out, stay calm and ask an adult for help.",
-  "Do not touch fallen wires. They are not noodles. They are dangerous.",
-  "Keep your homework dry. Rain is not an excuse machine.",
-  "Listen to adults and official news. Rumors are weaker than Wi-Fi in a storm.",
-  "Do not go outside to take cool photos. Safety first, likes later.",
-  "Close windows and doors. The wind is not invited to your room.",
-  "Put important things away from the floor. Floodwater loves surprise attacks.",
-  "Use a flashlight, not candles, if possible. Fire is a boss monster.",
-  "Stay with your family. Team mode is safer than solo mode.",
-  "If you hear thunder, stay inside. The sky is doing a drum solo."
+  {
+    en:"Stay indoors. Your house is your safety base.",
+    zh:"待在室內。你的家就是颱風天的安全基地。"
+  },
+  {
+    en:"Do not play near rivers. The water is not a water park today.",
+    zh:"不要靠近河邊玩水。今天的水不是水上樂園。"
+  },
+  {
+    en:"Stay away from windows. Flying objects do not knock politely.",
+    zh:"遠離窗戶。飛來的東西可不會先敲門。"
+  },
+  {
+    en:"Charge your phone early. A full battery is a tiny superhero.",
+    zh:"提早把手機充飽電。滿格電量就是小小超級英雄。"
+  },
+  {
+    en:"Prepare water, food, and a flashlight before the storm gets stronger.",
+    zh:"風雨變強前，先準備飲用水、食物和手電筒。"
+  },
+  {
+    en:"If the power goes out, stay calm and ask an adult for help.",
+    zh:"如果停電，先保持冷靜，並請大人協助。"
+  },
+  {
+    en:"Do not touch fallen wires. They are dangerous.",
+    zh:"不要碰掉落的電線。那真的很危險。"
+  },
+  {
+    en:"Keep homework and books away from the floor.",
+    zh:"把作業和書本放高一點，避免被積水弄濕。"
+  },
+  {
+    en:"Listen to adults and official news, not random rumors.",
+    zh:"聽大人和官方消息，不要相信亂傳的謠言。"
+  },
+  {
+    en:"Do not go outside to take cool photos. Safety first, likes later.",
+    zh:"不要為了拍酷照片跑出去。安全第一，按讚以後再說。"
+  },
+  {
+    en:"Close windows and doors. The wind is not invited to your room.",
+    zh:"關好門窗。颱風可沒有被邀請進你房間。"
+  },
+  {
+    en:"Move important things away from low places.",
+    zh:"把重要物品移到較高處，避免泡水。"
+  },
+  {
+    en:"Use a flashlight instead of candles if possible.",
+    zh:"如果可以，停電時用手電筒，盡量不要用蠟燭。"
+  },
+  {
+    en:"Stay with your family. Team mode is safer than solo mode.",
+    zh:"和家人在一起。颱風天團隊模式比單人模式安全。"
+  },
+  {
+    en:"If you hear thunder, stay inside. The sky is doing a drum solo.",
+    zh:"如果聽到雷聲，就待在室內。天空正在打鼓，不要去湊熱鬧。"
+  }
 ];
 
-function getRandomSafetyTips(){
-  return [...typhoonSafetyTips].sort(() => Math.random() - 0.5).slice(0,3);
+let lastSafetyTipIndex = -1;
+
+function getRandomSafetyTip(){
+  if(typhoonSafetyTips.length === 1) return typhoonSafetyTips[0];
+  let index;
+  do{
+    index = Math.floor(Math.random() * typhoonSafetyTips.length);
+  }while(index === lastSafetyTipIndex);
+  lastSafetyTipIndex = index;
+  return typhoonSafetyTips[index];
 }
 
 function safetyTipsHTML(){
+  const tip = getRandomSafetyTip();
   return `<div class="safety-tip-box">
-    <b>🌪️ Typhoon Safety Tips</b>
-    <ul>${getRandomSafetyTips().map(t => `<li>${t}</li>`).join("")}</ul>
+    <b>🌪️ Typhoon Safety Rule</b>
+    <div class="safety-tip-en">${tip.en}</div>
+    <div class="safety-tip-zh">${tip.zh}</div>
   </div>`;
 }
 

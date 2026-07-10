@@ -1,0 +1,663 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Typhoon Home Quest｜颱風小屋守護者</title>
+<style>
+:root{
+  --bg:#101828;--panel:#182338;--text:#f8fafc;--muted:#b7c2d3;--line:#334155;
+  --sky:#38bdf8;--green:#86efac;--yellow:#fde68a;--red:#fb7185;--purple:#c084fc
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;font-family:system-ui,-apple-system,"Noto Sans TC","Segoe UI",sans-serif;background:var(--bg);color:var(--text)}
+body{background:radial-gradient(circle at 10% 10%,rgba(56,189,248,.18),transparent 28%),radial-gradient(circle at 90% 0%,rgba(192,132,252,.12),transparent 24%),linear-gradient(180deg,#0b1220,#111827)}
+.wrap{max-width:980px;margin:0 auto;padding:16px}
+header{text-align:center;padding:18px 12px 8px}
+h1{margin:0;font-size:clamp(28px,6vw,48px);letter-spacing:1px;text-shadow:3px 3px 0 #000}
+.subtitle{margin:8px auto 0;color:var(--muted);max-width:680px;line-height:1.6}
+.maker{margin-top:10px;color:var(--yellow);font-weight:900;text-shadow:2px 2px 0 #000}
+.grid{display:grid;grid-template-columns:1fr 290px;gap:14px;align-items:start}
+@media(max-width:860px){.grid{grid-template-columns:1fr}}
+.card{background:rgba(24,35,56,.92);border:3px solid var(--line);border-radius:18px;padding:14px;box-shadow:0 12px 28px rgba(0,0,0,.28)}
+.gamebox{position:relative}
+canvas{width:100%;height:auto;display:block;background:#0f172a;border:4px solid #475569;border-radius:14px;image-rendering:pixelated;touch-action:none}
+.hud{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:10px}@media(max-width:640px){.hud{grid-template-columns:repeat(2,1fr)}}
+.stat{background:#0f172a;border:2px solid #334155;border-radius:12px;padding:8px;text-align:center}
+.stat small{display:block;color:var(--muted);font-size:12px}.stat b{font-size:20px;color:var(--yellow)}
+.david-stat{min-width:110px}
+.mini-colors{display:flex;justify-content:center;gap:4px;margin-top:5px;flex-wrap:wrap}
+.mini-dot{
+  width:15px;height:15px;border-radius:50%;
+  border:2px solid rgba(255,255,255,.72);
+  box-shadow:0 0 8px rgba(255,255,255,.25);
+}
+.mini-dot.locked{
+  background:#334155!important;
+  border-color:#64748b;
+  opacity:.45;
+  box-shadow:none;
+}
+.mini-dot.got{
+  box-shadow:0 0 10px currentColor,0 0 18px currentColor;
+}
+.controls{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:12px}
+button{border:0;border-radius:12px;padding:12px 14px;font-weight:900;cursor:pointer;color:#0b1220;background:var(--sky);box-shadow:0 4px 0 #075985}
+button:active{transform:translateY(2px);box-shadow:0 2px 0 #075985}
+button.secondary{background:#e2e8f0;box-shadow:0 4px 0 #64748b}
+button.green{background:var(--green);box-shadow:0 4px 0 #15803d}
+button.red{background:var(--red);box-shadow:0 4px 0 #be123c;color:#fff}
+.touchpad{display:none}@media(max-width:860px){.touchpad{display:grid}}
+h2{margin:0 0 10px;font-size:20px}
+ul{padding-left:20px;margin-top:8px;color:var(--muted);line-height:1.8}
+.badge{display:inline-block;padding:4px 8px;border-radius:999px;background:#0f172a;border:2px solid #334155;color:var(--yellow);font-weight:900;font-size:12px;margin:4px 4px 0 0}
+.david-badge{color:#fff;background:linear-gradient(90deg,#f59e0b,#ec4899);border-color:#fde68a}
+.message{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:auto;padding:20px}
+.overlay{max-width:520px;background:rgba(15,23,42,.92);border:4px solid #e2e8f0;border-radius:18px;padding:18px;text-align:center;box-shadow:0 0 0 4px rgba(0,0,0,.35)}
+.overlay h2{font-size:28px;margin-bottom:8px}.overlay p{color:var(--muted);line-height:1.6}
+.footer{text-align:center;color:var(--muted);padding:20px;font-size:12px}
+.kbd{background:#0f172a;border:2px solid #334155;border-radius:8px;padding:2px 7px;color:#f8fafc;font-weight:900}
+.challenge-card{
+  background:linear-gradient(135deg,#0f172a,#1e1b4b 45%,#831843);
+  border:5px solid #fde68a;
+  border-radius:24px;
+  padding:22px;
+  max-width:560px;
+  box-shadow:0 0 0 5px rgba(0,0,0,.35),0 0 35px rgba(253,230,138,.45);
+  text-align:center;
+}
+.challenge-card h2{
+  font-size:clamp(26px,6vw,42px);
+  margin:0 0 8px;
+  color:#fde68a;
+  text-shadow:3px 3px 0 #000;
+}
+.challenge-card p{font-size:18px;color:#fff;line-height:1.65;margin:8px 0}
+.color-row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:12px 0}
+.color-chip{padding:7px 11px;border-radius:999px;border:2px solid rgba(255,255,255,.6);font-weight:900;color:#020617}
+.color-red{background:#ef4444;color:#fff}.color-blue{background:#38bdf8}.color-yellow{background:#fde047}.color-green{background:#22c55e}.color-purple{background:#a855f7;color:#fff}
+.screenshot-hint{background:rgba(255,255,255,.12);border:2px dashed #fde68a;border-radius:16px;padding:10px;margin-top:12px;color:#fff}
+.safety-tip-box{
+  margin-top:12px;
+  padding:12px;
+  border-radius:16px;
+  background:rgba(56,189,248,.12);
+  border:2px solid rgba(56,189,248,.45);
+  color:#e0f2fe;
+  text-align:left;
+}
+.safety-tip-box b{
+  color:#fde68a;
+  display:block;
+  margin-bottom:6px;
+}
+.safety-tip-box ul{
+  margin:6px 0 0;
+  padding-left:20px;
+  color:#e0f2fe;
+  line-height:1.65;
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>🌀 Typhoon Home Quest</h1>
+  <p class="subtitle">颱風天在家玩的小小復古遊戲：收集防颱物資，避開危險物，守護你的安全小屋。</p>
+  <div class="maker">🎮 David 製作｜Made by David</div>
+</header>
+
+<main class="wrap">
+  <div class="grid">
+    <section class="card gamebox">
+      <div class="hud">
+        <div class="stat"><small>Score</small><b id="score">0</b></div>
+        <div class="stat"><small>Lives</small><b id="lives">3</b></div>
+        <div class="stat"><small>Level</small><b id="level">1</b></div>
+        <div class="stat david-stat"><small>David</small><b id="davidCount">0/5</b><div class="mini-colors" id="davidColors"></div></div>
+        <div class="stat"><small>Best</small><b id="best">0</b></div>
+      </div>
+      <canvas id="game" width="640" height="420"></canvas>
+      <div class="message" id="message">
+        <div class="overlay">
+          <h2>颱風小屋守護者</h2>
+          <p>接住 <b>水、手電筒、書本、電池</b>。<br>避開 <b>漏水、飛散物、閃電</b>。</p>
+          <p><b style="color:#fde68a">颱風天 David 彩蛋挑戰</b><br>收集紅、藍、黃、綠、紫五種 David，截圖後周一找 David 兌換小禮物！部分顏色為超稀有掉落。</p>
+          <p>鍵盤：<span class="kbd">←</span> <span class="kbd">→</span> 移動，<span class="kbd">Space</span> 開始</p>
+          <button class="green" onclick="startGame()">Start Game</button>
+        </div>
+      </div>
+      <div class="controls">
+        <button class="secondary" onclick="moveLeft()">⬅ Left</button>
+        <button class="green" onclick="startGame()">Start</button>
+        <button class="secondary" onclick="moveRight()">Right ➡</button>
+      </div>
+      <div class="controls touchpad">
+        <button ontouchstart="touchDir=-1" ontouchend="touchDir=0">按住左移</button>
+        <button class="red" onclick="pauseGame()">Pause</button>
+        <button ontouchstart="touchDir=1" ontouchend="touchDir=0">按住右移</button>
+      </div>
+    </section>
+
+    <aside class="card">
+      <h2>🎮 遊戲規則</h2>
+      <ul>
+        <li>接到防颱物資：加分。</li>
+        <li>接到不同顏色的 <b>DAVID</b>：大加分。</li>
+        <li>第一次接到 David 會跳出挑戰說明。</li>
+        <li>集滿五色 David，遊戲會結束並出現截圖獎勵畫面。</li>
+        <li>碰到危險物：扣生命。</li>
+        <li>每 100 分升一級，速度會變快。</li>
+      </ul>
+
+      <h2>✅ 可接物品</h2>
+      <span class="badge">💧 水</span>
+      <span class="badge">🔦 手電筒</span>
+      <span class="badge">🔋 電池</span>
+      <span class="badge">📘 書本</span>
+      <span class="badge">🍙 食物</span>
+      <span class="badge david-badge">🔴 David</span>
+      <span class="badge david-badge">🔵 David</span>
+      <span class="badge david-badge">🟡 David</span>
+      <span class="badge david-badge">🟢 David</span>
+      <span class="badge david-badge">🟣 David</span>
+
+      <h2 style="margin-top:16px">⚠️ 要避開</h2>
+      <span class="badge">💦 漏水</span>
+      <span class="badge">🪵 飛散物</span>
+      <span class="badge">⚡ 閃電</span>
+
+      <h2 style="margin-top:16px">🏠 安全提醒</h2>
+      <ul>
+        <li>颱風天不要外出玩水。</li>
+        <li>遠離窗戶與陽台。</li>
+        <li>手電筒、飲用水、電池要先準備。</li>
+        <li>停電時不要慌，先找大人。</li>
+      </ul>
+    </aside>
+  </div>
+</main>
+
+<div class="footer">🎮 David 製作｜Hard Challenge Mode｜Made for typhoon days｜No internet needed after opening</div>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+const scoreEl = document.getElementById("score");
+const livesEl = document.getElementById("lives");
+const levelEl = document.getElementById("level");
+const davidCountEl = document.getElementById("davidCount");
+const davidColorsEl = document.getElementById("davidColors");
+const bestEl = document.getElementById("best");
+const messageEl = document.getElementById("message");
+
+let best = Number(localStorage.getItem("typhoon_home_quest_best_david") || 0);
+bestEl.textContent = best;
+
+let running = false, paused = false, gameOver = false;
+let score = 0, lives = 3, level = 1;
+let keys = {}, touchDir = 0, spawnTimer = 0, frame = 0, wind = 0;
+let items = [], floatingTexts = [], shake = 0;
+let collectedDavids = {};
+let firstDavidChallengeShown = false;
+
+const player = {x: canvas.width / 2 - 36, y: canvas.height - 58, w:72, h:36, speed:6};
+
+const goodItems = [
+  {emoji:"💧", name:"水", points:10},
+  {emoji:"🔦", name:"手電筒", points:15},
+  {emoji:"🔋", name:"電池", points:15},
+  {emoji:"📘", name:"書本", points:10},
+  {emoji:"🍙", name:"食物", points:12}
+];
+
+const badItems = [
+  {emoji:"💦", name:"漏水", damage:1},
+  {emoji:"🪵", name:"飛散物", damage:1},
+  {emoji:"⚡", name:"閃電", damage:1}
+];
+
+const typhoonSafetyTips = [
+  "Stay indoors. Your house is not a boring box; it is your safety base.",
+  "Do not play near rivers. The water is not a water park today.",
+  "Stay away from windows. Flying objects do not knock politely.",
+  "Charge your phone early. A full battery is a tiny superhero.",
+  "Prepare water, snacks, and a flashlight before the storm gets serious.",
+  "If the power goes out, stay calm and ask an adult for help.",
+  "Do not touch fallen wires. They are not noodles. They are dangerous.",
+  "Keep your homework dry. Rain is not an excuse machine.",
+  "Listen to adults and official news. Rumors are weaker than Wi-Fi in a storm.",
+  "Do not go outside to take cool photos. Safety first, likes later.",
+  "Close windows and doors. The wind is not invited to your room.",
+  "Put important things away from the floor. Floodwater loves surprise attacks.",
+  "Use a flashlight, not candles, if possible. Fire is a boss monster.",
+  "Stay with your family. Team mode is safer than solo mode.",
+  "If you hear thunder, stay inside. The sky is doing a drum solo."
+];
+
+function getRandomSafetyTips(){
+  return [...typhoonSafetyTips].sort(() => Math.random() - 0.5).slice(0,3);
+}
+
+function safetyTipsHTML(){
+  return `<div class="safety-tip-box">
+    <b>🌪️ Typhoon Safety Tips</b>
+    <ul>${getRandomSafetyTips().map(t => `<li>${t}</li>`).join("")}</ul>
+  </div>`;
+}
+
+// 五色 David 彩蛋掉落：部分顏色為超稀有，完全機率，沒有保底
+const davidTypes = [
+  {key:"red", label:"紅色 David", short:"RED", color:"#ef4444", chip:"🔴", points:80, chance:0.07},
+  {key:"blue", label:"藍色 David", short:"BLUE", color:"#38bdf8", chip:"🔵", points:300, chance:0.0001},
+  {key:"yellow", label:"黃色 David", short:"YELLOW", color:"#fde047", chip:"🟡", points:80, chance:0.07},
+  {key:"green", label:"綠色 David", short:"GREEN", color:"#22c55e", chip:"🟢", points:80, chance:0.07},
+  {key:"purple", label:"紫色 David", short:"PURPLE", color:"#a855f7", chip:"🟣", points:500, chance:0.0003}
+];
+
+function resetGame(){
+  score = 0; lives = 3; level = 1;
+  items = []; floatingTexts = [];
+  collectedDavids = {};
+  firstDavidChallengeShown = false;
+  frame = 0; spawnTimer = 0; wind = 0; shake = 0;
+  player.x = canvas.width / 2 - player.w / 2;
+  gameOver = false;
+  updateHUD();
+}
+
+function startGame(){
+  if(!running || gameOver){
+    resetGame();
+    running = true; paused = false;
+    messageEl.style.display = "none";
+    requestAnimationFrame(loop);
+  }else if(paused){
+    paused = false;
+    messageEl.style.display = "none";
+    requestAnimationFrame(loop);
+  }
+}
+
+function pauseGame(){
+  if(!running || gameOver) return;
+  paused = !paused;
+  if(paused){
+    messageEl.style.display = "flex";
+    messageEl.innerHTML = `<div class="overlay"><h2>Paused</h2><p>先喝水、休息一下，回來再繼續。</p><button class="green" onclick="startGame()">Resume</button></div>`;
+  }else{
+    messageEl.style.display = "none";
+    requestAnimationFrame(loop);
+  }
+}
+
+function endGame(){
+  running = false; gameOver = true;
+  if(score > best){
+    best = score;
+    localStorage.setItem("typhoon_home_quest_best_david", String(best));
+  }
+  updateHUD();
+  messageEl.style.display = "flex";
+  messageEl.innerHTML = `<div class="overlay">
+    <h2>Game Over</h2>
+    <p>你的分數：<b>${score}</b><br>最高分：<b>${best}</b></p>
+    <p>Safety mission failed, but learning mission unlocked.</p>
+    ${safetyTipsHTML()}
+    <p style="color:#fde68a;font-weight:900">🎮 David 製作</p>
+    <button class="green" onclick="startGame()">Play Again</button>
+  </div>`;
+}
+
+function updateHUD(){
+  scoreEl.textContent = score;
+  livesEl.textContent = lives;
+  levelEl.textContent = level;
+  bestEl.textContent = best;
+  davidCountEl.textContent = getDavidCount() + "/5";
+  if(davidColorsEl) davidColorsEl.innerHTML = getDavidMiniHTML();
+}
+
+function getDavidCount(){
+  return davidTypes.filter(d => collectedDavids[d.key]).length;
+}
+
+function getDavidCollectionHTML(){
+  return davidTypes.map(d => {
+    const got = collectedDavids[d.key];
+    return `<span class="color-chip color-${d.key}" style="${got ? '' : 'filter:grayscale(1);opacity:.38'}">${d.chip} ${got ? d.short : "???"}</span>`;
+  }).join("");
+}
+
+function getDavidMiniHTML(){
+  return davidTypes.map(d => {
+    const got = collectedDavids[d.key];
+    return `<span class="mini-dot ${got ? "got" : "locked"}" title="${d.label}" style="background:${d.color};color:${d.color}"></span>`;
+  }).join("");
+}
+
+function showFirstDavidChallenge(){
+  paused = true;
+  messageEl.style.display = "flex";
+  messageEl.innerHTML = `<div class="overlay">
+    <h2>🎁 突發挑戰開啟！</h2>
+    <p>你收集到第一個 <b style="color:#fde68a">David 彩蛋</b>！</p>
+    <p>挑戰內容：收集五種不同顏色的 David：紅、藍、黃、綠、紫。部分顏色非常稀有，完全看運氣。</p>
+    <p>集滿後截圖，周一找 David 兌換小禮物。</p>
+    <div class="color-row">${getDavidCollectionHTML()}</div>
+    <button class="green" onclick="startGame()">繼續挑戰</button>
+  </div>`;
+}
+
+function winChallenge(){
+  running = false;
+  gameOver = true;
+  if(score > best){
+    best = score;
+    localStorage.setItem("typhoon_home_quest_best_david", String(best));
+  }
+  updateHUD();
+  messageEl.style.display = "flex";
+  messageEl.innerHTML = `<div class="challenge-card">
+    <h2>🎉 恭喜解鎖<br>颱風天 David 挑戰</h2>
+    <p>你已收集五種不同顏色的 David！</p>
+    <div class="color-row">${getDavidCollectionHTML()}</div>
+    <div class="screenshot-hint">
+      📸 請截圖這個畫面<br>
+      周一找 David 兌換小禮物
+    </div>
+    <p style="font-size:15px;color:#cbd5e1">Score：${score}｜Made by David</p>
+    <button class="green" onclick="startGame()">再玩一次</button>
+  </div>`;
+}
+
+function pickDavidDrop(){
+  const roll = Math.random();
+  let acc = 0;
+  for(const d of davidTypes){
+    acc += d.chance;
+    if(roll < acc) return d;
+  }
+  return null;
+}
+
+function spawnItem(){
+  const david = pickDavidDrop();
+  if(david){
+    items.push({
+      emoji:"⭐",
+      name:"DAVID",
+      davidKey:david.key,
+      davidLabel:david.label,
+      davidShort:david.short,
+      davidColor:david.color,
+      points:david.points,
+      good:true,
+      special:true,
+      x: 36 + Math.random() * (canvas.width - 72),
+      y: -50,
+      size: 46,
+      speed: 2.0 + level * 0.28,
+      drift: (Math.random() - 0.5) * 1.2
+    });
+    return;
+  }
+
+  const isGood = Math.random() > Math.min(0.25 + level * 0.025, 0.48);
+  const source = isGood ? goodItems : badItems;
+  const data = source[Math.floor(Math.random() * source.length)];
+  items.push({
+    ...data,
+    good:isGood,
+    special:false,
+    x: 28 + Math.random() * (canvas.width - 56),
+    y: -36,
+    size: 30 + Math.random() * 6,
+    speed: 2.2 + level * 0.45 + Math.random() * 1.5,
+    drift: (Math.random() - 0.5) * (1.2 + level * 0.15)
+  });
+}
+
+function moveLeft(){player.x -= 42; clampPlayer();}
+function moveRight(){player.x += 42; clampPlayer();}
+function clampPlayer(){
+  if(player.x < 8) player.x = 8;
+  if(player.x + player.w > canvas.width - 8) player.x = canvas.width - 8 - player.w;
+}
+
+function update(){
+  frame++;
+  level = Math.floor(score / 100) + 1;
+  wind = Math.sin(frame * 0.025) * (0.55 + level * 0.08);
+
+  if(keys["ArrowLeft"] || keys["a"] || touchDir < 0) player.x -= player.speed;
+  if(keys["ArrowRight"] || keys["d"] || touchDir > 0) player.x += player.speed;
+  clampPlayer();
+
+  spawnTimer--;
+  const spawnRate = Math.max(18, 48 - level * 3);
+  if(spawnTimer <= 0){
+    spawnItem();
+    spawnTimer = spawnRate;
+  }
+
+  for(const item of items){
+    item.y += item.speed;
+    item.x += item.drift + wind;
+  }
+
+  for(let i = items.length - 1; i >= 0; i--){
+    const item = items[i];
+    const hit =
+      item.x < player.x + player.w &&
+      item.x + item.size > player.x &&
+      item.y < player.y + player.h &&
+      item.y + item.size > player.y;
+
+    if(hit){
+      if(item.good){
+        score += item.points;
+        if(item.special){
+          const beforeCount = getDavidCount();
+          collectedDavids[item.davidKey] = true;
+          const afterCount = getDavidCount();
+          popText(item.davidShort + " DAVID +" + item.points, item.x, item.y, item.davidColor, 25);
+          shake = 5;
+
+          if(afterCount >= 5){
+            items.splice(i, 1);
+            updateHUD();
+            winChallenge();
+            return;
+          }
+
+          if(!firstDavidChallengeShown && beforeCount === 0){
+            firstDavidChallengeShown = true;
+            items.splice(i, 1);
+            updateHUD();
+            showFirstDavidChallenge();
+            return;
+          }
+        }else{
+          popText("+" + item.points, item.x, item.y, "#86efac", 20);
+        }
+      }else{
+        lives -= item.damage;
+        popText("-1", item.x, item.y, "#fb7185", 20);
+        shake = 10;
+      }
+      items.splice(i, 1);
+      updateHUD();
+      if(lives <= 0) endGame();
+      continue;
+    }
+    if(item.y > canvas.height + 50) items.splice(i,1);
+  }
+}
+
+function popText(text,x,y,color,size){
+  floatingTexts.push({text,x,y,color,size,life:42});
+}
+
+function drawPixelHouse(){
+  ctx.fillStyle = "#334155";
+  ctx.fillRect(player.x, player.y + 10, player.w, player.h - 8);
+  ctx.fillStyle = "#64748b";
+  ctx.fillRect(player.x + 8, player.y + 18, 14, 18);
+  ctx.fillStyle = "#38bdf8";
+  ctx.fillRect(player.x + 40, player.y + 18, 18, 12);
+  ctx.fillStyle = "#fb7185";
+  ctx.beginPath();
+  ctx.moveTo(player.x - 6, player.y + 12);
+  ctx.lineTo(player.x + player.w / 2, player.y - 14);
+  ctx.lineTo(player.x + player.w + 6, player.y + 12);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = "#fde68a";
+  ctx.fillRect(player.x + 51, player.y + 2, 7, 11);
+}
+
+function drawBackground(){
+  ctx.fillStyle = "#0f172a";
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+
+  for(let i=0;i<60;i++){
+    const x = (i * 71 + frame * (0.4 + level*.05)) % canvas.width;
+    const y = (i * 37) % canvas.height;
+    ctx.fillStyle = i % 3 === 0 ? "rgba(56,189,248,.22)" : "rgba(148,163,184,.18)";
+    ctx.fillRect(x, y, 18, 2);
+  }
+
+  ctx.fillStyle = "#111827";
+  for(let i=0;i<9;i++){
+    const w = 54 + (i % 3) * 16;
+    const h = 80 + (i % 4) * 26;
+    const x = i * 78 - 18;
+    ctx.fillRect(x, canvas.height - h - 20, w, h);
+    ctx.fillStyle = "rgba(253,230,138,.35)";
+    for(let yy=canvas.height-h; yy<canvas.height-30; yy+=18){
+      for(let xx=x+8; xx<x+w-8; xx+=18){
+        if((xx+yy+i)%4===0) ctx.fillRect(xx,yy,6,6);
+      }
+    }
+    ctx.fillStyle = "#111827";
+  }
+
+  ctx.fillStyle = "#1e293b";
+  ctx.fillRect(0, canvas.height - 20, canvas.width, 20);
+
+  ctx.fillStyle = "rgba(253,230,138,.8)";
+  ctx.font = "bold 13px system-ui";
+  ctx.textAlign = "right";
+  ctx.fillText("David 製作", canvas.width - 14, canvas.height - 26);
+
+  ctx.textAlign = "left";
+  ctx.font = "bold 13px system-ui";
+  ctx.fillStyle = "rgba(253,230,138,.92)";
+  ctx.fillText("DAVID: " + getDavidCount() + "/5", 14, canvas.height - 26);
+  davidTypes.forEach((d, idx) => {
+    ctx.beginPath();
+    ctx.arc(96 + idx * 18, canvas.height - 30, 6, 0, Math.PI * 2);
+    ctx.fillStyle = collectedDavids[d.key] ? d.color : "rgba(100,116,139,.55)";
+    ctx.fill();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = collectedDavids[d.key] ? "rgba(255,255,255,.85)" : "rgba(148,163,184,.45)";
+    ctx.stroke();
+  });
+}
+
+function drawItems(){
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  for(const item of items){
+    if(item.special){
+      ctx.save();
+      ctx.shadowColor = item.davidColor || "#fde68a";
+      ctx.shadowBlur = 20;
+      ctx.fillStyle = item.davidColor || "#fde68a";
+      ctx.font = "bold 15px system-ui";
+      ctx.fillText(item.davidShort, item.x + item.size/2, item.y + item.size/2 - 22);
+      ctx.font = "bold 17px system-ui";
+      ctx.fillText("DAVID", item.x + item.size/2, item.y + item.size/2 - 4);
+      ctx.font = "30px system-ui, Apple Color Emoji, Segoe UI Emoji";
+      ctx.fillText(item.emoji, item.x + item.size/2, item.y + item.size/2 + 20);
+      ctx.restore();
+    }else{
+      ctx.font = "30px system-ui, Apple Color Emoji, Segoe UI Emoji";
+      ctx.fillText(item.emoji, item.x + item.size/2, item.y + item.size/2);
+    }
+
+    if(!item.good){
+      ctx.strokeStyle = "rgba(251,113,133,.7)";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(item.x, item.y, item.size, item.size);
+    }
+  }
+}
+
+function drawFloatingTexts(){
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  for(let i=floatingTexts.length-1;i>=0;i--){
+    const t = floatingTexts[i];
+    ctx.globalAlpha = Math.max(0, t.life/42);
+    ctx.fillStyle = t.color;
+    ctx.font = "bold " + (t.size || 20) + "px system-ui";
+    ctx.fillText(t.text, t.x, t.y);
+    ctx.globalAlpha = 1;
+    t.y -= 1.25;
+    t.life--;
+    if(t.life <= 0) floatingTexts.splice(i,1);
+  }
+}
+
+function drawStormWarning(){
+  if(level >= 3){
+    ctx.fillStyle = "rgba(251,113,133,.10)";
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+  }
+  ctx.fillStyle = "rgba(255,255,255,.7)";
+  ctx.font = "bold 14px system-ui";
+  ctx.textAlign = "left";
+  ctx.fillText("WIND LEVEL " + level, 14, 24);
+}
+
+function draw(){
+  ctx.save();
+  if(shake > 0){
+    ctx.translate((Math.random()-.5)*shake, (Math.random()-.5)*shake);
+    shake--;
+  }
+  drawBackground();
+  drawStormWarning();
+  drawItems();
+  drawPixelHouse();
+  drawFloatingTexts();
+  ctx.restore();
+}
+
+function loop(){
+  if(!running || paused || gameOver) return;
+  update();
+  draw();
+  requestAnimationFrame(loop);
+}
+
+window.addEventListener("keydown", e => {
+  keys[e.key] = true;
+  if(e.key === " "){e.preventDefault();startGame();}
+  if(e.key.toLowerCase() === "p"){pauseGame();}
+});
+window.addEventListener("keyup", e => keys[e.key] = false);
+
+canvas.addEventListener("pointerdown", e => {
+  const rect = canvas.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  touchDir = x < rect.width / 2 ? -1 : 1;
+});
+canvas.addEventListener("pointerup", () => touchDir = 0);
+canvas.addEventListener("pointerleave", () => touchDir = 0);
+
+draw();
+</script>
+</body>
+</html>

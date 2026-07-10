@@ -10,6 +10,8 @@
   --sky:#38bdf8;--green:#86efac;--yellow:#fde68a;--red:#fb7185;--purple:#c084fc
 }
 *{box-sizing:border-box}
+html{touch-action:manipulation}
+body{overscroll-behavior:none;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;min-height:100%;font-family:system-ui,-apple-system,"Noto Sans TC","Segoe UI",sans-serif;background:var(--bg);color:var(--text)}
 body{background:radial-gradient(circle at 10% 10%,rgba(56,189,248,.18),transparent 28%),radial-gradient(circle at 90% 0%,rgba(192,132,252,.12),transparent 24%),linear-gradient(180deg,#0b1220,#111827)}
 .wrap{max-width:980px;margin:0 auto;padding:16px}
@@ -42,12 +44,56 @@ canvas{width:100%;height:auto;display:block;background:#0f172a;border:4px solid 
   box-shadow:0 0 10px currentColor,0 0 18px currentColor;
 }
 .controls{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:12px}
-button{border:0;border-radius:12px;padding:12px 14px;font-weight:900;cursor:pointer;color:#0b1220;background:var(--sky);box-shadow:0 4px 0 #075985}
+button{border:0;border-radius:12px;padding:12px 14px;min-height:48px;font-weight:900;cursor:pointer;color:#0b1220;background:var(--sky);box-shadow:0 4px 0 #075985;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 button:active{transform:translateY(2px);box-shadow:0 2px 0 #075985}
 button.secondary{background:#e2e8f0;box-shadow:0 4px 0 #64748b}
 button.green{background:var(--green);box-shadow:0 4px 0 #15803d}
 button.red{background:var(--red);box-shadow:0 4px 0 #be123c;color:#fff}
-.touchpad{display:none}@media(max-width:860px){.touchpad{display:grid}}
+.touchpad{display:none}
+.mobile-note{display:none}
+@media(max-width:860px){
+  header{padding:12px 10px 6px}
+  h1{font-size:28px}
+  .subtitle{font-size:13px;line-height:1.45}
+  .maker{font-size:13px}
+  .wrap{padding:8px}
+  .grid{grid-template-columns:1fr;gap:10px}
+  .card{padding:10px;border-width:2px;border-radius:14px}
+  .hud{gap:6px;margin-bottom:8px}
+  .stat{padding:6px}
+  .stat b{font-size:18px}
+  canvas{border-width:3px;border-radius:12px;max-height:58vh;object-fit:contain}
+  .controls{gap:8px;margin-top:8px}
+  .controls:not(.touchpad){display:none}
+  .touchpad{
+    display:grid;
+    position:sticky;
+    bottom:8px;
+    z-index:30;
+    background:rgba(15,23,42,.86);
+    border:2px solid #334155;
+    border-radius:18px;
+    padding:8px;
+    backdrop-filter:blur(8px);
+    box-shadow:0 10px 26px rgba(0,0,0,.35);
+  }
+  .touchpad button{
+    min-height:68px;
+    font-size:17px;
+    border-radius:16px;
+  }
+  .mobile-note{
+    display:block;
+    color:var(--muted);
+    text-align:center;
+    font-size:12px;
+    margin-top:8px;
+    line-height:1.45;
+  }
+  .overlay{max-width:92vw;padding:14px}
+  .overlay h2{font-size:24px}
+  .overlay p{font-size:14px}
+}
 h2{margin:0 0 10px;font-size:20px}
 ul{padding-left:20px;margin-top:8px;color:var(--muted);line-height:1.8}
 .badge{display:inline-block;padding:4px 8px;border-radius:999px;background:#0f172a;border:2px solid #334155;color:var(--yellow);font-weight:900;font-size:12px;margin:4px 4px 0 0}
@@ -138,10 +184,11 @@ ul{padding-left:20px;margin-top:8px;color:var(--muted);line-height:1.8}
         <button class="secondary" onclick="moveRight()">Right ➡</button>
       </div>
       <div class="controls touchpad">
-        <button ontouchstart="touchDir=-1" ontouchend="touchDir=0">按住左移</button>
+        <button onpointerdown="touchDir=-1" onpointerup="touchDir=0" onpointercancel="touchDir=0" onpointerleave="touchDir=0">⬅ 按住左移</button>
         <button class="red" onclick="pauseGame()">Pause</button>
-        <button ontouchstart="touchDir=1" ontouchend="touchDir=0">按住右移</button>
+        <button onpointerdown="touchDir=1" onpointerup="touchDir=0" onpointercancel="touchDir=0" onpointerleave="touchDir=0">按住右移 ➡</button>
       </div>
+      <div class="mobile-note">手機操作：按住下方左右鍵移動；也可以按住遊戲畫面左半邊 / 右半邊移動。</div>
     </section>
 
     <aside class="card">
@@ -711,6 +758,7 @@ window.addEventListener("keydown", e => {
 window.addEventListener("keyup", e => keys[e.key] = false);
 
 canvas.addEventListener("pointerdown", e => {
+  e.preventDefault();
   const rect = canvas.getBoundingClientRect();
   const x = e.clientX - rect.left;
   touchDir = x < rect.width / 2 ? -1 : 1;

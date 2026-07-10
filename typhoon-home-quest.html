@@ -105,10 +105,13 @@ button.red{background:var(--red);box-shadow:0 4px 0 #be123c;color:#fff}
   .overlay{
     max-width:92vw;
     width:92vw;
-    max-height:78vh;
-    padding:12px;
+    max-height:72vh;
+    padding:10px;
     border-width:3px;
     border-radius:14px;
+  }
+  .top-overlay{
+    margin-top:0;
   }
   .overlay h2{font-size:21px}
   .overlay p{font-size:13px;line-height:1.35}
@@ -132,7 +135,7 @@ h2{margin:0 0 10px;font-size:20px}
 ul{padding-left:20px;margin-top:8px;color:var(--muted);line-height:1.8}
 .badge{display:inline-block;padding:4px 8px;border-radius:999px;background:#0f172a;border:2px solid #334155;color:var(--yellow);font-weight:900;font-size:12px;margin:4px 4px 0 0}
 .david-badge{color:#fff;background:linear-gradient(90deg,#f59e0b,#ec4899);border-color:#fde68a}
-.message{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:auto;padding:20px}
+.message{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:auto;padding:8px 20px 20px}
 .overlay{
   max-width:520px;
   max-height:88vh;
@@ -145,6 +148,10 @@ ul{padding-left:20px;margin-top:8px;color:var(--muted);line-height:1.8}
   box-shadow:0 0 0 4px rgba(0,0,0,.35);
 }
 .overlay h2{font-size:26px;margin:0 0 6px}.overlay p{color:var(--muted);line-height:1.45;margin:7px 0}
+.top-overlay{
+  align-self:flex-start;
+  margin-top:0;
+}
 .footer{text-align:center;color:var(--muted);padding:20px;font-size:12px}
 .kbd{background:#0f172a;border:2px solid #334155;border-radius:8px;padding:2px 7px;color:#f8fafc;font-weight:900}
 .challenge-card{
@@ -452,7 +459,7 @@ function endGame(){
   }
   updateHUD();
   messageEl.style.display = "flex";
-  messageEl.innerHTML = `<div class="overlay">
+  messageEl.innerHTML = `<div class="overlay top-overlay">
     <h2>Game Over</h2>
     <p>你的分數：<b>${score}</b><br>最高分：<b>${best}</b></p>
     <p>Safety mission failed, but learning mission unlocked.</p>
@@ -492,7 +499,7 @@ function getDavidMiniHTML(){
 function showFirstDavidChallenge(){
   paused = true;
   messageEl.style.display = "flex";
-  messageEl.innerHTML = `<div class="overlay">
+  messageEl.innerHTML = `<div class="overlay top-overlay">
     <h2>🎁 突發挑戰開啟！</h2>
     <p>你收集到第一個 <b style="color:#fde68a">David 彩蛋</b>！</p>
     <p>挑戰內容：收集五種不同顏色的 David：紅、藍、黃、綠、紫。部分顏色非常稀有，完全看運氣。</p>

@@ -51,6 +51,17 @@ button.green{background:var(--green);box-shadow:0 4px 0 #15803d}
 button.red{background:var(--red);box-shadow:0 4px 0 #be123c;color:#fff}
 .touchpad{display:none}
 .mobile-note{display:none}
+.mobile-control-hint{
+  display:none;
+  margin:8px 0 0;
+  padding:10px 12px;
+  border-radius:14px;
+  background:linear-gradient(90deg,rgba(253,230,138,.95),rgba(56,189,248,.95));
+  color:#0f172a;
+  font-weight:900;
+  text-align:center;
+  box-shadow:0 4px 0 rgba(15,23,42,.45);
+}
 @media(max-width:860px){
   header{padding:12px 10px 6px}
   h1{font-size:28px}
@@ -87,20 +98,53 @@ button.red{background:var(--red);box-shadow:0 4px 0 #be123c;color:#fff}
     color:var(--muted);
     text-align:center;
     font-size:12px;
-    margin-top:8px;
-    line-height:1.45;
+    margin-top:6px;
+    line-height:1.35;
   }
-  .overlay{max-width:92vw;padding:14px}
-  .overlay h2{font-size:24px}
-  .overlay p{font-size:14px}
+  .mobile-control-hint{display:block}
+  .overlay{
+    max-width:92vw;
+    width:92vw;
+    max-height:78vh;
+    padding:12px;
+    border-width:3px;
+    border-radius:14px;
+  }
+  .overlay h2{font-size:21px}
+  .overlay p{font-size:13px;line-height:1.35}
+  .overlay button{
+    position:sticky;
+    bottom:0;
+    width:100%;
+    margin-top:8px;
+    min-height:48px;
+    box-shadow:0 4px 0 #15803d;
+  }
+  .safety-tip-box{
+    margin-top:8px;
+    padding:10px;
+  }
+  .safety-tip-box b{margin-bottom:5px}
+  .safety-tip-en{font-size:14px;line-height:1.3;margin-bottom:5px}
+  .safety-tip-zh{font-size:13px;line-height:1.35}
 }
 h2{margin:0 0 10px;font-size:20px}
 ul{padding-left:20px;margin-top:8px;color:var(--muted);line-height:1.8}
 .badge{display:inline-block;padding:4px 8px;border-radius:999px;background:#0f172a;border:2px solid #334155;color:var(--yellow);font-weight:900;font-size:12px;margin:4px 4px 0 0}
 .david-badge{color:#fff;background:linear-gradient(90deg,#f59e0b,#ec4899);border-color:#fde68a}
 .message{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:auto;padding:20px}
-.overlay{max-width:520px;background:rgba(15,23,42,.92);border:4px solid #e2e8f0;border-radius:18px;padding:18px;text-align:center;box-shadow:0 0 0 4px rgba(0,0,0,.35)}
-.overlay h2{font-size:28px;margin-bottom:8px}.overlay p{color:var(--muted);line-height:1.6}
+.overlay{
+  max-width:520px;
+  max-height:88vh;
+  overflow-y:auto;
+  background:rgba(15,23,42,.94);
+  border:4px solid #e2e8f0;
+  border-radius:18px;
+  padding:16px;
+  text-align:center;
+  box-shadow:0 0 0 4px rgba(0,0,0,.35);
+}
+.overlay h2{font-size:26px;margin:0 0 6px}.overlay p{color:var(--muted);line-height:1.45;margin:7px 0}
 .footer{text-align:center;color:var(--muted);padding:20px;font-size:12px}
 .kbd{background:#0f172a;border:2px solid #334155;border-radius:8px;padding:2px 7px;color:#f8fafc;font-weight:900}
 .challenge-card{
@@ -175,6 +219,7 @@ ul{padding-left:20px;margin-top:8px;color:var(--muted);line-height:1.8}
           <p>接住 <b>水、手電筒、書本、電池</b>。<br>避開 <b>漏水、飛散物、閃電</b>。</p>
           <p><b style="color:#fde68a">颱風天 David 彩蛋挑戰</b><br>收集紅、藍、黃、綠、紫五種 David，截圖後周一找 David 兌換小禮物！部分顏色為超稀有掉落。</p>
           <p>鍵盤：<span class="kbd">←</span> <span class="kbd">→</span> 移動，<span class="kbd">Space</span> 開始</p>
+          <p><b style="color:#fde68a">手機：按住遊戲畫面左邊 / 右邊移動</b></p>
           <button class="green" onclick="startGame()">Start Game</button>
         </div>
       </div>
@@ -188,7 +233,8 @@ ul{padding-left:20px;margin-top:8px;color:var(--muted);line-height:1.8}
         <button class="red" onclick="pauseGame()">Pause</button>
         <button onpointerdown="touchDir=1" onpointerup="touchDir=0" onpointercancel="touchDir=0" onpointerleave="touchDir=0">按住右移 ➡</button>
       </div>
-      <div class="mobile-note">手機操作：按住下方左右鍵移動；也可以按住遊戲畫面左半邊 / 右半邊移動。</div>
+      <div class="mobile-control-hint">📱 手機操作：按住遊戲畫面左邊＝左移｜右邊＝右移</div>
+      <div class="mobile-note">也可以使用下方大按鈕控制。Game Over 後可直接按 Play Again。</div>
     </section>
 
     <aside class="card">

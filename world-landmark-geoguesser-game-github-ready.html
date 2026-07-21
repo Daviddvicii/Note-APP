@@ -1,0 +1,505 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>World Landmark GeoGuesser｜Night City Edition</title>
+<style>
+:root{--bg:#06101c;--panel:#101a2b;--panel2:#16233a;--text:#f8fafc;--muted:#cbd5e1;--line:#334155;--cyan:#38bdf8;--green:#86efac;--yellow:#fde68a;--red:#fb7185;--purple:#c084fc;--orange:#fdba74}
+*{box-sizing:border-box}
+html{touch-action:manipulation}
+body{margin:0;min-height:100vh;color:var(--text);font-family:system-ui,-apple-system,"Noto Sans TC","Segoe UI",sans-serif;background:radial-gradient(circle at 12% 5%,rgba(56,189,248,.18),transparent 26%),radial-gradient(circle at 88% 0%,rgba(192,132,252,.14),transparent 25%),linear-gradient(180deg,#06101c,#0f172a 55%,#111827)}
+.wrap{max-width:1140px;margin:0 auto;padding:15px}
+header{text-align:center;padding:18px 10px 10px}
+h1{margin:0;font-size:clamp(30px,6vw,54px);text-shadow:3px 3px 0 #000}
+.subtitle{max-width:900px;margin:8px auto 0;color:var(--muted);line-height:1.6}
+.card{background:rgba(16,26,43,.95);border:3px solid var(--line);border-radius:22px;padding:16px;box-shadow:0 16px 38px rgba(0,0,0,.32)}
+.grid{display:grid;grid-template-columns:1.08fr .92fr;gap:14px;align-items:start}
+@media(max-width:920px){.grid{grid-template-columns:1fr}.wrap{padding:9px}}
+h2{margin:0 0 10px;font-size:22px}
+label{display:block;margin:10px 0 6px;font-weight:900;color:#e2e8f0}
+input{width:100%;border:2px solid #475569;border-radius:14px;padding:13px;background:#0f172a;color:#fff;font:inherit;outline:none}
+input:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(56,189,248,.18)}
+button{border:0;border-radius:14px;min-height:50px;padding:12px 14px;font-weight:1000;color:#07111f;background:var(--cyan);box-shadow:0 4px 0 #075985;cursor:pointer;touch-action:manipulation}
+button:active:not(:disabled){transform:translateY(2px);box-shadow:0 2px 0 #075985}
+button:disabled{opacity:.4;filter:grayscale(.6);cursor:not-allowed}
+button.green{background:var(--green);box-shadow:0 4px 0 #15803d}
+button.yellow{background:var(--yellow);box-shadow:0 4px 0 #a16207}
+button.red{background:var(--red);box-shadow:0 4px 0 #be123c;color:#fff}
+button.purple{background:var(--purple);box-shadow:0 4px 0 #7e22ce;color:#fff}
+button.secondary{background:#e2e8f0;box-shadow:0 4px 0 #64748b}
+.btn-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+@media(max-width:560px){.btn-row{grid-template-columns:1fr}}
+.note{color:var(--muted);font-size:14px;line-height:1.6}
+.role-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:10px}
+@media(max-width:900px){.role-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:470px){.role-grid{grid-template-columns:1fr}}
+.role-card{background:#0f172a;border:2px solid #334155;border-radius:16px;padding:10px;cursor:pointer;transition:.15s}
+.role-card:hover,.role-card.active{border-color:var(--yellow);background:#17233a;box-shadow:0 0 18px rgba(253,230,138,.18)}
+.role-icon{font-size:27px}
+.role-name{font-weight:1000;color:#fff;margin-top:3px}
+.role-zh{font-size:12px;color:#bfdbfe}
+.role-passive{font-size:11px;color:var(--muted);line-height:1.4;margin-top:5px}
+.rules{display:grid;gap:8px;margin-top:12px}
+.rule{background:#0f172a;border:2px solid #334155;border-radius:15px;padding:10px 12px;color:#dbeafe;line-height:1.5}
+.game-top{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:12px}
+@media(max-width:760px){.game-top{grid-template-columns:repeat(2,1fr)}}
+.stat{background:#0f172a;border:2px solid #334155;border-radius:16px;padding:9px;text-align:center}
+.stat small{display:block;color:var(--muted);font-size:11px;margin-bottom:3px}
+.stat b{font-size:clamp(19px,3vw,29px);color:var(--yellow);line-height:1}
+.progress-wrap{height:16px;background:#0f172a;border:2px solid #334155;border-radius:999px;overflow:hidden;margin-bottom:12px}
+.progress-bar{width:100%;height:100%;background:linear-gradient(90deg,var(--green),var(--cyan),var(--purple));transition:width .2s linear}
+.scene{min-height:240px;display:flex;flex-direction:column;justify-content:center;text-align:center;border:3px solid #475569;border-radius:22px;padding:18px;background:radial-gradient(circle at 16% 15%,rgba(56,189,248,.14),transparent 27%),radial-gradient(circle at 85% 0%,rgba(253,230,138,.10),transparent 24%),linear-gradient(135deg,#0f172a,#17233a)}
+.scene-tag{align-self:center;padding:6px 12px;border-radius:999px;background:rgba(253,230,138,.13);border:2px solid rgba(253,230,138,.4);color:var(--yellow);font-weight:1000;margin-bottom:10px}
+.clue{font-size:clamp(21px,3.1vw,32px);font-weight:1000;line-height:1.42;color:#fff;text-shadow:2px 2px 0 #000}
+.meta{margin-top:10px;color:#bfdbfe;line-height:1.55}
+.options{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+@media(max-width:640px){.options{grid-template-columns:1fr}}
+.option-btn{min-height:82px;text-align:left;color:#f8fafc;background:#0f172a;border:2px solid #475569;box-shadow:0 4px 0 #1e293b;display:flex;align-items:center;gap:10px}
+.option-btn:hover:not(:disabled){border-color:var(--cyan);background:#13213a}
+.option-letter{flex:0 0 auto;width:35px;height:35px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;background:var(--yellow);color:#0f172a;font-weight:1000}
+.option-text{font-size:17px;font-weight:900;line-height:1.3}
+.option-en{display:block;margin-top:4px;color:#bfdbfe;font-size:13px;font-weight:800}
+.option-btn.correct{background:rgba(134,239,172,.17);border-color:var(--green)}
+.option-btn.wrong{background:rgba(251,113,133,.16);border-color:var(--red)}
+.option-btn.eliminated{opacity:.18;pointer-events:none;text-decoration:line-through}
+.skills{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+@media(max-width:640px){.skills{grid-template-columns:1fr}}
+.skill{min-height:68px;font-size:14px}
+.skill-title{display:block;font-size:15px}
+.skill-desc{display:block;margin-top:3px;font-size:11px;font-weight:700}
+.feedback{margin-top:12px;min-height:62px;background:#0f172a;border:2px solid #334155;border-radius:16px;padding:12px;color:#dbeafe;line-height:1.55}
+.feedback b{color:var(--yellow)}
+.speed-line{color:#86efac;font-weight:1000}
+.critical-note{color:#fecdd3;font-weight:1000}
+.diagnosis-mark{
+  display:block;
+  margin-top:5px;
+  color:#86efac;
+  font-size:11px;
+  font-weight:1000;
+}
+
+.rank-list{display:grid;gap:8px;margin-top:10px}
+.rank-item{background:#0f172a;border:2px solid #334155;border-radius:16px;padding:10px 12px;display:grid;grid-template-columns:42px 1fr auto;gap:10px;align-items:center}
+.rank-no{width:34px;height:34px;border-radius:999px;background:var(--yellow);color:#0f172a;font-weight:1000;display:flex;align-items:center;justify-content:center}
+.rank-team{font-weight:1000;color:#fff}
+.rank-meta{color:var(--muted);font-size:12px;margin-top:2px}
+.rank-score{color:var(--green);font-size:20px;font-weight:1000;text-align:right}
+.result-box{text-align:center;padding:18px;border-radius:20px;border:3px solid rgba(253,230,138,.5);background:rgba(253,230,138,.10)}
+.result-score{font-size:clamp(36px,8vw,70px);color:var(--yellow);font-weight:1000;text-shadow:3px 3px 0 #000}
+.hidden{display:none!important}
+.footer{text-align:center;color:var(--muted);font-size:12px;padding:20px}
+</style>
+</head>
+<body>
+<header>
+  <h1>🌍 World Landmark GeoGuesser</h1>
+  <p class="subtitle">Night City Career Edition｜100 題全球著名地標題庫，每局隨機 10 題。第 6 題起進入同類型地標混淆模式。</p>
+</header>
+
+<main class="wrap">
+<section class="card" id="homeScreen">
+  <div class="grid">
+    <div>
+      <h2>🎒 建立隊伍</h2>
+      <label for="teamName">隊伍名稱 Team Name</label>
+      <input id="teamName" maxlength="24" placeholder="例如：World Runners / 七年一班 / 火鍋隊">
+
+      <label>選擇職業 Choose Your Career</label>
+      <div class="role-grid" id="roleGrid"></div>
+
+      <div class="btn-row">
+        <button class="green" onclick="startGame()">Start Mission</button>
+        <button class="secondary" onclick="renderRanking()">Refresh Ranking</button>
+      </div>
+
+      <div class="rules">
+        <div class="rule">⏱️ <b>限時：</b>整局 3 分鐘。</div>
+        <div class="rule">🔥 <b>第 6～10 題：</b>ABCD 會全部改成同性質地標，例如四座橋、四座城堡或四個瀑布。</div>
+        <div class="rule">⚡ <b>速度計分：</b>答題越快，單題速度獎勵越高。</div>
+        <div class="rule">🧠 <b>職業技能：</b>五種職業都有不同的技能名稱、提示內容與被動效果。</div>
+        <div class="rule">💉 <b>Medtech 危急條件：</b>剩餘時間 ≤ 60 秒，或進入第 6～10 題。達成時三個技能會自動強化。</div>
+        <div class="rule">🔤 <b>英文練習：</b>每個選項都會顯示中文與英文地標名稱。</div>
+      </div>
+    </div>
+
+    <div>
+      <h2>🏆 累積排行榜</h2>
+      <div class="rank-list" id="homeRanking"></div>
+      <div class="btn-row">
+        <button class="red" onclick="clearRanking()">Clear Ranking</button>
+        <button class="yellow" onclick="demoName()">Demo Team</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="card hidden" id="gameScreen">
+  <div class="game-top">
+    <div class="stat"><small>Team</small><b id="teamDisplay">—</b></div>
+    <div class="stat"><small>Career</small><b id="roleDisplay">—</b></div>
+    <div class="stat"><small>Time</small><b id="timeDisplay">3:00</b></div>
+    <div class="stat"><small>Question</small><b id="questionDisplay">1/10</b></div>
+    <div class="stat"><small>Score</small><b id="scoreDisplay">0</b></div>
+  </div>
+
+  <div class="progress-wrap"><div class="progress-bar" id="timeBar"></div></div>
+
+  <div class="scene">
+    <div class="scene-tag" id="sceneTag">World Landmark</div>
+    <div class="clue" id="clueText">Clue appears here.</div>
+    <div class="meta" id="hintText">選出最可能的地標。</div>
+  </div>
+
+  <div class="options" id="options"></div>
+
+  <div class="skills">
+    <button class="skill yellow" id="skillEliminate" onclick="useEliminate()"></button>
+    <button class="skill purple" id="skillHint" onclick="useHint()"></button>
+    <button class="skill green" id="skillProb" onclick="useProbability()"></button>
+  </div>
+
+  <div class="feedback" id="feedback">選一個答案，或先使用職業技能。</div>
+</section>
+
+<section class="card hidden" id="resultScreen">
+  <div class="result-box">
+    <h2>🎉 Mission Complete</h2>
+    <p class="note">隊伍</p>
+    <h2 id="resultTeam">—</h2>
+    <p class="note">本局分數</p>
+    <div class="result-score" id="resultScore">0</div>
+    <p class="note" id="resultDetail"></p>
+    <div class="btn-row">
+      <button class="green" onclick="backHome()">Back Home</button>
+      <button class="yellow" onclick="restartSameTeam()">Play Again</button>
+    </div>
+  </div>
+  <h2 style="margin-top:18px">🏆 累積排行榜</h2>
+  <div class="rank-list" id="resultRanking"></div>
+</section>
+</main>
+
+<div class="footer">World Landmark GeoGuesser｜100-question database｜Night City career system｜Local leaderboard</div>
+
+<script>
+const questionBank = [{"name": "艾菲爾鐵塔", "en": "Eiffel Tower", "country": "法國 France", "continent": "Europe", "category": "塔樓與摩天大樓", "clue": "這座十九世紀鐵塔原本是世界博覽會入口，後來成為浪漫城市最具代表性的地標。", "hint": "位於巴黎，夜間會閃燈。"}, {"name": "大笨鐘", "en": "Big Ben", "country": "英國 United Kingdom", "continent": "Europe", "category": "塔樓與摩天大樓", "clue": "這個名稱常用來指倫敦國會大廈旁的鐘樓，但原本其實是大鐘的名字。", "hint": "位於泰晤士河旁。"}, {"name": "比薩斜塔", "en": "Leaning Tower of Pisa", "country": "義大利 Italy", "continent": "Europe", "category": "塔樓與摩天大樓", "clue": "這座鐘塔因地基問題而傾斜，遊客常拍出用手扶住它的照片。", "hint": "位於托斯卡尼的比薩。"}, {"name": "杜拜哈里發塔", "en": "Burj Khalifa", "country": "阿拉伯聯合大公國 United Arab Emirates", "continent": "Asia", "category": "塔樓與摩天大樓", "clue": "這棟超高摩天大樓外型向上逐層收窄，目前是世界最高建築之一。", "hint": "位於杜拜。"}, {"name": "東京晴空塔", "en": "Tokyo Skytree", "country": "日本 Japan", "continent": "Asia", "category": "塔樓與摩天大樓", "clue": "這座超高電波塔設有觀景台，是現代東京天際線的重要標誌。", "hint": "英文名稱中有 Skytree。"}, {"name": "台北 101", "en": "Taipei 101", "country": "台灣 Taiwan", "continent": "Asia", "category": "塔樓與摩天大樓", "clue": "這座高樓外型像一節一節的竹子，跨年煙火十分著名。", "hint": "位於台北信義區。"}, {"name": "雙子星塔", "en": "Petronas Twin Towers", "country": "馬來西亞 Malaysia", "continent": "Asia", "category": "塔樓與摩天大樓", "clue": "兩座相同摩天大樓由空中天橋連接，曾是世界最高建築。", "hint": "位於吉隆坡。"}, {"name": "帝國大廈", "en": "Empire State Building", "country": "美國 United States", "continent": "North America", "category": "塔樓與摩天大樓", "clue": "這座裝飾藝術風格摩天大樓曾長期保持世界最高建築紀錄。", "hint": "位於紐約曼哈頓。"}, {"name": "加拿大國家電視塔", "en": "CN Tower", "country": "加拿大 Canada", "continent": "North America", "category": "塔樓與摩天大樓", "clue": "這座高塔擁有觀景台和玻璃地板，是加拿大最大城市的天際線象徵。", "hint": "位於多倫多。"}, {"name": "太空針塔", "en": "Space Needle", "country": "美國 United States", "continent": "North America", "category": "塔樓與摩天大樓", "clue": "這座未來感觀景塔頂端像飛碟，是太平洋西北城市的代表。", "hint": "位於西雅圖。"}, {"name": "金門大橋", "en": "Golden Gate Bridge", "country": "美國 United States", "continent": "North America", "category": "橋梁", "clue": "這座橘紅色懸索橋經常出現在霧中，是美國西岸城市的重要象徵。", "hint": "位於舊金山。"}, {"name": "倫敦塔橋", "en": "Tower Bridge", "country": "英國 United Kingdom", "continent": "Europe", "category": "橋梁", "clue": "這座跨河大橋有兩座塔，橋面可以升起讓大型船隻通過。", "hint": "它常被誤認為 London Bridge。"}, {"name": "雪梨港灣大橋", "en": "Sydney Harbour Bridge", "country": "澳洲 Australia", "continent": "Oceania", "category": "橋梁", "clue": "大型鋼拱橋橫跨海港，遊客甚至可以攀登橋拱。", "hint": "綽號常被稱為衣架。"}, {"name": "布魯克林大橋", "en": "Brooklyn Bridge", "country": "美國 United States", "continent": "North America", "category": "橋梁", "clue": "這座十九世紀吊橋連接曼哈頓與另一個行政區，石造橋塔非常醒目。", "hint": "位於紐約。"}, {"name": "查理大橋", "en": "Charles Bridge", "country": "捷克 Czech Republic", "continent": "Europe", "category": "橋梁", "clue": "這座歷史悠久的石橋兩側排列許多宗教雕像。", "hint": "位於布拉格。"}, {"name": "里阿爾托橋", "en": "Rialto Bridge", "country": "義大利 Italy", "continent": "Europe", "category": "橋梁", "clue": "這座拱橋跨越大運河，橋上還有商店。", "hint": "位於威尼斯。"}, {"name": "明石海峽大橋", "en": "Akashi Kaikyo Bridge", "country": "日本 Japan", "continent": "Asia", "category": "橋梁", "clue": "這座超長懸索橋跨越海峽，連接本州與淡路島。", "hint": "位於日本關西地區。"}, {"name": "米約高架橋", "en": "Millau Viaduct", "country": "法國 France", "continent": "Europe", "category": "橋梁", "clue": "這座高架橋跨越深谷，橋塔高度令人震撼。", "hint": "位於法國南部。"}, {"name": "塞切尼鏈橋", "en": "Szechenyi Chain Bridge", "country": "匈牙利 Hungary", "continent": "Europe", "category": "橋梁", "clue": "這座鏈橋跨越多瑙河，連接城市兩側。", "hint": "位於布達佩斯。"}, {"name": "老橋", "en": "Ponte Vecchio", "country": "義大利 Italy", "continent": "Europe", "category": "橋梁", "clue": "這座中世紀橋梁兩側布滿商店，珠寶店尤其有名。", "hint": "位於佛羅倫斯。"}, {"name": "新天鵝堡", "en": "Neuschwanstein Castle", "country": "德國 Germany", "continent": "Europe", "category": "宮殿與城堡", "clue": "這座十九世紀山中城堡外型夢幻，被認為啟發了童話城堡設計。", "hint": "位於巴伐利亞。"}, {"name": "紫禁城", "en": "Forbidden City", "country": "中國 China", "continent": "Asia", "category": "宮殿與城堡", "clue": "大型宮殿建築群曾是明清皇帝居住與處理政務的地方。", "hint": "位於北京中軸線。"}, {"name": "阿爾罕布拉宮", "en": "Alhambra", "country": "西班牙 Spain", "continent": "Europe", "category": "宮殿與城堡", "clue": "這座宮殿與堡壘建築群以伊斯蘭藝術、庭院和精緻雕刻聞名。", "hint": "位於格拉納達。"}, {"name": "白金漢宮", "en": "Buckingham Palace", "country": "英國 United Kingdom", "continent": "Europe", "category": "宮殿與城堡", "clue": "這座宮殿是英國君主在倫敦的主要官邸，衛兵交接很有名。", "hint": "位於倫敦。"}, {"name": "凡爾賽宮", "en": "Palace of Versailles", "country": "法國 France", "continent": "Europe", "category": "宮殿與城堡", "clue": "這座宮殿以鏡廳、廣大花園和法國王室歷史聞名。", "hint": "位於巴黎郊外。"}, {"name": "布拉格城堡", "en": "Prague Castle", "country": "捷克 Czech Republic", "continent": "Europe", "category": "宮殿與城堡", "clue": "這座大型城堡建築群俯瞰河流與舊城，現今仍具政治功能。", "hint": "位於布拉格。"}, {"name": "姬路城", "en": "Himeji Castle", "country": "日本 Japan", "continent": "Asia", "category": "宮殿與城堡", "clue": "白色外牆與多層屋頂使它有白鷺城的別名。", "hint": "位於兵庫縣。"}, {"name": "溫莎城堡", "en": "Windsor Castle", "country": "英國 United Kingdom", "continent": "Europe", "category": "宮殿與城堡", "clue": "這座仍在使用的王室城堡歷史悠久，位於倫敦西方。", "hint": "與英國王室密切相關。"}, {"name": "布達拉宮", "en": "Potala Palace", "country": "中國 China", "continent": "Asia", "category": "宮殿與城堡", "clue": "這座高原宮殿建築依山而建，紅白相間。", "hint": "位於拉薩。"}, {"name": "佩納宮", "en": "Pena Palace", "country": "葡萄牙 Portugal", "continent": "Europe", "category": "宮殿與城堡", "clue": "這座色彩鮮豔的浪漫主義宮殿位於山頂，融合多種建築風格。", "hint": "位於辛特拉。"}, {"name": "聖家堂", "en": "Sagrada Familia", "country": "西班牙 Spain", "continent": "Europe", "category": "宗教建築", "clue": "這座教堂由高第設計，施工超過百年，外觀結合自然與奇幻造型。", "hint": "位於巴塞隆納。"}, {"name": "聖瓦西里主教座堂", "en": "Saint Basil's Cathedral", "country": "俄羅斯 Russia", "continent": "Europe", "category": "宗教建築", "clue": "這座教堂擁有色彩鮮豔、形狀像洋蔥的圓頂。", "hint": "位於莫斯科紅場。"}, {"name": "帕德嫩神殿", "en": "Parthenon", "country": "希臘 Greece", "continent": "Europe", "category": "宗教建築", "clue": "這座古希臘神殿位於高地上，主要獻給雅典娜女神。", "hint": "位於雅典衛城。"}, {"name": "萬神殿", "en": "Pantheon", "country": "義大利 Italy", "continent": "Europe", "category": "宗教建築", "clue": "這座古羅馬建築擁有巨大圓頂，頂部中央有一個圓形開口。", "hint": "英文名稱不是 Parthenon。"}, {"name": "泰姬瑪哈陵", "en": "Taj Mahal", "country": "印度 India", "continent": "Asia", "category": "宗教建築", "clue": "白色大理石陵墓由皇帝為紀念妻子而建，常被視為愛情象徵。", "hint": "位於阿格拉。"}, {"name": "吳哥窟", "en": "Angkor Wat", "country": "柬埔寨 Cambodia", "continent": "Asia", "category": "宗教建築", "clue": "巨大的寺廟建築群出現在國旗上，最初與印度教有關。", "hint": "位於暹粒附近。"}, {"name": "婆羅浮屠", "en": "Borobudur", "country": "印尼 Indonesia", "continent": "Asia", "category": "宗教建築", "clue": "大型佛教遺址由多層平台與大量鐘形佛塔構成。", "hint": "位於爪哇島。"}, {"name": "金閣寺", "en": "Kinkaku-ji", "country": "日本 Japan", "continent": "Asia", "category": "宗教建築", "clue": "這座寺院上層覆有金箔，倒映在池水中十分醒目。", "hint": "位於京都。"}, {"name": "聖索菲亞大教堂", "en": "Hagia Sophia", "country": "土耳其 Turkey", "continent": "Europe / Asia", "category": "宗教建築", "clue": "這座建築曾先後作為教堂、清真寺與博物館使用。", "hint": "位於伊斯坦堡。"}, {"name": "聖伯多祿大殿", "en": "St. Peter's Basilica", "country": "梵蒂岡 Vatican City", "continent": "Europe", "category": "宗教建築", "clue": "這座巨大教堂位於世界最小國家，是天主教重要中心。", "hint": "位於梵蒂岡。"}, {"name": "羅馬競技場", "en": "Colosseum", "country": "義大利 Italy", "continent": "Europe", "category": "古代遺跡", "clue": "古代大型圓形競技場，曾舉行角鬥士比賽與公共表演。", "hint": "位於羅馬。"}, {"name": "巨石陣", "en": "Stonehenge", "country": "英國 United Kingdom", "continent": "Europe", "category": "古代遺跡", "clue": "一圈巨大的史前石柱矗立在平原上，建造目的至今仍有爭議。", "hint": "位於英格蘭南部。"}, {"name": "奇琴伊察", "en": "Chichen Itza", "country": "墨西哥 Mexico", "continent": "North America", "category": "古代遺跡", "clue": "這座古代城市擁有階梯金字塔，與馬雅文明密切相關。", "hint": "最著名建築是 El Castillo。"}, {"name": "馬丘比丘", "en": "Machu Picchu", "country": "祕魯 Peru", "continent": "South America", "category": "古代遺跡", "clue": "這座高山古城由印加文明建造，周圍被安地斯山脈包圍。", "hint": "位於祕魯高山。"}, {"name": "佩特拉古城", "en": "Petra", "country": "約旦 Jordan", "continent": "Asia", "category": "古代遺跡", "clue": "這座古城以直接雕刻在玫瑰色岩壁上的建築聞名。", "hint": "電影常出現寶庫建築。"}, {"name": "龐貝古城", "en": "Pompeii", "country": "義大利 Italy", "continent": "Europe", "category": "古代遺跡", "clue": "這座古羅馬城市因火山爆發被火山灰掩埋，保存許多生活痕跡。", "hint": "靠近維蘇威火山。"}, {"name": "特奧蒂瓦坎", "en": "Teotihuacan", "country": "墨西哥 Mexico", "continent": "North America", "category": "古代遺跡", "clue": "這座古城擁有太陽金字塔與月亮金字塔。", "hint": "位於墨西哥城附近。"}, {"name": "兵馬俑", "en": "Terracotta Army", "country": "中國 China", "continent": "Asia", "category": "古代遺跡", "clue": "成千上萬陶製士兵、戰馬與戰車守護古代皇帝陵墓。", "hint": "位於西安附近。"}, {"name": "吉薩金字塔", "en": "Pyramids of Giza", "country": "埃及 Egypt", "continent": "Africa", "category": "古代遺跡", "clue": "古代法老陵墓群，由巨大石塊建成，是古代世界七大奇蹟之一。", "hint": "附近有獅身人面像。"}, {"name": "阿布辛貝神殿", "en": "Abu Simbel Temples", "country": "埃及 Egypt", "continent": "Africa", "category": "古代遺跡", "clue": "岩壁神殿入口有四座巨大坐像，後來因水壩工程被整體遷移。", "hint": "與拉美西斯二世有關。"}, {"name": "自由女神像", "en": "Statue of Liberty", "country": "美國 United States", "continent": "North America", "category": "紀念碑與雕像", "clue": "一座手持火炬的巨大女性雕像，曾迎接許多抵達新世界的移民。", "hint": "位於紐約港。"}, {"name": "救世基督像", "en": "Christ the Redeemer", "country": "巴西 Brazil", "continent": "South America", "category": "紀念碑與雕像", "clue": "一座張開雙臂的巨大雕像，從山上俯瞰海灣與城市。", "hint": "位於里約熱內盧。"}, {"name": "拉什莫爾山", "en": "Mount Rushmore", "country": "美國 United States", "continent": "North America", "category": "紀念碑與雕像", "clue": "山壁上雕刻了四位美國總統的巨大頭像。", "hint": "位於南達科他州。"}, {"name": "凱旋門", "en": "Arc de Triomphe", "country": "法國 France", "continent": "Europe", "category": "紀念碑與雕像", "clue": "這座巨大拱門位於多條大道交會處，用來紀念軍事勝利。", "hint": "位於巴黎香榭麗舍大道附近。"}, {"name": "布蘭登堡門", "en": "Brandenburg Gate", "country": "德國 Germany", "continent": "Europe", "category": "紀念碑與雕像", "clue": "這座新古典主義城門曾位於分裂城市附近，如今象徵統一。", "hint": "位於柏林。"}, {"name": "印度門", "en": "India Gate", "country": "印度 India", "continent": "Asia", "category": "紀念碑與雕像", "clue": "這座大型紀念拱門紀念戰爭中陣亡的士兵。", "hint": "位於新德里。"}, {"name": "印度之門", "en": "Gateway of India", "country": "印度 India", "continent": "Asia", "category": "紀念碑與雕像", "clue": "這座面向海港的拱門紀念英國王室訪問。", "hint": "位於孟買。"}, {"name": "魚尾獅", "en": "Merlion", "country": "新加坡 Singapore", "continent": "Asia", "category": "紀念碑與雕像", "clue": "這座雕像擁有獅子頭和魚身，從口中噴出水柱。", "hint": "位於濱海灣附近。"}, {"name": "祖國母親在召喚", "en": "The Motherland Calls", "country": "俄羅斯 Russia", "continent": "Europe", "category": "紀念碑與雕像", "clue": "這座巨大女性雕像手持長劍，紀念重要戰役。", "hint": "位於伏爾加格勒。"}, {"name": "獨立天使", "en": "Angel of Independence", "country": "墨西哥 Mexico", "continent": "North America", "category": "紀念碑與雕像", "clue": "金色天使站在高柱頂端，是首都重要紀念碑。", "hint": "位於墨西哥城。"}, {"name": "羅浮宮", "en": "Louvre Museum", "country": "法國 France", "continent": "Europe", "category": "博物館與現代建築", "clue": "這裡原為宮殿，現為世界最著名的博物館之一，入口前有玻璃金字塔。", "hint": "《蒙娜麗莎》收藏於此。"}, {"name": "雪梨歌劇院", "en": "Sydney Opera House", "country": "澳洲 Australia", "continent": "Oceania", "category": "博物館與現代建築", "clue": "屋頂外型像白色船帆或貝殼，位於著名海港旁。", "hint": "位於澳洲雪梨。"}, {"name": "濱海灣金沙", "en": "Marina Bay Sands", "country": "新加坡 Singapore", "continent": "Asia", "category": "博物館與現代建築", "clue": "三棟高樓頂端由一座像船的空中平台連接。", "hint": "著名無邊際泳池位於高處。"}, {"name": "古根漢美術館畢爾包分館", "en": "Guggenheim Museum Bilbao", "country": "西班牙 Spain", "continent": "Europe", "category": "博物館與現代建築", "clue": "這座現代美術館以彎曲金屬外牆聞名。", "hint": "位於西班牙北部。"}, {"name": "帆船飯店", "en": "Burj Al Arab", "country": "阿拉伯聯合大公國 United Arab Emirates", "continent": "Asia", "category": "博物館與現代建築", "clue": "這座豪華飯店外型像巨大帆船，建於人工島上。", "hint": "位於杜拜。"}, {"name": "原子球塔", "en": "Atomium", "country": "比利時 Belgium", "continent": "Europe", "category": "博物館與現代建築", "clue": "這座建築由多個巨大金屬球體和管道構成，像放大的原子模型。", "hint": "位於布魯塞爾。"}, {"name": "蓮花寺", "en": "Lotus Temple", "country": "印度 India", "continent": "Asia", "category": "博物館與現代建築", "clue": "這座白色建築外型像盛開的蓮花，歡迎不同信仰者進入。", "hint": "位於新德里。"}, {"name": "未來博物館", "en": "Museum of the Future", "country": "阿拉伯聯合大公國 United Arab Emirates", "continent": "Asia", "category": "博物館與現代建築", "clue": "這座橢圓形建築中央鏤空，外牆布滿阿拉伯書法。", "hint": "位於杜拜。"}, {"name": "跳舞的房子", "en": "Dancing House", "country": "捷克 Czech Republic", "continent": "Europe", "category": "博物館與現代建築", "clue": "兩棟彎曲建築看起來像一對舞者。", "hint": "位於布拉格。"}, {"name": "伊甸園計畫", "en": "Eden Project", "country": "英國 United Kingdom", "continent": "Europe", "category": "博物館與現代建築", "clue": "大型透明穹頂內重現不同氣候帶的植物生態。", "hint": "位於英格蘭康瓦爾。"}, {"name": "大峽谷", "en": "Grand Canyon", "country": "美國 United States", "continent": "North America", "category": "山岳與岩石景觀", "clue": "河流長期侵蝕形成深邃峽谷，岩層展現不同年代與顏色。", "hint": "位於亞利桑那州。"}, {"name": "富士山", "en": "Mount Fuji", "country": "日本 Japan", "continent": "Asia", "category": "山岳與岩石景觀", "clue": "外型對稱的火山是國家代表性景觀，也是藝術作品常見主題。", "hint": "日本最高峰。"}, {"name": "乞力馬扎羅山", "en": "Mount Kilimanjaro", "country": "坦尚尼亞 Tanzania", "continent": "Africa", "category": "山岳與岩石景觀", "clue": "非洲最高峰，靠近赤道卻曾以山頂冰雪聞名。", "hint": "它是一座休眠火山。"}, {"name": "桌山", "en": "Table Mountain", "country": "南非 South Africa", "continent": "Africa", "category": "山岳與岩石景觀", "clue": "這座山頂平坦如桌面，俯瞰海岸城市與大西洋。", "hint": "位於開普敦。"}, {"name": "烏魯魯", "en": "Uluru", "country": "澳洲 Australia", "continent": "Oceania", "category": "山岳與岩石景觀", "clue": "澳洲內陸巨大的紅色砂岩岩體，對原住民族具有重要文化意義。", "hint": "也曾被稱為 Ayers Rock。"}, {"name": "聖母峰", "en": "Mount Everest", "country": "尼泊爾 / 中國 Nepal / China", "continent": "Asia", "category": "山岳與岩石景觀", "clue": "這座山峰是地球海拔最高點，吸引世界各地登山者。", "hint": "位於喜馬拉雅山脈。"}, {"name": "馬特洪峰", "en": "Matterhorn", "country": "瑞士 / 義大利 Switzerland / Italy", "continent": "Europe", "category": "山岳與岩石景觀", "clue": "這座金字塔形山峰是阿爾卑斯山最具辨識度的山峰之一。", "hint": "靠近策馬特。"}, {"name": "張家界石柱群", "en": "Zhangjiajie National Forest Park", "country": "中國 China", "continent": "Asia", "category": "山岳與岩石景觀", "clue": "高聳砂岩石柱從森林中拔地而起，景觀非常奇幻。", "hint": "位於湖南。"}, {"name": "百內國家公園", "en": "Torres del Paine", "country": "智利 Chile", "continent": "South America", "category": "山岳與岩石景觀", "clue": "尖銳花崗岩山峰、冰川與湖泊構成巴塔哥尼亞代表景觀。", "hint": "位於智利南部。"}, {"name": "羅賴馬山", "en": "Mount Roraima", "country": "委內瑞拉 / 蓋亞那 / 巴西", "continent": "South America", "category": "山岳與岩石景觀", "clue": "這座桌狀山頂部平坦、四周懸崖陡峭。", "hint": "位於南美洲北部。"}, {"name": "米佛峽灣", "en": "Milford Sound", "country": "紐西蘭 New Zealand", "continent": "Oceania", "category": "瀑布、海岸與水域", "clue": "陡峭山壁、瀑布與深水峽灣構成壯麗自然景觀。", "hint": "位於紐西蘭南島。"}, {"name": "尼加拉瀑布", "en": "Niagara Falls", "country": "加拿大 / 美國 Canada / United States", "continent": "North America", "category": "瀑布、海岸與水域", "clue": "這組大型瀑布位於兩國邊界，以巨大水量聞名。", "hint": "靠近五大湖區。"}, {"name": "維多利亞瀑布", "en": "Victoria Falls", "country": "尚比亞 / 辛巴威 Zambia / Zimbabwe", "continent": "Africa", "category": "瀑布、海岸與水域", "clue": "這座寬廣瀑布在水量豐沛時產生巨大水霧。", "hint": "位於尚比西河。"}, {"name": "伊瓜蘇瀑布", "en": "Iguazu Falls", "country": "阿根廷 / 巴西 Argentina / Brazil", "continent": "South America", "category": "瀑布、海岸與水域", "clue": "由數百個大小瀑布組成，其中惡魔咽喉最震撼。", "hint": "位於南美兩國邊界。"}, {"name": "大堡礁", "en": "Great Barrier Reef", "country": "澳洲 Australia", "continent": "Oceania", "category": "瀑布、海岸與水域", "clue": "世界最大的珊瑚礁系統之一，從太空可觀察到其廣大範圍。", "hint": "位於澳洲東北海岸。"}, {"name": "下龍灣", "en": "Ha Long Bay", "country": "越南 Vietnam", "continent": "Asia", "category": "瀑布、海岸與水域", "clue": "海面上散布許多石灰岩島嶼與奇峰。", "hint": "位於越南北部。"}, {"name": "烏尤尼鹽湖", "en": "Salar de Uyuni", "country": "玻利維亞 Bolivia", "continent": "South America", "category": "瀑布、海岸與水域", "clue": "雨季時薄薄積水會形成如天空之鏡般的倒影。", "hint": "世界最大的鹽沼之一。"}, {"name": "死海", "en": "Dead Sea", "country": "約旦 / 以色列 Jordan / Israel", "continent": "Asia", "category": "瀑布、海岸與水域", "clue": "這片高鹽度水域讓人容易漂浮，岸邊低於海平面。", "hint": "名稱中有 Sea，但其實是內陸湖。"}, {"name": "棉堡", "en": "Pamukkale", "country": "土耳其 Turkey", "continent": "Asia", "category": "瀑布、海岸與水域", "clue": "白色石灰華階梯上流動著溫泉水，看起來像雪地。", "hint": "名稱有棉花城堡之意。"}, {"name": "佩里托莫雷諾冰川", "en": "Perito Moreno Glacier", "country": "阿根廷 Argentina", "continent": "South America", "category": "瀑布、海岸與水域", "clue": "這座巨大冰川可從步道近距離觀察，有時會發生冰塊崩落。", "hint": "位於巴塔哥尼亞。"}, {"name": "時代廣場", "en": "Times Square", "country": "美國 United States", "continent": "North America", "category": "城市廣場與街區", "clue": "巨型電子看板、百老匯劇院與跨年倒數使這個路口非常著名。", "hint": "位於紐約。"}, {"name": "紅場", "en": "Red Square", "country": "俄羅斯 Russia", "continent": "Europe", "category": "城市廣場與街區", "clue": "這座大型廣場鄰近彩色圓頂教堂、克里姆林宮與大型百貨公司。", "hint": "位於莫斯科。"}, {"name": "特拉法加廣場", "en": "Trafalgar Square", "country": "英國 United Kingdom", "continent": "Europe", "category": "城市廣場與街區", "clue": "廣場中央有高柱與海軍英雄雕像，四周常有活動。", "hint": "位於倫敦。"}, {"name": "聖馬可廣場", "en": "St. Mark's Square", "country": "義大利 Italy", "continent": "Europe", "category": "城市廣場與街區", "clue": "這座廣場鄰近教堂、鐘樓與潟湖，常有大量鴿子與遊客。", "hint": "位於威尼斯。"}, {"name": "天安門廣場", "en": "Tiananmen Square", "country": "中國 China", "continent": "Asia", "category": "城市廣場與街區", "clue": "這座大型城市廣場位於重要宮殿建築群南側。", "hint": "位於北京。"}, {"name": "中央公園", "en": "Central Park", "country": "美國 United States", "continent": "North America", "category": "城市廣場與街區", "clue": "這座大型都市公園被高樓包圍，內有湖泊、草地和步道。", "hint": "位於紐約曼哈頓。"}, {"name": "澀谷十字路口", "en": "Shibuya Crossing", "country": "日本 Japan", "continent": "Asia", "category": "城市廣場與街區", "clue": "號誌改變時，大量行人會從多個方向同時穿越路口。", "hint": "位於東京。"}, {"name": "香榭麗舍大道", "en": "Champs-Elysees", "country": "法國 France", "continent": "Europe", "category": "城市廣場與街區", "clue": "這條知名大道連接大型廣場與紀念拱門，兩側有商店與劇院。", "hint": "位於巴黎。"}, {"name": "拉斯維加斯大道", "en": "Las Vegas Strip", "country": "美國 United States", "continent": "North America", "category": "城市廣場與街區", "clue": "這條大道以大型飯店、賭場、霓虹燈與主題建築聞名。", "hint": "位於內華達州。"}, {"name": "濱海灣花園", "en": "Gardens by the Bay", "country": "新加坡 Singapore", "continent": "Asia", "category": "城市廣場與街區", "clue": "大型未來感超級樹與溫室花園構成夜間燈光景觀。", "hint": "位於新加坡濱海灣。"}];
+const roles = {"netrunner": {"name": "Netrunner", "zh": "網路駭客", "icon": "🧠", "passive": "Neural Boost：每題速度獎勵額外 +15 分。", "eliminate": {"name": "ICE Breaker", "desc": "破解系統，刪除 2 個錯誤選項。"}, "hint": {"name": "Data Leak", "desc": "洩漏國家與英文名稱前兩個字母。"}, "prob": {"name": "Predictive Scan", "desc": "高精度預測，各選項顯示機率。"}}, "solo": {"name": "Solo", "zh": "戰鬥傭兵", "icon": "🔫", "passive": "Combat Streak：Combo 加分額外提高。", "eliminate": {"name": "Suppressive Fire", "desc": "火力壓制，刪除 2 個錯誤選項。"}, "hint": {"name": "Tactical Intel", "desc": "顯示地標類型與所在洲。"}, "prob": {"name": "Threat Assessment", "desc": "依戰術風險顯示可能性。"}}, "techie": {"name": "Techie", "zh": "技術專家", "icon": "🛠️", "passive": "Precision Build：使用技能後答對，額外 +20 分。", "eliminate": {"name": "Circuit Cut", "desc": "切斷錯誤訊號，刪除 2 個選項。"}, "hint": {"name": "Blueprint Read", "desc": "顯示建築類型與結構提示。"}, "prob": {"name": "Sensor Calibration", "desc": "校準感測器，提供精密機率。"}}, "medtech": {"name": "Medtech", "zh": "醫療技師", "icon": "💉", "passive": "Second Heart：每局第一次答錯不斷 Combo；一般回復 6 秒，危急狀態回復 10 秒。", "eliminate": {"name": "Triage Protocol", "desc": "一般排除 2 個並回復 3 秒；危急狀態排除 3 個並回復 6 秒。"}, "hint": {"name": "Trauma Scan", "desc": "顯示國家、類型與字數；危急狀態再揭露中英文開頭。"}, "prob": {"name": "Prognosis Override", "desc": "提供高精度診斷；危急狀態額外回復 5 秒並標記最高機率。"}}, "runner": {"name": "Runner", "zh": "夜城跑者", "icon": "⚡", "passive": "Street Reflex：6 秒內答對額外 +30 分。", "eliminate": {"name": "Shortcut", "desc": "找出捷徑，刪除 2 個錯誤選項。"}, "hint": {"name": "Street Whisper", "desc": "顯示所在洲與中文首字。"}, "prob": {"name": "Instinct Meter", "desc": "用直覺顯示各選項機率。"}}};
+
+const homeScreen=document.getElementById("homeScreen");
+const gameScreen=document.getElementById("gameScreen");
+const resultScreen=document.getElementById("resultScreen");
+const teamNameInput=document.getElementById("teamName");
+const roleGrid=document.getElementById("roleGrid");
+const teamDisplay=document.getElementById("teamDisplay");
+const roleDisplay=document.getElementById("roleDisplay");
+const timeDisplay=document.getElementById("timeDisplay");
+const questionDisplay=document.getElementById("questionDisplay");
+const scoreDisplay=document.getElementById("scoreDisplay");
+const timeBar=document.getElementById("timeBar");
+const sceneTag=document.getElementById("sceneTag");
+const clueText=document.getElementById("clueText");
+const hintText=document.getElementById("hintText");
+const optionsEl=document.getElementById("options");
+const feedback=document.getElementById("feedback");
+const homeRanking=document.getElementById("homeRanking");
+const resultRanking=document.getElementById("resultRanking");
+const resultTeam=document.getElementById("resultTeam");
+const resultScore=document.getElementById("resultScore");
+const resultDetail=document.getElementById("resultDetail");
+
+let selectedRole="netrunner";
+let currentTeam="",lastTeam="",gameQuestions=[],currentOptions=[];
+let currentIndex=0,score=0,correctCount=0,combo=0,timeLeft=180;
+let timerId=null,locked=false,usedEliminate=false,usedHint=false,usedProb=false,medtechRescueUsed=false;
+let questionStartedAt=0,skillUsedThisQuestion=false,audioCtx=null;
+
+function ensureAudio(){
+  if(audioCtx)return;
+  const AC=window.AudioContext||window.webkitAudioContext;
+  if(AC)audioCtx=new AC();
+}
+function tone(freq,duration,type="sine",gainValue=.075,delay=0){
+  ensureAudio();if(!audioCtx)return;
+  const t=audioCtx.currentTime+delay,osc=audioCtx.createOscillator(),gain=audioCtx.createGain();
+  osc.type=type;osc.frequency.setValueAtTime(freq,t);
+  gain.gain.setValueAtTime(.0001,t);
+  gain.gain.exponentialRampToValueAtTime(gainValue,t+.015);
+  gain.gain.exponentialRampToValueAtTime(.0001,t+duration);
+  osc.connect(gain);gain.connect(audioCtx.destination);osc.start(t);osc.stop(t+duration+.03);
+}
+function playCorrect(){tone(660,.12,"triangle",.08);tone(880,.14,"triangle",.08,.1);tone(1320,.18,"sine",.065,.2)}
+function playWrong(){tone(250,.17,"sawtooth",.05);tone(175,.23,"sawtooth",.045,.14)}
+
+function shuffle(arr){const a=[...arr];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function sample(arr,n){return shuffle(arr).slice(0,n)}
+function escapeHTML(str){return String(str).replace(/[&<>"']/g,s=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[s]))}
+function escapeAttr(str){return escapeHTML(str).replace(/"/g,"&quot;")}
+function formatTime(sec){sec=Math.max(0,sec);return `${Math.floor(sec/60)}:${String(sec%60).padStart(2,"0")}`}
+function isMedtechCritical(){
+  return timeLeft<=60 || currentIndex>=5;
+}
+function medtechConditionText(){
+  return isMedtechCritical() ? "危急狀態啟動" : "一般狀態";
+}
+
+
+function renderRoles(){
+  roleGrid.innerHTML=Object.entries(roles).map(([id,r])=>`
+    <div class="role-card ${selectedRole===id?"active":""}" onclick="selectRole('${id}')">
+      <div class="role-icon">${r.icon}</div>
+      <div class="role-name">${r.name}</div>
+      <div class="role-zh">${r.zh}</div>
+      <div class="role-passive">${r.passive}</div>
+    </div>`).join("");
+}
+function selectRole(id){selectedRole=id;renderRoles()}
+function renderSkillButtons(){
+  const r=roles[selectedRole];
+  document.getElementById("skillEliminate").innerHTML=`<span class="skill-title">🪓 ${r.eliminate.name}</span><span class="skill-desc">${r.eliminate.desc}</span>`;
+  document.getElementById("skillHint").innerHTML=`<span class="skill-title">💡 ${r.hint.name}</span><span class="skill-desc">${r.hint.desc}</span>`;
+  document.getElementById("skillProb").innerHTML=`<span class="skill-title">📊 ${r.prob.name}</span><span class="skill-desc">${r.prob.desc}</span>`;
+}
+
+function startGame(){
+  ensureAudio();
+  currentTeam=teamNameInput.value.trim()||"No Name Team";
+  lastTeam=currentTeam;
+  gameQuestions=sample(questionBank,10);
+  currentIndex=0;score=0;correctCount=0;combo=0;timeLeft=180;locked=false;
+  usedEliminate=false;usedHint=false;usedProb=false;medtechRescueUsed=false;
+  document.getElementById("skillEliminate").disabled=false;
+  document.getElementById("skillHint").disabled=false;
+  document.getElementById("skillProb").disabled=false;
+  renderSkillButtons();
+  homeScreen.classList.add("hidden");resultScreen.classList.add("hidden");gameScreen.classList.remove("hidden");
+  teamDisplay.textContent=currentTeam.length>8?currentTeam.slice(0,8)+"…":currentTeam;
+  roleDisplay.textContent=roles[selectedRole].name;
+  updateTop();loadQuestion();
+  clearInterval(timerId);timerId=setInterval(tick,1000);
+}
+function tick(){timeLeft--;updateTop();if(timeLeft<=0)finishGame("Time's up!")}
+function updateTop(){
+  timeDisplay.textContent=formatTime(timeLeft);
+  questionDisplay.textContent=`${Math.min(currentIndex+1,10)}/10`;
+  scoreDisplay.textContent=score;
+  timeBar.style.width=`${Math.max(0,timeLeft/180*100)}%`;
+}
+
+function createOptions(q,hardMode){
+  let pool;
+  if(hardMode){
+    pool=questionBank.filter(x=>x.name!==q.name&&x.category===q.category);
+  }else{
+    const sameContinent=questionBank.filter(x=>x.name!==q.name&&x.continent===q.continent);
+    pool=[...shuffle(sameContinent),...shuffle(questionBank.filter(x=>x.name!==q.name))];
+  }
+  const unique=[];
+  for(const item of pool){
+    if(unique.length>=3)break;
+    if(!unique.some(x=>x.name===item.name))unique.push(item);
+  }
+  return shuffle([q,...unique]);
+}
+
+function loadQuestion(){
+  if(currentIndex>=10){finishGame("All questions finished!");return}
+  locked=false;skillUsedThisQuestion=false;
+  const q=gameQuestions[currentIndex],hardMode=currentIndex>=5;
+  currentOptions=createOptions(q,hardMode);
+  sceneTag.textContent=hardMode?`EXPERT｜${q.category}`:"World Landmark";
+  clueText.textContent=q.clue;
+  hintText.textContent=hardMode
+    ? `第 6 題起：四個選項全部都是「${q.category}」，不能只靠類型排除。`
+    : "前五題為一般模式；第六題開始會改成同性質地標選項。";
+  feedback.innerHTML=`第 <b>${currentIndex+1}</b> 題：請盡快作答，速度越快分數越高。`;
+  optionsEl.innerHTML=currentOptions.map((opt,i)=>`
+    <button class="option-btn" data-name="${escapeAttr(opt.name)}" onclick="chooseAnswer('${escapeAttr(opt.name)}')">
+      <span class="option-letter">${String.fromCharCode(65+i)}</span>
+      <span class="option-text">${escapeHTML(opt.name)}<span class="option-en">${escapeHTML(opt.en)}</span></span>
+    </button>`).join("");
+  questionStartedAt=performance.now();
+  updateTop();
+}
+
+function calculateSpeedBonus(seconds){
+  let bonus=0;
+  if(seconds<=3)bonus=140;
+  else if(seconds<=5)bonus=115;
+  else if(seconds<=8)bonus=90;
+  else if(seconds<=12)bonus=65;
+  else if(seconds<=18)bonus=40;
+  else if(seconds<=25)bonus=20;
+
+  if(selectedRole==="netrunner")bonus+=15;
+  if(selectedRole==="runner"&&seconds<=6)bonus+=30;
+  return bonus;
+}
+
+function chooseAnswer(answer){
+  if(locked)return;
+  locked=true;
+  const q=gameQuestions[currentIndex],isCorrect=answer===q.name;
+  const answerSeconds=Math.max(.1,(performance.now()-questionStartedAt)/1000);
+  const buttons=[...document.querySelectorAll(".option-btn")];
+  buttons.forEach(btn=>{
+    btn.disabled=true;
+    if(btn.dataset.name===q.name)btn.classList.add("correct");
+    else if(btn.dataset.name===answer)btn.classList.add("wrong");
+  });
+
+  if(isCorrect){
+    playCorrect();combo++;correctCount++;
+    const base=100;
+    const speedBonus=calculateSpeedBonus(answerSeconds);
+    let comboBonus=Math.min(90,(combo-1)*15);
+    if(selectedRole==="solo")comboBonus+=Math.min(50,(combo-1)*10);
+    let roleBonus=0;
+    if(selectedRole==="techie"&&skillUsedThisQuestion)roleBonus=20;
+    const gain=base+speedBonus+comboBonus+roleBonus;
+    score+=gain;
+    feedback.innerHTML=`✅ Correct! <b>${q.name}</b>｜${q.en}<br><span class="speed-line">${answerSeconds.toFixed(1)} 秒作答：速度 +${speedBonus}</span>｜Combo +${comboBonus}${roleBonus?`｜職業 +${roleBonus}`:""}<br>本題共 +${gain} 分`;
+  }else{
+    playWrong();
+    let medtechMessage="";
+    if(selectedRole==="medtech"&&!medtechRescueUsed){
+      const critical=isMedtechCritical();
+      const heal=critical?10:6;
+      medtechRescueUsed=true;
+      timeLeft=Math.min(180,timeLeft+heal);
+      medtechMessage=`<br><span class="critical-note">💉 Second Heart：第一次答錯急救，Combo 保留，回復 ${heal} 秒（${critical?"危急狀態":"一般狀態"}）</span>`;
+    }else{
+      combo=0;
+    }
+    feedback.innerHTML=`❌ Wrong! 正確答案是 <b>${q.name}</b>｜${q.en}<br>所在地：${q.country}${medtechMessage}`;
+  }
+  updateTop();
+  setTimeout(()=>{currentIndex++;currentIndex>=10?finishGame("All questions finished!"):loadQuestion()},1550);
+}
+
+function useEliminate(){
+  if(usedEliminate||locked)return;
+  usedEliminate=true;skillUsedThisQuestion=true;
+  document.getElementById("skillEliminate").disabled=true;
+  const q=gameQuestions[currentIndex];
+  const wrong=[...document.querySelectorAll(".option-btn")].filter(btn=>btn.dataset.name!==q.name);
+  let removeCount=2;
+  let extraText="";
+  if(selectedRole==="medtech"){
+    const critical=isMedtechCritical();
+    removeCount=critical?3:2;
+    const heal=critical?6:3;
+    timeLeft=Math.min(180,timeLeft+heal);
+    extraText=`，回復 ${heal} 秒（${critical?"危急狀態：完整分流":"一般狀態"}）`;
+  }
+  sample(wrong,removeCount).forEach(btn=>{btn.classList.add("eliminated");btn.disabled=true});
+  feedback.innerHTML=`🪓 <b>${roles[selectedRole].eliminate.name}</b> 啟動：已排除 ${removeCount} 個錯誤選項${extraText}。`;
+  updateTop();
+}
+
+function useHint(){
+  if(usedHint||locked)return;
+  usedHint=true;skillUsedThisQuestion=true;
+  document.getElementById("skillHint").disabled=true;
+  const q=gameQuestions[currentIndex];
+  let text="";
+  if(selectedRole==="netrunner"){
+    text=`國家：<b>${q.country}</b>｜英文名稱開頭：<b>${q.en.slice(0,2)}</b>`;
+  }else if(selectedRole==="solo"){
+    text=`類型：<b>${q.category}</b>｜所在洲：<b>${q.continent}</b>`;
+  }else if(selectedRole==="techie"){
+    text=`Blueprint：<b>${q.category}</b>｜${q.hint}`;
+  }else if(selectedRole==="medtech"){
+    const critical=isMedtechCritical();
+    text=`國家：<b>${q.country}</b>｜類型：<b>${q.category}</b>｜中文答案共 <b>${q.name.length}</b> 個字｜${q.hint}`;
+    if(critical){
+      text+=`｜危急加強：中文開頭 <b>${q.name[0]}</b>，英文開頭 <b>${q.en.slice(0,2)}</b>`;
+    }
+  }else{
+    text=`所在洲：<b>${q.continent}</b>｜中文首字：<b>${q.name[0]}</b>｜${q.hint}`;
+  }
+  hintText.innerHTML=`💡 ${roles[selectedRole].hint.name}：${text}`;
+  feedback.innerHTML=`💡 <b>${roles[selectedRole].hint.name}</b> 已提供職業專屬提示。`;
+}
+
+function useProbability(){
+  if(usedProb||locked)return;
+  usedProb=true;skillUsedThisQuestion=true;
+  document.getElementById("skillProb").disabled=true;
+  const q=gameQuestions[currentIndex],correctIndex=currentOptions.findIndex(o=>o.name===q.name);
+  let min=58,max=74;
+  if(selectedRole==="netrunner"){min=72;max=86}
+  if(selectedRole==="techie"){min=67;max=82}
+  if(selectedRole==="solo"){min=62;max=77}
+  if(selectedRole==="medtech"){min=72;max=88}
+  if(selectedRole==="runner"){min=55;max=72}
+  const correctChance=min+Math.floor(Math.random()*(max-min+1));
+  const nums=[0,0,0,0];nums[correctIndex]=correctChance;
+  let remain=100-correctChance;
+  const wrong=[0,1,2,3].filter(i=>i!==correctIndex);
+  wrong.forEach((idx,i)=>{
+    if(i===wrong.length-1)nums[idx]=remain;
+    else{
+      const minLeft=wrong.length-i-1;
+      const maxPart=Math.max(1,remain-minLeft);
+      const part=1+Math.floor(Math.random()*maxPart);
+      nums[idx]=part;remain-=part;
+    }
+  });
+  const optionButtons=[...document.querySelectorAll(".option-btn")];
+  const maxIndex=nums.indexOf(Math.max(...nums));
+  optionButtons.forEach((btn,i)=>{
+    const t=btn.querySelector(".option-text"),o=currentOptions[i];
+    const diagnosis=(selectedRole==="medtech"&&i===maxIndex)?`<span class="diagnosis-mark">⚕ PRIORITY DIAGNOSIS</span>`:"";
+    t.innerHTML=`${escapeHTML(o.name)}<span class="option-en">${escapeHTML(o.en)}</span><small style="display:block;color:#fde68a;margin-top:4px">機率：${nums[i]}%</small>${diagnosis}`;
+  });
+  let medtechExtra="";
+  if(selectedRole==="medtech"&&isMedtechCritical()){
+    timeLeft=Math.min(180,timeLeft+5);
+    medtechExtra="｜危急狀態額外回復 5 秒，並標記最高診斷";
+    updateTop();
+  }
+  feedback.innerHTML=`📊 <b>${roles[selectedRole].prob.name}</b> 啟動：職業演算法已顯示可能性${medtechExtra}。`;
+}
+
+function finishGame(reason){
+  clearInterval(timerId);timerId=null;
+  gameScreen.classList.add("hidden");resultScreen.classList.remove("hidden");
+  saveRanking(currentTeam,score,correctCount,selectedRole);
+  resultTeam.textContent=`${currentTeam}｜${roles[selectedRole].name}`;
+  resultScore.textContent=score;
+  resultDetail.textContent=`${reason}｜答對 ${correctCount}/10 題｜分數已加入累積排行榜。`;
+  renderRanking();
+}
+function getRanking(){
+  try{return JSON.parse(localStorage.getItem("world_landmark_nightcity_ranking")||"{}")}catch(e){return{}}
+}
+function saveRanking(team,addScore,correct,role){
+  const data=getRanking(),key=team.trim()||"No Name Team";
+  if(!data[key])data[key]={team:key,total:0,plays:0,best:0,correct:0,lastRole:role};
+  data[key].total+=addScore;data[key].plays++;data[key].best=Math.max(data[key].best,addScore);data[key].correct+=correct;data[key].lastRole=role;
+  localStorage.setItem("world_landmark_nightcity_ranking",JSON.stringify(data));
+}
+function renderRanking(){
+  const rows=Object.values(getRanking()).sort((a,b)=>b.total-a.total||b.best-a.best).slice(0,10);
+  const markup=rows.length?rows.map((r,i)=>`
+    <div class="rank-item">
+      <div class="rank-no">${i+1}</div>
+      <div><div class="rank-team">${escapeHTML(r.team)}</div><div class="rank-meta">${roles[r.lastRole]?.icon||"🌍"} ${roles[r.lastRole]?.name||"Explorer"}｜Played ${r.plays}｜Best ${r.best}｜Correct ${r.correct}</div></div>
+      <div class="rank-score">${r.total}</div>
+    </div>`).join(""):`<div class="rule">目前還沒有排行榜紀錄。</div>`;
+  homeRanking.innerHTML=markup;resultRanking.innerHTML=markup;
+}
+function clearRanking(){
+  if(confirm("確定要清空排行榜嗎？")){localStorage.removeItem("world_landmark_nightcity_ranking");renderRanking()}
+}
+function demoName(){teamNameInput.value="Night City Explorers"}
+function backHome(){resultScreen.classList.add("hidden");gameScreen.classList.add("hidden");homeScreen.classList.remove("hidden");renderRanking();renderRoles()}
+function restartSameTeam(){teamNameInput.value=lastTeam||currentTeam||"Night City Explorers";startGame()}
+
+renderRoles();
+renderRanking();
+</script>
+</body>
+</html>

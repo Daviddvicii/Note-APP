@@ -1,0 +1,774 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>CYBER GEO // World Landmark Protocol</title>
+<style>
+:root{
+  --void:#03050a;--panel:#09101c;--panel2:#10192a;--cyan:#00f5ff;--pink:#ff2bd6;
+  --yellow:#ffe600;--green:#45ff9a;--red:#ff3b64;--white:#f7fbff;--muted:#91a4ba;
+  --line:#213a55
+}
+*{box-sizing:border-box}
+html{touch-action:manipulation}
+body{
+  margin:0;min-height:100vh;color:var(--white);
+  font-family:system-ui,-apple-system,"Segoe UI","Noto Sans TC",sans-serif;
+  background:
+    linear-gradient(rgba(0,245,255,.035) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(0,245,255,.035) 1px,transparent 1px),
+    radial-gradient(circle at 8% 0%,rgba(255,43,214,.21),transparent 28%),
+    radial-gradient(circle at 94% 4%,rgba(0,245,255,.18),transparent 26%),
+    #03050a;
+  background-size:34px 34px,34px 34px,auto,auto,auto;
+  overflow-x:hidden
+}
+body::after{
+  content:"";position:fixed;inset:0;pointer-events:none;z-index:999;
+  background:repeating-linear-gradient(0deg,rgba(255,255,255,.018) 0,rgba(255,255,255,.018) 1px,transparent 1px,transparent 4px)
+}
+.wrap{max-width:1180px;margin:auto;padding:14px}
+header{padding:22px 12px 12px;text-align:center}
+.glitch{
+  position:relative;display:inline-block;margin:0;color:#fff;
+  font-size:clamp(31px,6vw,60px);font-weight:1000;letter-spacing:.035em;
+  text-shadow:-3px 0 var(--pink),3px 0 var(--cyan),0 4px #000
+}
+.glitch::before,.glitch::after{content:attr(data-text);position:absolute;inset:0;pointer-events:none}
+.glitch::before{color:var(--cyan);clip-path:inset(0 0 57% 0);transform:translate(3px,-1px);opacity:.48}
+.glitch::after{color:var(--pink);clip-path:inset(60% 0 0 0);transform:translate(-3px,1px);opacity:.48}
+.subtitle{max-width:930px;margin:9px auto 0;color:#a8bad0;line-height:1.65}
+.kicker{color:var(--yellow);font-weight:1000;letter-spacing:.22em;font-size:12px}
+.panel{
+  position:relative;background:linear-gradient(145deg,rgba(12,20,34,.97),rgba(5,10,18,.97));
+  border:2px solid var(--line);border-radius:4px;padding:16px;
+  box-shadow:0 0 0 1px #000,0 18px 45px rgba(0,0,0,.48),inset 0 0 28px rgba(0,245,255,.035)
+}
+.panel::before{
+  content:"";position:absolute;left:-2px;top:18px;width:5px;height:62px;background:var(--pink);
+  box-shadow:0 0 14px var(--pink)
+}
+.grid{display:grid;grid-template-columns:1.1fr .9fr;gap:14px;align-items:start}
+@media(max-width:920px){.grid{grid-template-columns:1fr}.wrap{padding:8px}}
+h2{margin:0 0 10px;font-size:22px;letter-spacing:.04em}
+label{display:block;margin:11px 0 6px;color:var(--cyan);font-weight:1000}
+input{
+  width:100%;padding:14px;border:2px solid #294763;border-radius:2px;background:#030812;
+  color:#fff;font:inherit;outline:none;box-shadow:inset 0 0 18px rgba(0,245,255,.04)
+}
+input:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(0,245,255,.12),inset 0 0 18px rgba(0,245,255,.07)}
+button{
+  min-height:50px;padding:11px 13px;border:1px solid #000;border-radius:2px;
+  background:var(--cyan);color:#02070b;font-weight:1000;cursor:pointer;
+  box-shadow:4px 4px 0 #005b61;touch-action:manipulation
+}
+button:active:not(:disabled){transform:translate(2px,2px);box-shadow:2px 2px 0 #005b61}
+button:disabled{opacity:.35;filter:grayscale(.7);cursor:not-allowed}
+button.pink{background:var(--pink);box-shadow:4px 4px 0 #761064;color:#fff}
+button.yellow{background:var(--yellow);box-shadow:4px 4px 0 #726800}
+button.green{background:var(--green);box-shadow:4px 4px 0 #147442}
+button.dark{background:#dce8f5;box-shadow:4px 4px 0 #52687c}
+button.red{background:var(--red);box-shadow:4px 4px 0 #7f1731;color:#fff}
+.btn-row{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:12px}
+@media(max-width:520px){.btn-row{grid-template-columns:1fr}}
+.role-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;margin-top:9px}
+@media(max-width:940px){.role-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:480px){.role-grid{grid-template-columns:1fr}}
+.role{
+  position:relative;padding:10px;background:#050b15;border:1px solid #294763;cursor:pointer;
+  clip-path:polygon(0 0,92% 0,100% 16%,100% 100%,8% 100%,0 84%)
+}
+.role.active{border-color:var(--yellow);box-shadow:inset 0 0 24px rgba(255,230,0,.10),0 0 16px rgba(255,230,0,.14)}
+.role.adam{
+  border-color:var(--red);
+  background:linear-gradient(145deg,#21040b,#07080c);
+  box-shadow:inset 0 0 30px rgba(255,59,100,.13),0 0 18px rgba(255,59,100,.18)
+}
+.role.adam.active{border-color:#fff;box-shadow:0 0 8px #fff,0 0 24px var(--red),inset 0 0 28px rgba(255,59,100,.2)}
+.unlock-flash{color:var(--red);font-weight:1000;text-shadow:0 0 8px var(--red)}
+
+.role-icon{font-size:27px}
+.role-avatar{
+  width:76px;height:76px;margin:0 auto 7px;border:1px solid #365977;background:#02070d;
+  box-shadow:inset 0 0 18px rgba(0,245,255,.08),0 0 11px rgba(0,245,255,.08);
+  overflow:hidden;clip-path:polygon(0 0,86% 0,100% 14%,100% 100%,14% 100%,0 86%)
+}
+.role-avatar svg{display:block;width:100%;height:100%;image-rendering:pixelated}
+.role-name{font-weight:1000;color:#fff;text-align:center}.role-zh{color:var(--cyan);font-size:12px;text-align:center}
+.role-passive{color:var(--muted);font-size:11px;line-height:1.4;margin-top:5px}
+.rules{display:grid;gap:7px;margin-top:12px}.rule{padding:9px 11px;background:#050b15;border-left:3px solid var(--pink);color:#c9d7e8;line-height:1.52;font-size:13px}
+.note{color:var(--muted);line-height:1.55;font-size:13px}
+.rank-list{display:grid;gap:8px}.rank{
+  display:grid;grid-template-columns:38px 1fr auto;gap:9px;align-items:center;
+  padding:10px;background:#050b15;border:1px solid #203950
+}
+.rank-no{width:31px;height:31px;display:flex;align-items:center;justify-content:center;background:var(--yellow);color:#05070a;font-weight:1000}
+.rank-name{font-weight:1000}.rank-meta{color:var(--muted);font-size:11px;margin-top:2px}.rank-score{color:var(--green);font-size:20px;font-weight:1000}
+.hidden{display:none!important}
+.game-top{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;margin-bottom:10px}
+@media(max-width:760px){.game-top{grid-template-columns:repeat(2,1fr)}}
+.stat{padding:9px;text-align:center;background:#050b15;border:1px solid #27445e}
+.stat small{display:block;color:#7f95ac;font-size:10px;letter-spacing:.12em}.stat b{color:var(--yellow);font-size:clamp(18px,3vw,28px)}
+.timer-track{height:13px;border:1px solid #294763;background:#030812;margin-bottom:11px;overflow:hidden}
+.timer-fill{height:100%;width:100%;background:linear-gradient(90deg,var(--green),var(--cyan),var(--pink));box-shadow:0 0 13px var(--cyan)}
+.mission{
+  min-height:214px;padding:17px;display:flex;flex-direction:column;justify-content:center;text-align:center;
+  background:linear-gradient(145deg,#070e19,#10182a);border:1px solid #34516b;position:relative;overflow:hidden
+}
+.mission::after{content:"GEO-LINK // ACTIVE";position:absolute;right:-45px;top:24px;transform:rotate(42deg);background:var(--pink);color:#fff;padding:4px 52px;font-size:10px;font-weight:1000}
+.tag{align-self:center;padding:5px 10px;border:1px solid var(--yellow);color:var(--yellow);font-size:12px;font-weight:1000;letter-spacing:.11em;margin-bottom:9px}
+.clue{font-size:clamp(20px,3vw,31px);line-height:1.45;font-weight:1000;text-shadow:2px 2px #000}
+.meta{margin-top:9px;color:#9fc6de;line-height:1.5}
+.map-shell{margin-top:11px;padding:7px;background:#02060c;border:1px solid #2d506b;box-shadow:inset 0 0 34px rgba(0,245,255,.08)}
+.world-map{display:block;width:100%;height:auto;max-height:430px}
+.map-ocean{fill:#03101a}.map-grid{stroke:rgba(0,245,255,.12);stroke-width:1}.land{fill:#11293a;stroke:#3a7a91;stroke-width:2}
+.map-label{fill:#4e7186;font-size:18px;font-weight:900;letter-spacing:2px}
+.map-marker{cursor:pointer}.map-marker circle{fill:#05070a;stroke:var(--yellow);stroke-width:4;filter:drop-shadow(0 0 7px var(--yellow))}
+.map-marker text{fill:var(--yellow);font-weight:1000;font-size:18px;text-anchor:middle;dominant-baseline:central;pointer-events:none}
+.map-marker.correct circle{stroke:var(--green);fill:#0f3e2a}.map-marker.correct text{fill:var(--green)}
+.map-marker.wrong circle{stroke:var(--red);fill:#491322}.map-marker.wrong text{fill:#fff}
+.options{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:12px}
+@media(max-width:650px){.options{grid-template-columns:1fr}}
+.option{
+  min-height:76px;display:flex;align-items:center;gap:10px;text-align:left;background:#050b15;color:#fff;
+  border:1px solid #34516b;box-shadow:4px 4px 0 #111d2b
+}
+.option:hover:not(:disabled){border-color:var(--cyan);box-shadow:4px 4px 0 #07505b}
+.letter{flex:0 0 35px;width:35px;height:35px;display:flex;align-items:center;justify-content:center;background:var(--yellow);color:#05070a;font-weight:1000}
+.option-main{font-size:16px;font-weight:1000}.option-en{display:block;color:#8fc9e0;font-size:12px;margin-top:3px}
+.option.correct{border-color:var(--green);background:#08251a}.option.wrong{border-color:var(--red);background:#2b0b14}.option.eliminated{opacity:.14;pointer-events:none;text-decoration:line-through}
+.skills{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:11px}
+@media(max-width:650px){.skills{grid-template-columns:1fr}}
+.skill{min-height:67px}.skill-title{display:block;font-size:15px}.skill-desc{display:block;font-size:10px;margin-top:3px}
+.feedback{min-height:62px;margin-top:11px;padding:11px;background:#030812;border:1px solid #294763;color:#cfe5f2;line-height:1.55}
+.feedback b{color:var(--yellow)}.score-flash{color:var(--green);font-weight:1000}.critical{color:#ff97ad;font-weight:1000}
+.result{text-align:center;padding:20px;background:linear-gradient(145deg,rgba(255,43,214,.08),rgba(0,245,255,.06));border:1px solid #43657b}
+.result-score{font-size:clamp(40px,9vw,78px);color:var(--yellow);font-weight:1000;text-shadow:-3px 0 var(--pink),3px 0 var(--cyan),0 4px #000}
+.footer{text-align:center;padding:18px;color:#72869c;font-size:11px}
+.lobby-music{
+  margin-top:9px;padding:9px 11px;background:#030812;border:1px solid #294763;
+  color:#8fc9e0;font-size:12px;line-height:1.45
+}
+.lobby-music.active{color:var(--green);border-color:#267553;box-shadow:inset 0 0 18px rgba(69,255,154,.07)}
+.intrusion-overlay{
+  position:fixed;inset:0;z-index:1200;display:flex;align-items:center;justify-content:center;
+  padding:16px;background:rgba(1,3,7,.88);backdrop-filter:blur(5px)
+}
+.intrusion-card{
+  width:min(620px,100%);padding:20px;background:linear-gradient(145deg,#20030b,#080b12 58%,#0d1420);
+  border:2px solid var(--red);box-shadow:0 0 10px var(--red),0 0 42px rgba(255,59,100,.25);
+  position:relative;overflow:hidden
+}
+.intrusion-card::after{
+  content:"ARASAKA SECURITY";position:absolute;right:-50px;top:27px;transform:rotate(42deg);
+  padding:4px 60px;background:var(--red);color:#fff;font-size:10px;font-weight:1000
+}
+.intrusion-title{margin:0;color:#fff;font-size:clamp(25px,6vw,43px);text-shadow:-2px 0 var(--red),2px 0 #fff}
+.intrusion-sub{color:#ff9eb3;letter-spacing:.14em;font-size:11px;font-weight:1000}
+.intrusion-prompt{
+  margin:15px 0;padding:16px;background:#02060c;border:1px solid #773047;
+  color:var(--yellow);font-size:clamp(21px,5vw,34px);font-weight:1000;text-align:center
+}
+.intrusion-options{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+@media(max-width:540px){.intrusion-options{grid-template-columns:1fr}}
+.intrusion-option{background:#dce8f5;box-shadow:4px 4px 0 #5c6875;font-size:17px}
+.intrusion-timer{height:10px;margin:12px 0 6px;background:#030812;border:1px solid #7c263d;overflow:hidden}
+.intrusion-timer-fill{height:100%;width:100%;background:linear-gradient(90deg,var(--green),var(--yellow),var(--red))}
+.intrusion-status{min-height:24px;color:#cfdbe8;font-size:13px;text-align:center}
+
+</style>
+</head>
+<body>
+<header>
+  <div class="kicker">ARASAKA GEO-NET // EDUCATION PROTOCOL</div>
+  <h1 class="glitch" data-text="CYBER GEO">CYBER GEO</h1>
+  <p class="subtitle">進階全球地標任務｜100 題資料庫｜每局隨機 10 題｜世界地圖定位｜Night City 職業技能｜三分鐘極速作戰</p>
+</header>
+
+<main class="wrap">
+<section class="panel" id="homeScreen">
+  <div class="grid">
+    <div>
+      <h2>// INITIALIZE SQUAD</h2>
+      <label>隊伍名稱 TEAM ID</label>
+      <input id="teamName" maxlength="24" placeholder="Night City Explorers">
+
+      <label>選擇角色 SELECT EDGERUNNER</label>
+      <div class="role-grid" id="roleGrid"></div>
+      <div class="lobby-music" id="musicStatus">
+        ♪ 選擇 Lucy 或 David 後，播放原創 Night City 2-bit 大廳音樂。
+      </div>
+
+      <div class="btn-row">
+        <button class="green" onclick="startGame()">JACK IN</button>
+        <button class="dark" onclick="renderRanking()">REFRESH DATA</button>
+      </div>
+
+      <div class="rules">
+        <div class="rule">⏱️ 全局限時 3 分鐘；每題另外計算反應速度。</div>
+        <div class="rule">🗺️ 每局固定混入 4 題世界地圖定位題，點選 A～D 霓虹座標。</div>
+        <div class="rule">🔥 第 6～10 題進入 EXPERT：文字題四個選項都是同性質地標；地圖題也優先使用同類型候選位置。</div>
+        <div class="rule">⚡ 答得越快，速度獎勵越高；地圖題與後半段另有難度加分。</div>
+        <div class="rule">🧠 Lucy、David、Rebecca、Maine、Falco 各有專屬技能；隊伍累積 2600 分後，隱藏角色 Adam Smasher 才會出現。</div>
+        <div class="rule">🎵 選擇 Lucy 或 David 時，大廳會播放原創 2-bit 夜城抒情 BGM；進入任務後自動停止。</div>
+        <div class="rule">🚨 每局會隨機遭遇 1～2 次 Arasaka 傭兵。完成英文反應挑戰後才能繼續。</div>
+      </div>
+    </div>
+    <div>
+      <h2>// LOCAL LEADERBOARD</h2>
+      <div class="rank-list" id="homeRanking"></div>
+      <div class="btn-row">
+        <button class="red" onclick="clearRanking()">PURGE DATA</button>
+        <button class="yellow" onclick="demoTeam()">DEMO TEAM</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="panel hidden" id="gameScreen">
+  <div class="game-top">
+    <div class="stat"><small>TEAM</small><b id="teamDisplay">—</b></div>
+    <div class="stat"><small>EDGERUNNER</small><b id="roleDisplay">—</b></div>
+    <div class="stat"><small>TIME</small><b id="timeDisplay">3:00</b></div>
+    <div class="stat"><small>MISSION</small><b id="questionDisplay">1/10</b></div>
+    <div class="stat"><small>SCORE</small><b id="scoreDisplay">0</b></div>
+  </div>
+  <div class="timer-track"><div class="timer-fill" id="timeBar"></div></div>
+
+  <div class="mission">
+    <div class="tag" id="sceneTag">LANDMARK TRACE</div>
+    <div class="clue" id="clueText"></div>
+    <div class="meta" id="hintText"></div>
+  </div>
+
+  <div class="map-shell hidden" id="mapShell">
+    <svg class="world-map" id="worldMap" viewBox="0 0 1000 480" aria-label="Stylized world map"></svg>
+  </div>
+
+  <div class="options" id="options"></div>
+
+  <div class="skills">
+    <button class="skill yellow" id="skillEliminate" onclick="useEliminate()"></button>
+    <button class="skill pink" id="skillHint" onclick="useHint()"></button>
+    <button class="skill green" id="skillProb" onclick="useProbability()"></button>
+  </div>
+
+  <div class="feedback" id="feedback">等待任務資料……</div>
+</section>
+
+<section class="panel hidden" id="resultScreen">
+  <div class="result">
+    <h2>// MISSION REPORT</h2>
+    <h2 id="resultTeam">—</h2>
+    <div class="result-score" id="resultScore">0</div>
+    <p class="note" id="resultDetail"></p>
+    <div class="btn-row">
+      <button class="green" onclick="backHome()">RETURN HUB</button>
+      <button class="yellow" onclick="restartSameTeam()">RUN AGAIN</button>
+    </div>
+  </div>
+  <h2 style="margin-top:17px">// CUMULATIVE RANKING</h2>
+  <div class="rank-list" id="resultRanking"></div>
+</section>
+</main>
+
+
+<div class="intrusion-overlay hidden" id="intrusionOverlay">
+  <div class="intrusion-card">
+    <div class="intrusion-sub">HOSTILE SIGNAL DETECTED // ENGLISH REACTION TEST</div>
+    <h2 class="intrusion-title">🚨 ARASAKA AMBUSH</h2>
+    <p class="note">快速閱讀英文指令並點擊正確答案。答錯或超時會扣除主遊戲時間，直到完成才能離開。</p>
+    <div class="intrusion-prompt" id="intrusionPrompt">CLICK: RUN</div>
+    <div class="intrusion-options" id="intrusionOptions"></div>
+    <div class="intrusion-timer"><div class="intrusion-timer-fill" id="intrusionTimerFill"></div></div>
+    <div class="intrusion-status" id="intrusionStatus">ARASAKA mercenary is blocking the GEO-NET.</div>
+  </div>
+</div>
+
+<div class="footer">Unofficial fan-made cyberpunk classroom game｜Original inline pixel portraits and original chiptune｜Leaderboard stored in this browser</div>
+
+<script>
+const questionBank=[{"name":"艾菲爾鐵塔","en":"Eiffel Tower","country":"法國 France","continent":"Europe","category":"塔樓與摩天大樓","clue":"這座十九世紀鐵塔原本是世界博覽會入口，後來成為浪漫城市最具代表性的地標。","hint":"位於巴黎，夜間會閃燈。","lat":46.2,"lon":2.3},{"name":"大笨鐘","en":"Big Ben","country":"英國 United Kingdom","continent":"Europe","category":"塔樓與摩天大樓","clue":"這個名稱常用來指倫敦國會大廈旁的鐘樓，但原本其實是大鐘的名字。","hint":"位於泰晤士河旁。","lat":54.0,"lon":-2.0},{"name":"比薩斜塔","en":"Leaning Tower of Pisa","country":"義大利 Italy","continent":"Europe","category":"塔樓與摩天大樓","clue":"這座鐘塔因地基問題而傾斜，遊客常拍出用手扶住它的照片。","hint":"位於托斯卡尼的比薩。","lat":42.8,"lon":12.5},{"name":"杜拜哈里發塔","en":"Burj Khalifa","country":"阿拉伯聯合大公國 United Arab Emirates","continent":"Asia","category":"塔樓與摩天大樓","clue":"這棟超高摩天大樓外型向上逐層收窄，目前是世界最高建築之一。","hint":"位於杜拜。","lat":24.3,"lon":54.4},{"name":"東京晴空塔","en":"Tokyo Skytree","country":"日本 Japan","continent":"Asia","category":"塔樓與摩天大樓","clue":"這座超高電波塔設有觀景台，是現代東京天際線的重要標誌。","hint":"英文名稱中有 Skytree。","lat":36.2,"lon":138.2},{"name":"台北 101","en":"Taipei 101","country":"台灣 Taiwan","continent":"Asia","category":"塔樓與摩天大樓","clue":"這座高樓外型像一節一節的竹子，跨年煙火十分著名。","hint":"位於台北信義區。","lat":23.7,"lon":121.0},{"name":"雙子星塔","en":"Petronas Twin Towers","country":"馬來西亞 Malaysia","continent":"Asia","category":"塔樓與摩天大樓","clue":"兩座相同摩天大樓由空中天橋連接，曾是世界最高建築。","hint":"位於吉隆坡。","lat":4.2,"lon":102.0},{"name":"帝國大廈","en":"Empire State Building","country":"美國 United States","continent":"North America","category":"塔樓與摩天大樓","clue":"這座裝飾藝術風格摩天大樓曾長期保持世界最高建築紀錄。","hint":"位於紐約曼哈頓。","lat":39.0,"lon":-98.0},{"name":"加拿大國家電視塔","en":"CN Tower","country":"加拿大 Canada","continent":"North America","category":"塔樓與摩天大樓","clue":"這座高塔擁有觀景台和玻璃地板，是加拿大最大城市的天際線象徵。","hint":"位於多倫多。","lat":56.0,"lon":-106.0},{"name":"太空針塔","en":"Space Needle","country":"美國 United States","continent":"North America","category":"塔樓與摩天大樓","clue":"這座未來感觀景塔頂端像飛碟，是太平洋西北城市的代表。","hint":"位於西雅圖。","lat":39.0,"lon":-98.0},{"name":"金門大橋","en":"Golden Gate Bridge","country":"美國 United States","continent":"North America","category":"橋梁","clue":"這座橘紅色懸索橋經常出現在霧中，是美國西岸城市的重要象徵。","hint":"位於舊金山。","lat":39.0,"lon":-98.0},{"name":"倫敦塔橋","en":"Tower Bridge","country":"英國 United Kingdom","continent":"Europe","category":"橋梁","clue":"這座跨河大橋有兩座塔，橋面可以升起讓大型船隻通過。","hint":"它常被誤認為 London Bridge。","lat":54.0,"lon":-2.0},{"name":"雪梨港灣大橋","en":"Sydney Harbour Bridge","country":"澳洲 Australia","continent":"Oceania","category":"橋梁","clue":"大型鋼拱橋橫跨海港，遊客甚至可以攀登橋拱。","hint":"綽號常被稱為衣架。","lat":-25.3,"lon":133.8},{"name":"布魯克林大橋","en":"Brooklyn Bridge","country":"美國 United States","continent":"North America","category":"橋梁","clue":"這座十九世紀吊橋連接曼哈頓與另一個行政區，石造橋塔非常醒目。","hint":"位於紐約。","lat":39.0,"lon":-98.0},{"name":"查理大橋","en":"Charles Bridge","country":"捷克 Czech Republic","continent":"Europe","category":"橋梁","clue":"這座歷史悠久的石橋兩側排列許多宗教雕像。","hint":"位於布拉格。","lat":49.8,"lon":15.5},{"name":"里阿爾托橋","en":"Rialto Bridge","country":"義大利 Italy","continent":"Europe","category":"橋梁","clue":"這座拱橋跨越大運河，橋上還有商店。","hint":"位於威尼斯。","lat":42.8,"lon":12.5},{"name":"明石海峽大橋","en":"Akashi Kaikyo Bridge","country":"日本 Japan","continent":"Asia","category":"橋梁","clue":"這座超長懸索橋跨越海峽，連接本州與淡路島。","hint":"位於日本關西地區。","lat":36.2,"lon":138.2},{"name":"米約高架橋","en":"Millau Viaduct","country":"法國 France","continent":"Europe","category":"橋梁","clue":"這座高架橋跨越深谷，橋塔高度令人震撼。","hint":"位於法國南部。","lat":46.2,"lon":2.3},{"name":"塞切尼鏈橋","en":"Szechenyi Chain Bridge","country":"匈牙利 Hungary","continent":"Europe","category":"橋梁","clue":"這座鏈橋跨越多瑙河，連接城市兩側。","hint":"位於布達佩斯。","lat":47.2,"lon":19.3},{"name":"老橋","en":"Ponte Vecchio","country":"義大利 Italy","continent":"Europe","category":"橋梁","clue":"這座中世紀橋梁兩側布滿商店，珠寶店尤其有名。","hint":"位於佛羅倫斯。","lat":42.8,"lon":12.5},{"name":"新天鵝堡","en":"Neuschwanstein Castle","country":"德國 Germany","continent":"Europe","category":"宮殿與城堡","clue":"這座十九世紀山中城堡外型夢幻，被認為啟發了童話城堡設計。","hint":"位於巴伐利亞。","lat":51.0,"lon":10.0},{"name":"紫禁城","en":"Forbidden City","country":"中國 China","continent":"Asia","category":"宮殿與城堡","clue":"大型宮殿建築群曾是明清皇帝居住與處理政務的地方。","hint":"位於北京中軸線。","lat":35.0,"lon":104.0},{"name":"阿爾罕布拉宮","en":"Alhambra","country":"西班牙 Spain","continent":"Europe","category":"宮殿與城堡","clue":"這座宮殿與堡壘建築群以伊斯蘭藝術、庭院和精緻雕刻聞名。","hint":"位於格拉納達。","lat":40.3,"lon":-3.7},{"name":"白金漢宮","en":"Buckingham Palace","country":"英國 United Kingdom","continent":"Europe","category":"宮殿與城堡","clue":"這座宮殿是英國君主在倫敦的主要官邸，衛兵交接很有名。","hint":"位於倫敦。","lat":54.0,"lon":-2.0},{"name":"凡爾賽宮","en":"Palace of Versailles","country":"法國 France","continent":"Europe","category":"宮殿與城堡","clue":"這座宮殿以鏡廳、廣大花園和法國王室歷史聞名。","hint":"位於巴黎郊外。","lat":46.2,"lon":2.3},{"name":"布拉格城堡","en":"Prague Castle","country":"捷克 Czech Republic","continent":"Europe","category":"宮殿與城堡","clue":"這座大型城堡建築群俯瞰河流與舊城，現今仍具政治功能。","hint":"位於布拉格。","lat":49.8,"lon":15.5},{"name":"姬路城","en":"Himeji Castle","country":"日本 Japan","continent":"Asia","category":"宮殿與城堡","clue":"白色外牆與多層屋頂使它有白鷺城的別名。","hint":"位於兵庫縣。","lat":36.2,"lon":138.2},{"name":"溫莎城堡","en":"Windsor Castle","country":"英國 United Kingdom","continent":"Europe","category":"宮殿與城堡","clue":"這座仍在使用的王室城堡歷史悠久，位於倫敦西方。","hint":"與英國王室密切相關。","lat":54.0,"lon":-2.0},{"name":"布達拉宮","en":"Potala Palace","country":"中國 China","continent":"Asia","category":"宮殿與城堡","clue":"這座高原宮殿建築依山而建，紅白相間。","hint":"位於拉薩。","lat":35.0,"lon":104.0},{"name":"佩納宮","en":"Pena Palace","country":"葡萄牙 Portugal","continent":"Europe","category":"宮殿與城堡","clue":"這座色彩鮮豔的浪漫主義宮殿位於山頂，融合多種建築風格。","hint":"位於辛特拉。","lat":39.5,"lon":-8.0},{"name":"聖家堂","en":"Sagrada Familia","country":"西班牙 Spain","continent":"Europe","category":"宗教建築","clue":"這座教堂由高第設計，施工超過百年，外觀結合自然與奇幻造型。","hint":"位於巴塞隆納。","lat":40.3,"lon":-3.7},{"name":"聖瓦西里主教座堂","en":"Saint Basil's Cathedral","country":"俄羅斯 Russia","continent":"Europe","category":"宗教建築","clue":"這座教堂擁有色彩鮮豔、形狀像洋蔥的圓頂。","hint":"位於莫斯科紅場。","lat":55.8,"lon":37.6},{"name":"帕德嫩神殿","en":"Parthenon","country":"希臘 Greece","continent":"Europe","category":"宗教建築","clue":"這座古希臘神殿位於高地上，主要獻給雅典娜女神。","hint":"位於雅典衛城。","lat":39.0,"lon":22.0},{"name":"萬神殿","en":"Pantheon","country":"義大利 Italy","continent":"Europe","category":"宗教建築","clue":"這座古羅馬建築擁有巨大圓頂，頂部中央有一個圓形開口。","hint":"英文名稱不是 Parthenon。","lat":42.8,"lon":12.5},{"name":"泰姬瑪哈陵","en":"Taj Mahal","country":"印度 India","continent":"Asia","category":"宗教建築","clue":"白色大理石陵墓由皇帝為紀念妻子而建，常被視為愛情象徵。","hint":"位於阿格拉。","lat":21.0,"lon":78.0},{"name":"吳哥窟","en":"Angkor Wat","country":"柬埔寨 Cambodia","continent":"Asia","category":"宗教建築","clue":"巨大的寺廟建築群出現在國旗上，最初與印度教有關。","hint":"位於暹粒附近。","lat":12.6,"lon":105.0},{"name":"婆羅浮屠","en":"Borobudur","country":"印尼 Indonesia","continent":"Asia","category":"宗教建築","clue":"大型佛教遺址由多層平台與大量鐘形佛塔構成。","hint":"位於爪哇島。","lat":-2.5,"lon":118.0},{"name":"金閣寺","en":"Kinkaku-ji","country":"日本 Japan","continent":"Asia","category":"宗教建築","clue":"這座寺院上層覆有金箔，倒映在池水中十分醒目。","hint":"位於京都。","lat":36.2,"lon":138.2},{"name":"聖索菲亞大教堂","en":"Hagia Sophia","country":"土耳其 Turkey","continent":"Europe / Asia","category":"宗教建築","clue":"這座建築曾先後作為教堂、清真寺與博物館使用。","hint":"位於伊斯坦堡。","lat":39.0,"lon":35.0},{"name":"聖伯多祿大殿","en":"St. Peter's Basilica","country":"梵蒂岡 Vatican City","continent":"Europe","category":"宗教建築","clue":"這座巨大教堂位於世界最小國家，是天主教重要中心。","hint":"位於梵蒂岡。","lat":41.9,"lon":12.45},{"name":"羅馬競技場","en":"Colosseum","country":"義大利 Italy","continent":"Europe","category":"古代遺跡","clue":"古代大型圓形競技場，曾舉行角鬥士比賽與公共表演。","hint":"位於羅馬。","lat":42.8,"lon":12.5},{"name":"巨石陣","en":"Stonehenge","country":"英國 United Kingdom","continent":"Europe","category":"古代遺跡","clue":"一圈巨大的史前石柱矗立在平原上，建造目的至今仍有爭議。","hint":"位於英格蘭南部。","lat":54.0,"lon":-2.0},{"name":"奇琴伊察","en":"Chichen Itza","country":"墨西哥 Mexico","continent":"North America","category":"古代遺跡","clue":"這座古代城市擁有階梯金字塔，與馬雅文明密切相關。","hint":"最著名建築是 El Castillo。","lat":23.6,"lon":-102.5},{"name":"馬丘比丘","en":"Machu Picchu","country":"祕魯 Peru","continent":"South America","category":"古代遺跡","clue":"這座高山古城由印加文明建造，周圍被安地斯山脈包圍。","hint":"位於祕魯高山。","lat":-9.2,"lon":-75.0},{"name":"佩特拉古城","en":"Petra","country":"約旦 Jordan","continent":"Asia","category":"古代遺跡","clue":"這座古城以直接雕刻在玫瑰色岩壁上的建築聞名。","hint":"電影常出現寶庫建築。","lat":31.2,"lon":36.5},{"name":"龐貝古城","en":"Pompeii","country":"義大利 Italy","continent":"Europe","category":"古代遺跡","clue":"這座古羅馬城市因火山爆發被火山灰掩埋，保存許多生活痕跡。","hint":"靠近維蘇威火山。","lat":42.8,"lon":12.5},{"name":"特奧蒂瓦坎","en":"Teotihuacan","country":"墨西哥 Mexico","continent":"North America","category":"古代遺跡","clue":"這座古城擁有太陽金字塔與月亮金字塔。","hint":"位於墨西哥城附近。","lat":23.6,"lon":-102.5},{"name":"兵馬俑","en":"Terracotta Army","country":"中國 China","continent":"Asia","category":"古代遺跡","clue":"成千上萬陶製士兵、戰馬與戰車守護古代皇帝陵墓。","hint":"位於西安附近。","lat":35.0,"lon":104.0},{"name":"吉薩金字塔","en":"Pyramids of Giza","country":"埃及 Egypt","continent":"Africa","category":"古代遺跡","clue":"古代法老陵墓群，由巨大石塊建成，是古代世界七大奇蹟之一。","hint":"附近有獅身人面像。","lat":26.8,"lon":30.8},{"name":"阿布辛貝神殿","en":"Abu Simbel Temples","country":"埃及 Egypt","continent":"Africa","category":"古代遺跡","clue":"岩壁神殿入口有四座巨大坐像，後來因水壩工程被整體遷移。","hint":"與拉美西斯二世有關。","lat":26.8,"lon":30.8},{"name":"自由女神像","en":"Statue of Liberty","country":"美國 United States","continent":"North America","category":"紀念碑與雕像","clue":"一座手持火炬的巨大女性雕像，曾迎接許多抵達新世界的移民。","hint":"位於紐約港。","lat":39.0,"lon":-98.0},{"name":"救世基督像","en":"Christ the Redeemer","country":"巴西 Brazil","continent":"South America","category":"紀念碑與雕像","clue":"一座張開雙臂的巨大雕像，從山上俯瞰海灣與城市。","hint":"位於里約熱內盧。","lat":-10.0,"lon":-52.0},{"name":"拉什莫爾山","en":"Mount Rushmore","country":"美國 United States","continent":"North America","category":"紀念碑與雕像","clue":"山壁上雕刻了四位美國總統的巨大頭像。","hint":"位於南達科他州。","lat":39.0,"lon":-98.0},{"name":"凱旋門","en":"Arc de Triomphe","country":"法國 France","continent":"Europe","category":"紀念碑與雕像","clue":"這座巨大拱門位於多條大道交會處，用來紀念軍事勝利。","hint":"位於巴黎香榭麗舍大道附近。","lat":46.2,"lon":2.3},{"name":"布蘭登堡門","en":"Brandenburg Gate","country":"德國 Germany","continent":"Europe","category":"紀念碑與雕像","clue":"這座新古典主義城門曾位於分裂城市附近，如今象徵統一。","hint":"位於柏林。","lat":51.0,"lon":10.0},{"name":"印度門","en":"India Gate","country":"印度 India","continent":"Asia","category":"紀念碑與雕像","clue":"這座大型紀念拱門紀念戰爭中陣亡的士兵。","hint":"位於新德里。","lat":21.0,"lon":78.0},{"name":"印度之門","en":"Gateway of India","country":"印度 India","continent":"Asia","category":"紀念碑與雕像","clue":"這座面向海港的拱門紀念英國王室訪問。","hint":"位於孟買。","lat":21.0,"lon":78.0},{"name":"魚尾獅","en":"Merlion","country":"新加坡 Singapore","continent":"Asia","category":"紀念碑與雕像","clue":"這座雕像擁有獅子頭和魚身，從口中噴出水柱。","hint":"位於濱海灣附近。","lat":1.35,"lon":103.8},{"name":"祖國母親在召喚","en":"The Motherland Calls","country":"俄羅斯 Russia","continent":"Europe","category":"紀念碑與雕像","clue":"這座巨大女性雕像手持長劍，紀念重要戰役。","hint":"位於伏爾加格勒。","lat":55.8,"lon":37.6},{"name":"獨立天使","en":"Angel of Independence","country":"墨西哥 Mexico","continent":"North America","category":"紀念碑與雕像","clue":"金色天使站在高柱頂端，是首都重要紀念碑。","hint":"位於墨西哥城。","lat":23.6,"lon":-102.5},{"name":"羅浮宮","en":"Louvre Museum","country":"法國 France","continent":"Europe","category":"博物館與現代建築","clue":"這裡原為宮殿，現為世界最著名的博物館之一，入口前有玻璃金字塔。","hint":"《蒙娜麗莎》收藏於此。","lat":46.2,"lon":2.3},{"name":"雪梨歌劇院","en":"Sydney Opera House","country":"澳洲 Australia","continent":"Oceania","category":"博物館與現代建築","clue":"屋頂外型像白色船帆或貝殼，位於著名海港旁。","hint":"位於澳洲雪梨。","lat":-25.3,"lon":133.8},{"name":"濱海灣金沙","en":"Marina Bay Sands","country":"新加坡 Singapore","continent":"Asia","category":"博物館與現代建築","clue":"三棟高樓頂端由一座像船的空中平台連接。","hint":"著名無邊際泳池位於高處。","lat":1.35,"lon":103.8},{"name":"古根漢美術館畢爾包分館","en":"Guggenheim Museum Bilbao","country":"西班牙 Spain","continent":"Europe","category":"博物館與現代建築","clue":"這座現代美術館以彎曲金屬外牆聞名。","hint":"位於西班牙北部。","lat":40.3,"lon":-3.7},{"name":"帆船飯店","en":"Burj Al Arab","country":"阿拉伯聯合大公國 United Arab Emirates","continent":"Asia","category":"博物館與現代建築","clue":"這座豪華飯店外型像巨大帆船，建於人工島上。","hint":"位於杜拜。","lat":24.3,"lon":54.4},{"name":"原子球塔","en":"Atomium","country":"比利時 Belgium","continent":"Europe","category":"博物館與現代建築","clue":"這座建築由多個巨大金屬球體和管道構成，像放大的原子模型。","hint":"位於布魯塞爾。","lat":50.8,"lon":4.5},{"name":"蓮花寺","en":"Lotus Temple","country":"印度 India","continent":"Asia","category":"博物館與現代建築","clue":"這座白色建築外型像盛開的蓮花，歡迎不同信仰者進入。","hint":"位於新德里。","lat":21.0,"lon":78.0},{"name":"未來博物館","en":"Museum of the Future","country":"阿拉伯聯合大公國 United Arab Emirates","continent":"Asia","category":"博物館與現代建築","clue":"這座橢圓形建築中央鏤空，外牆布滿阿拉伯書法。","hint":"位於杜拜。","lat":24.3,"lon":54.4},{"name":"跳舞的房子","en":"Dancing House","country":"捷克 Czech Republic","continent":"Europe","category":"博物館與現代建築","clue":"兩棟彎曲建築看起來像一對舞者。","hint":"位於布拉格。","lat":49.8,"lon":15.5},{"name":"伊甸園計畫","en":"Eden Project","country":"英國 United Kingdom","continent":"Europe","category":"博物館與現代建築","clue":"大型透明穹頂內重現不同氣候帶的植物生態。","hint":"位於英格蘭康瓦爾。","lat":54.0,"lon":-2.0},{"name":"大峽谷","en":"Grand Canyon","country":"美國 United States","continent":"North America","category":"山岳與岩石景觀","clue":"河流長期侵蝕形成深邃峽谷，岩層展現不同年代與顏色。","hint":"位於亞利桑那州。","lat":39.0,"lon":-98.0},{"name":"富士山","en":"Mount Fuji","country":"日本 Japan","continent":"Asia","category":"山岳與岩石景觀","clue":"外型對稱的火山是國家代表性景觀，也是藝術作品常見主題。","hint":"日本最高峰。","lat":36.2,"lon":138.2},{"name":"乞力馬扎羅山","en":"Mount Kilimanjaro","country":"坦尚尼亞 Tanzania","continent":"Africa","category":"山岳與岩石景觀","clue":"非洲最高峰，靠近赤道卻曾以山頂冰雪聞名。","hint":"它是一座休眠火山。","lat":-6.3,"lon":35.0},{"name":"桌山","en":"Table Mountain","country":"南非 South Africa","continent":"Africa","category":"山岳與岩石景觀","clue":"這座山頂平坦如桌面，俯瞰海岸城市與大西洋。","hint":"位於開普敦。","lat":-30.6,"lon":22.9},{"name":"烏魯魯","en":"Uluru","country":"澳洲 Australia","continent":"Oceania","category":"山岳與岩石景觀","clue":"澳洲內陸巨大的紅色砂岩岩體，對原住民族具有重要文化意義。","hint":"也曾被稱為 Ayers Rock。","lat":-25.3,"lon":133.8},{"name":"聖母峰","en":"Mount Everest","country":"尼泊爾 / 中國 Nepal / China","continent":"Asia","category":"山岳與岩石景觀","clue":"這座山峰是地球海拔最高點，吸引世界各地登山者。","hint":"位於喜馬拉雅山脈。","lat":28.2,"lon":86.5},{"name":"馬特洪峰","en":"Matterhorn","country":"瑞士 / 義大利 Switzerland / Italy","continent":"Europe","category":"山岳與岩石景觀","clue":"這座金字塔形山峰是阿爾卑斯山最具辨識度的山峰之一。","hint":"靠近策馬特。","lat":46.0,"lon":8.5},{"name":"張家界石柱群","en":"Zhangjiajie National Forest Park","country":"中國 China","continent":"Asia","category":"山岳與岩石景觀","clue":"高聳砂岩石柱從森林中拔地而起，景觀非常奇幻。","hint":"位於湖南。","lat":35.0,"lon":104.0},{"name":"百內國家公園","en":"Torres del Paine","country":"智利 Chile","continent":"South America","category":"山岳與岩石景觀","clue":"尖銳花崗岩山峰、冰川與湖泊構成巴塔哥尼亞代表景觀。","hint":"位於智利南部。","lat":-30.0,"lon":-71.0},{"name":"羅賴馬山","en":"Mount Roraima","country":"委內瑞拉 / 蓋亞那 / 巴西","continent":"South America","category":"山岳與岩石景觀","clue":"這座桌狀山頂部平坦、四周懸崖陡峭。","hint":"位於南美洲北部。","lat":5.0,"lon":-60.0},{"name":"米佛峽灣","en":"Milford Sound","country":"紐西蘭 New Zealand","continent":"Oceania","category":"瀑布、海岸與水域","clue":"陡峭山壁、瀑布與深水峽灣構成壯麗自然景觀。","hint":"位於紐西蘭南島。","lat":-41.0,"lon":174.0},{"name":"尼加拉瀑布","en":"Niagara Falls","country":"加拿大 / 美國 Canada / United States","continent":"North America","category":"瀑布、海岸與水域","clue":"這組大型瀑布位於兩國邊界，以巨大水量聞名。","hint":"靠近五大湖區。","lat":49.0,"lon":-110.0},{"name":"維多利亞瀑布","en":"Victoria Falls","country":"尚比亞 / 辛巴威 Zambia / Zimbabwe","continent":"Africa","category":"瀑布、海岸與水域","clue":"這座寬廣瀑布在水量豐沛時產生巨大水霧。","hint":"位於尚比西河。","lat":-17.9,"lon":25.8},{"name":"伊瓜蘇瀑布","en":"Iguazu Falls","country":"阿根廷 / 巴西 Argentina / Brazil","continent":"South America","category":"瀑布、海岸與水域","clue":"由數百個大小瀑布組成，其中惡魔咽喉最震撼。","hint":"位於南美兩國邊界。","lat":-27.0,"lon":-56.0},{"name":"大堡礁","en":"Great Barrier Reef","country":"澳洲 Australia","continent":"Oceania","category":"瀑布、海岸與水域","clue":"世界最大的珊瑚礁系統之一，從太空可觀察到其廣大範圍。","hint":"位於澳洲東北海岸。","lat":-25.3,"lon":133.8},{"name":"下龍灣","en":"Ha Long Bay","country":"越南 Vietnam","continent":"Asia","category":"瀑布、海岸與水域","clue":"海面上散布許多石灰岩島嶼與奇峰。","hint":"位於越南北部。","lat":16.0,"lon":108.0},{"name":"烏尤尼鹽湖","en":"Salar de Uyuni","country":"玻利維亞 Bolivia","continent":"South America","category":"瀑布、海岸與水域","clue":"雨季時薄薄積水會形成如天空之鏡般的倒影。","hint":"世界最大的鹽沼之一。","lat":-16.5,"lon":-64.5},{"name":"死海","en":"Dead Sea","country":"約旦 / 以色列 Jordan / Israel","continent":"Asia","category":"瀑布、海岸與水域","clue":"這片高鹽度水域讓人容易漂浮，岸邊低於海平面。","hint":"名稱中有 Sea，但其實是內陸湖。","lat":31.5,"lon":35.2},{"name":"棉堡","en":"Pamukkale","country":"土耳其 Turkey","continent":"Asia","category":"瀑布、海岸與水域","clue":"白色石灰華階梯上流動著溫泉水，看起來像雪地。","hint":"名稱有棉花城堡之意。","lat":39.0,"lon":35.0},{"name":"佩里托莫雷諾冰川","en":"Perito Moreno Glacier","country":"阿根廷 Argentina","continent":"South America","category":"瀑布、海岸與水域","clue":"這座巨大冰川可從步道近距離觀察，有時會發生冰塊崩落。","hint":"位於巴塔哥尼亞。","lat":-38.0,"lon":-64.0},{"name":"時代廣場","en":"Times Square","country":"美國 United States","continent":"North America","category":"城市廣場與街區","clue":"巨型電子看板、百老匯劇院與跨年倒數使這個路口非常著名。","hint":"位於紐約。","lat":39.0,"lon":-98.0},{"name":"紅場","en":"Red Square","country":"俄羅斯 Russia","continent":"Europe","category":"城市廣場與街區","clue":"這座大型廣場鄰近彩色圓頂教堂、克里姆林宮與大型百貨公司。","hint":"位於莫斯科。","lat":55.8,"lon":37.6},{"name":"特拉法加廣場","en":"Trafalgar Square","country":"英國 United Kingdom","continent":"Europe","category":"城市廣場與街區","clue":"廣場中央有高柱與海軍英雄雕像，四周常有活動。","hint":"位於倫敦。","lat":54.0,"lon":-2.0},{"name":"聖馬可廣場","en":"St. Mark's Square","country":"義大利 Italy","continent":"Europe","category":"城市廣場與街區","clue":"這座廣場鄰近教堂、鐘樓與潟湖，常有大量鴿子與遊客。","hint":"位於威尼斯。","lat":42.8,"lon":12.5},{"name":"天安門廣場","en":"Tiananmen Square","country":"中國 China","continent":"Asia","category":"城市廣場與街區","clue":"這座大型城市廣場位於重要宮殿建築群南側。","hint":"位於北京。","lat":35.0,"lon":104.0},{"name":"中央公園","en":"Central Park","country":"美國 United States","continent":"North America","category":"城市廣場與街區","clue":"這座大型都市公園被高樓包圍，內有湖泊、草地和步道。","hint":"位於紐約曼哈頓。","lat":39.0,"lon":-98.0},{"name":"澀谷十字路口","en":"Shibuya Crossing","country":"日本 Japan","continent":"Asia","category":"城市廣場與街區","clue":"號誌改變時，大量行人會從多個方向同時穿越路口。","hint":"位於東京。","lat":36.2,"lon":138.2},{"name":"香榭麗舍大道","en":"Champs-Elysees","country":"法國 France","continent":"Europe","category":"城市廣場與街區","clue":"這條知名大道連接大型廣場與紀念拱門，兩側有商店與劇院。","hint":"位於巴黎。","lat":46.2,"lon":2.3},{"name":"拉斯維加斯大道","en":"Las Vegas Strip","country":"美國 United States","continent":"North America","category":"城市廣場與街區","clue":"這條大道以大型飯店、賭場、霓虹燈與主題建築聞名。","hint":"位於內華達州。","lat":39.0,"lon":-98.0},{"name":"濱海灣花園","en":"Gardens by the Bay","country":"新加坡 Singapore","continent":"Asia","category":"城市廣場與街區","clue":"大型未來感超級樹與溫室花園構成夜間燈光景觀。","hint":"位於新加坡濱海灣。","lat":1.35,"lon":103.8}];
+const roles={"lucy":{"name":"Lucy","zh":"月面網路潛行者","icon":"🌙","passive":"Neural Link：每題答對 +25；8 秒內再 +35。Moon Path 精度最高。","eliminate":{"name":"ICE Break","desc":"刪除兩個錯誤節點，並回復 3 秒。"},"hint":{"name":"Deep Dive","desc":"顯示國家、洲別與中英文首尾情報。"},"prob":{"name":"Moon Path","desc":"84～94% 高精度預測，並回復 4 秒。"}},"david":{"name":"David","zh":"Sandevistan 跑者","icon":"⚡","passive":"Sandevistan：6 秒內答對額外 +40；其他答對速度分數 +10。","eliminate":{"name":"Sandevistan Cut","desc":"加速判斷，刪除兩個錯誤選項並回復 2 秒。"},"hint":{"name":"Chrome Focus","desc":"顯示國家、洲別與中文首字。"},"prob":{"name":"Time Dilation","desc":"減緩時間感，顯示高精度機率並回復 2 秒。"}},"rebecca":{"name":"Rebecca","zh":"重火力槍手","icon":"💥","passive":"Guts：第 6～10 題答對額外 +55 分。","eliminate":{"name":"Shotgun Sweep","desc":"霰彈掃射，直接轟掉三個錯誤選項。"},"hint":{"name":"Trigger Instinct","desc":"顯示地標類型、洲別與關鍵線索。"},"prob":{"name":"Bullet Spread","desc":"以火力分布顯示選項機率。"}},"maine":{"name":"Maine","zh":"重裝隊長","icon":"🦾","passive":"Crew Leader：Combo 獎勵額外提升，連勝越高越強。","eliminate":{"name":"Heavy Suppression","desc":"重火力壓制，刪除兩個錯誤節點。"},"hint":{"name":"Command Scan","desc":"顯示國家、類型與完整戰術提示。"},"prob":{"name":"Chrome Targeting","desc":"軍用義體鎖定高可能性目標。"}},"falco":{"name":"Falco","zh":"逃脫車手","icon":"🚘","passive":"Getaway Driver：世界地圖題答對額外 +50 分。","eliminate":{"name":"Escape Route","desc":"地圖題刪除三個錯誤位置；文字題刪除兩個。"},"hint":{"name":"Driver's Eye","desc":"顯示半球、所在洲與地圖方位。"},"prob":{"name":"Route Forecast","desc":"依導航路線訊號顯示機率。"}},"adam":{"name":"Adam Smasher","zh":"全身義體終極兵器","icon":"☠️","passive":"TOTAL CONVERSION：每題答對額外 +100；第一次答錯無視並保留 Combo。","eliminate":{"name":"Missile Barrage","desc":"鎖定並摧毀全部三個錯誤選項。"},"hint":{"name":"Target Lock","desc":"直接揭露正確答案、國家與地圖情報。"},"prob":{"name":"Combat OS","desc":"97～99% 戰鬥預測、標記正解並回復 10 秒。"}}};
+
+const $=id=>document.getElementById(id);
+const homeScreen=$("homeScreen"),gameScreen=$("gameScreen"),resultScreen=$("resultScreen");
+const teamNameInput=$("teamName"),roleGrid=$("roleGrid"),teamDisplay=$("teamDisplay"),roleDisplay=$("roleDisplay");
+const timeDisplay=$("timeDisplay"),questionDisplay=$("questionDisplay"),scoreDisplay=$("scoreDisplay"),timeBar=$("timeBar");
+const sceneTag=$("sceneTag"),clueText=$("clueText"),hintText=$("hintText"),mapShell=$("mapShell"),worldMap=$("worldMap");
+const optionsEl=$("options"),feedback=$("feedback"),homeRanking=$("homeRanking"),resultRanking=$("resultRanking");
+const resultTeam=$("resultTeam"),resultScore=$("resultScore"),resultDetail=$("resultDetail");
+const musicStatus=$("musicStatus"),intrusionOverlay=$("intrusionOverlay"),intrusionPrompt=$("intrusionPrompt");
+const intrusionOptions=$("intrusionOptions"),intrusionTimerFill=$("intrusionTimerFill"),intrusionStatus=$("intrusionStatus");
+
+let selectedRole="lucy",currentTeam="",lastTeam="",gameQuestions=[],currentOptions=[];
+let mapIndices=new Set(),currentIndex=0,score=0,correctCount=0,combo=0,timeLeft=180;
+let timerId=null,locked=false,usedEliminate=false,usedHint=false,usedProb=false;
+let questionStartedAt=0,currentMapMode=false,skillUsedThisQuestion=false,adamGuardUsed=false,audioCtx=null;
+let lobbyMusicTimer=null,lobbyMusicActive=false;
+let intrusionIndices=new Set(),resolvedIntrusions=new Set(),intrusionActive=false,intrusionTimerId=null,intrusionEndsAt=0,currentIntrusion=null;
+
+function ensureAudio(){if(audioCtx)return;const AC=window.AudioContext||window.webkitAudioContext;if(AC)audioCtx=new AC()}
+function tone(freq,duration,type="sine",gainValue=.07,delay=0){
+  ensureAudio();if(!audioCtx)return;const t=audioCtx.currentTime+delay,osc=audioCtx.createOscillator(),gain=audioCtx.createGain();
+  osc.type=type;osc.frequency.setValueAtTime(freq,t);gain.gain.setValueAtTime(.0001,t);
+  gain.gain.exponentialRampToValueAtTime(gainValue,t+.015);gain.gain.exponentialRampToValueAtTime(.0001,t+duration);
+  osc.connect(gain);gain.connect(audioCtx.destination);osc.start(t);osc.stop(t+duration+.03)
+}
+function correctSound(){tone(620,.1,"square",.045);tone(930,.13,"triangle",.07,.09);tone(1380,.17,"sine",.06,.19)}
+function wrongSound(){tone(240,.16,"sawtooth",.045);tone(145,.24,"sawtooth",.04,.13)}
+const lobbyNotes=[
+  [392,.20],[494,.20],[587,.38],[494,.20],[440,.20],[392,.38],
+  [330,.20],[392,.20],[494,.38],[440,.20],[392,.20],[330,.48],
+  [294,.20],[370,.20],[440,.38],[392,.20],[330,.20],[294,.48]
+];
+function lobbyChip(freq,duration,delay,volume=.024,type="square"){
+  ensureAudio();if(!audioCtx)return;
+  const t=audioCtx.currentTime+delay,osc=audioCtx.createOscillator(),gain=audioCtx.createGain();
+  osc.type=type;osc.frequency.setValueAtTime(freq,t);
+  gain.gain.setValueAtTime(.0001,t);gain.gain.exponentialRampToValueAtTime(volume,t+.018);
+  gain.gain.exponentialRampToValueAtTime(.0001,t+duration);
+  osc.connect(gain);gain.connect(audioCtx.destination);osc.start(t);osc.stop(t+duration+.03)
+}
+function playLobbyPhrase(){
+  if(!lobbyMusicActive)return;
+  let delay=0;
+  lobbyNotes.forEach(([freq,dur],i)=>{
+    lobbyChip(freq,dur,delay,.021,i%3===0?"square":"triangle");
+    if(i%3===0)lobbyChip(freq/2,dur*.9,delay,.011,"square");
+    delay+=dur+.045
+  })
+}
+function updateMusicStatus(){
+  const allowed=selectedRole==="lucy"||selectedRole==="david";
+  if(lobbyMusicActive&&allowed){
+    musicStatus.classList.add("active");
+    musicStatus.textContent=`♪ ${roles[selectedRole].name} selected // Original 2-bit Night City BGM playing`
+  }else{
+    musicStatus.classList.remove("active");
+    musicStatus.textContent=allowed
+      ?`♪ 再點一次 ${roles[selectedRole].name} 或切換回此角色即可啟動原創 2-bit BGM。`
+      :"♪ 只有選擇 Lucy 或 David 時，才會播放原創 Night City 2-bit 大廳音樂。"
+  }
+}
+function startLobbyMusic(){
+  if(!(selectedRole==="lucy"||selectedRole==="david")){stopLobbyMusic();return}
+  ensureAudio();stopLobbyMusic();lobbyMusicActive=true;playLobbyPhrase();
+  lobbyMusicTimer=setInterval(playLobbyPhrase,5600);updateMusicStatus()
+}
+function stopLobbyMusic(){
+  lobbyMusicActive=false;
+  if(lobbyMusicTimer){clearInterval(lobbyMusicTimer);lobbyMusicTimer=null}
+  if(musicStatus)updateMusicStatus()
+}
+function shuffle(arr){const a=[...arr];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function sample(arr,n){return shuffle(arr).slice(0,n)}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function attr(s){return esc(s).replace(/"/g,"&quot;")}
+function clock(sec){sec=Math.max(0,sec);return `${Math.floor(sec/60)}:${String(sec%60).padStart(2,"0")}`}
+function isCritical(){return timeLeft<=60||currentIndex>=5}
+function hemisphere(q){return `${q.lat>=0?"北半球":"南半球"}、${q.lon>=0?"東半球":"西半球"}`}
+function direction(q){
+  if(q.lat>35)return "世界地圖偏北側";
+  if(q.lat<-20)return "世界地圖偏南側";
+  return "接近中低緯度區域"
+}
+function teamKey(){
+  return teamNameInput.value.trim()||currentTeam.trim()||"Unknown Squad"
+}
+function teamTotal(team=teamKey()){
+  const row=getRanking()[team];
+  return row?row.total:0
+}
+function adamUnlocked(team=teamKey()){
+  return teamTotal(team)>=2600
+}
+
+
+
+function avatarSVG(id){
+  const bg=`<rect width="64" height="64" fill="#03070d"/><path d="M0 49L18 31 38 37 64 18V64H0Z" fill="#0b2030"/><path d="M0 58L26 38 64 44V64H0Z" fill="#111827"/>`;
+  const frame=`<path d="M1 1H55L63 9V63H9L1 55Z" fill="none" stroke="#2f6780" stroke-width="2"/>`;
+  const arts={
+    lucy:`<path d="M19 17L27 8 45 10 50 24 45 45 22 46 15 34Z" fill="#dce7ef"/><path d="M16 24L21 10 39 5 52 15 43 19 34 15 25 25Z" fill="#f4f7fb"/><path d="M43 14L54 21 49 43 40 39Z" fill="#bac8d4"/><rect x="24" y="27" width="7" height="3" fill="#00f5ff"/><rect x="38" y="27" width="7" height="3" fill="#ff2bd6"/><path d="M27 49H44L51 64H16Z" fill="#24293d"/><path d="M30 47L36 55 42 47" fill="none" stroke="#ff2bd6" stroke-width="3"/>`,
+    david:`<path d="M19 18L28 8 43 10 49 24 45 44 22 46 15 32Z" fill="#c89068"/><path d="M16 22L23 9 39 5 51 15 45 20 34 14 24 25Z" fill="#3a241d"/><rect x="24" y="27" width="7" height="3" fill="#111827"/><rect x="38" y="27" width="7" height="3" fill="#111827"/><path d="M18 48H48L58 64H8Z" fill="#d8e41d"/><path d="M27 48L35 57 43 48" fill="none" stroke="#00f5ff" stroke-width="3"/>`,
+    rebecca:`<path d="M19 18L27 10 43 10 50 23 46 45 22 46 15 31Z" fill="#d9d5d2"/><circle cx="14" cy="17" r="9" fill="#34d5df"/><circle cx="51" cy="17" r="9" fill="#ff68c7"/><path d="M16 25L20 11 31 7 47 12 51 25 41 20 33 25 25 19Z" fill="#62e2e2"/><rect x="23" y="28" width="8" height="3" fill="#ff2bd6"/><rect x="38" y="28" width="8" height="3" fill="#00f5ff"/><path d="M15 49H51L62 64H3Z" fill="#ef4aa9"/><path d="M25 43H43" stroke="#6c263f" stroke-width="2"/>`,
+    maine:`<path d="M17 16L25 7 43 8 52 20 48 44 21 46 13 31Z" fill="#80543f"/><path d="M16 18L24 7 44 8 52 19 47 22 38 16 25 19Z" fill="#251b18"/><rect x="22" y="27" width="8" height="3" fill="#ff3b64"/><rect x="39" y="27" width="8" height="3" fill="#ff3b64"/><path d="M17 40L24 48H45L51 39 47 52 22 53Z" fill="#a9bdc8"/><path d="M7 49H57L64 64H0Z" fill="#526474"/><rect x="8" y="48" width="12" height="16" fill="#7d98a9"/><rect x="44" y="48" width="12" height="16" fill="#7d98a9"/>`,
+    falco:`<path d="M20 19L28 10 43 11 49 25 45 45 22 46 15 32Z" fill="#bd815d"/><path d="M10 15H55L49 8H20Z" fill="#7a4c28"/><path d="M17 17L24 7H45L51 17Z" fill="#9d6333"/><rect x="24" y="27" width="7" height="3" fill="#111827"/><rect x="38" y="27" width="7" height="3" fill="#111827"/><path d="M25 38Q34 45 44 38Q38 48 25 43Z" fill="#4d2b1a"/><path d="M15 49H52L61 64H5Z" fill="#5b3925"/><path d="M25 48L35 56 45 48" fill="none" stroke="#d7b37e" stroke-width="3"/>`,
+    adam:`<path d="M15 14L25 5H44L54 15 51 44 43 53H23L13 43Z" fill="#9baab3"/><path d="M17 17L27 9H43L51 17 46 24 35 19 23 25Z" fill="#596872"/><rect x="20" y="27" width="12" height="5" fill="#ff163f"/><rect x="38" y="27" width="12" height="5" fill="#ff163f"/><path d="M22 40H47L43 50H27Z" fill="#26333b"/><rect x="10" y="48" width="44" height="16" fill="#4b5962"/><path d="M4 55L17 45 25 64H0Z" fill="#697b85"/><path d="M60 55L47 45 39 64H64Z" fill="#697b85"/>`
+  };
+  return `<svg viewBox="0 0 64 64" shape-rendering="crispEdges" aria-label="${roles[id].name} pixel portrait">${bg}${arts[id]||arts.lucy}${frame}</svg>`
+}
+
+function renderRoles(){
+  const unlocked=adamUnlocked();
+  if(selectedRole==="adam"&&!unlocked)selectedRole="lucy";
+  roleGrid.innerHTML=Object.entries(roles)
+    .filter(([id])=>id!=="adam"||unlocked)
+    .map(([id,r])=>`
+    <div class="role ${id==="adam"?"adam":""} ${selectedRole===id?"active":""}" onclick="selectRole('${id}')">
+      <div class="role-avatar">${avatarSVG(id)}</div>
+      <div class="role-name">${r.name}</div>
+      <div class="role-zh">${r.zh}</div><div class="role-passive">${r.passive}</div>
+    </div>`).join("")
+}
+function selectRole(id){
+  if(id==="adam"&&!adamUnlocked())return;
+  selectedRole=id;renderRoles();
+  if(id==="lucy"||id==="david")startLobbyMusic();else stopLobbyMusic()
+}
+function renderSkills(){
+  const r=roles[selectedRole];
+  $("skillEliminate").innerHTML=`<span class="skill-title">🪓 ${r.eliminate.name}</span><span class="skill-desc">${r.eliminate.desc}</span>`;
+  $("skillHint").innerHTML=`<span class="skill-title">💡 ${r.hint.name}</span><span class="skill-desc">${r.hint.desc}</span>`;
+  $("skillProb").innerHTML=`<span class="skill-title">📡 ${r.prob.name}</span><span class="skill-desc">${r.prob.desc}</span>`
+}
+
+function startGame(){
+  ensureAudio();stopLobbyMusic();currentTeam=teamNameInput.value.trim()||"Unknown Squad";lastTeam=currentTeam;if(selectedRole==="adam"&&!adamUnlocked(currentTeam))selectedRole="lucy";
+  gameQuestions=sample(questionBank,10);prepareIntrusions();intrusionActive=false;
+  const early=sample([0,1,2,3,4],2),late=sample([5,6,7,8,9],2);mapIndices=new Set([...early,...late]);
+  currentIndex=0;score=0;correctCount=0;combo=0;timeLeft=180;locked=false;
+  usedEliminate=false;usedHint=false;usedProb=false;adamGuardUsed=false;
+  ["skillEliminate","skillHint","skillProb"].forEach(id=>$(id).disabled=false);
+  renderSkills();homeScreen.classList.add("hidden");resultScreen.classList.add("hidden");gameScreen.classList.remove("hidden");
+  teamDisplay.textContent=currentTeam.length>9?currentTeam.slice(0,9)+"…":currentTeam;roleDisplay.textContent=roles[selectedRole].name;
+  updateTop();loadQuestion();clearInterval(timerId);timerId=setInterval(()=>{if(intrusionActive)return;timeLeft--;updateTop();if(timeLeft<=0)finishGame("CONNECTION TIMEOUT")},1000)
+}
+function updateTop(){
+  timeDisplay.textContent=clock(timeLeft);questionDisplay.textContent=`${Math.min(currentIndex+1,10)}/10`;
+  scoreDisplay.textContent=score;timeBar.style.width=`${Math.max(0,timeLeft/180*100)}%`
+}
+
+function uniqueByCountry(pool,q){
+  const chosen=[];for(const item of shuffle(pool)){
+    if(chosen.length>=3)break;
+    if(item.name!==q.name&&!chosen.some(x=>x.country===item.country)&&item.country!==q.country)chosen.push(item)
+  }return chosen
+}
+function createTextOptions(q,hard){
+  let pool=hard?questionBank.filter(x=>x.category===q.category&&x.name!==q.name):
+    [...questionBank.filter(x=>x.continent===q.continent&&x.name!==q.name),...questionBank.filter(x=>x.name!==q.name)];
+  const chosen=[];for(const item of shuffle(pool)){if(chosen.length>=3)break;if(!chosen.some(x=>x.name===item.name))chosen.push(item)}
+  return shuffle([q,...chosen])
+}
+function projectedDistance(a,b){
+  const pa=projection(a),pb=projection(b);
+  return Math.hypot(pa.x-pb.x,pa.y-pb.y)
+}
+function chooseSpacedWrongOptions(q,candidates){
+  const clean=shuffle(candidates).filter(x=>x.name!==q.name&&x.country!==q.country);
+  const thresholds=[230,190,155,120,85];
+  for(const minDistance of thresholds){
+    const chosen=[];
+    for(const item of clean){
+      if(chosen.length>=3)break;
+      if(chosen.some(x=>x.country===item.country))continue;
+      if(projectedDistance(q,item)<minDistance)continue;
+      if(chosen.every(x=>projectedDistance(x,item)>=minDistance))chosen.push(item)
+    }
+    if(chosen.length===3)return chosen
+  }
+  const fallback=[];
+  for(const item of clean){
+    if(fallback.length>=3)break;
+    if(!fallback.some(x=>x.country===item.country))fallback.push(item)
+  }
+  return fallback
+}
+function createMapOptions(q,hard){
+  let candidates;
+  if(hard){
+    candidates=[
+      ...questionBank.filter(x=>x.category===q.category&&x.continent!==q.continent),
+      ...questionBank.filter(x=>x.category===q.category),
+      ...questionBank.filter(x=>x.continent!==q.continent),
+      ...questionBank
+    ]
+  }else{
+    candidates=[
+      ...questionBank.filter(x=>x.continent!==q.continent),
+      ...questionBank
+    ]
+  }
+  const wrong=chooseSpacedWrongOptions(q,candidates);
+  return shuffle([q,...wrong])
+}
+
+function projection(q){return {x:((q.lon+180)/360)*1000,y:((90-q.lat)/180)*480}}
+const mapBase=`
+<defs>
+ <pattern id="grid" width="50" height="40" patternUnits="userSpaceOnUse"><path d="M50 0H0V40" fill="none" class="map-grid"/></pattern>
+ <filter id="glow"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+</defs>
+<rect width="1000" height="480" class="map-ocean"/><rect width="1000" height="480" fill="url(#grid)"/>
+<g>
+ <path class="land" d="M55 105L108 61 190 55 252 92 274 139 238 170 205 198 164 188 137 225 95 198 72 158Z"/>
+ <path class="land" d="M235 232L282 248 309 301 294 365 258 431 226 374 213 306Z"/>
+ <path class="land" d="M430 92L482 72 531 86 548 117 521 139 475 132 450 151 420 130Z"/>
+ <path class="land" d="M456 157L518 143 565 185 578 254 539 337 492 330 459 265 438 205Z"/>
+ <path class="land" d="M535 91L625 58 746 72 838 115 876 161 826 190 758 174 704 205 650 176 593 184 551 143Z"/>
+ <path class="land" d="M760 243L815 221 882 242 906 286 870 327 806 319 774 285Z"/>
+ <path class="land" d="M917 348L955 340 973 365 950 385 921 378Z"/>
+ <path class="land" d="M308 43L345 23 380 43 368 78 328 83Z"/>
+</g>
+<g opacity=".48">
+ <text x="142" y="126" class="map-label">N. AMERICA</text><text x="232" y="314" class="map-label">S. AMERICA</text>
+ <text x="454" y="113" class="map-label">EUROPE</text><text x="477" y="238" class="map-label">AFRICA</text>
+ <text x="680" y="126" class="map-label">ASIA</text><text x="800" y="279" class="map-label">OCEANIA</text>
+</g>`;
+
+function spreadMapPoints(items){
+  const points=items.map(q=>projection(q));
+  const minGap=92;
+  for(let pass=0;pass<12;pass++){
+    for(let i=0;i<points.length;i++){
+      for(let j=i+1;j<points.length;j++){
+        let dx=points[j].x-points[i].x,dy=points[j].y-points[i].y;
+        let d=Math.hypot(dx,dy);
+        if(d<minGap){
+          if(d<1){dx=(j-i)*9+1;dy=(i+j)*7+1;d=Math.hypot(dx,dy)}
+          const push=(minGap-d)/2+4,ux=dx/d,uy=dy/d;
+          points[i].x-=ux*push;points[i].y-=uy*push;
+          points[j].x+=ux*push;points[j].y+=uy*push
+        }
+      }
+      points[i].x=Math.max(34,Math.min(966,points[i].x));
+      points[i].y=Math.max(34,Math.min(446,points[i].y))
+    }
+  }
+  return points
+}
+function renderMap(){
+  const points=spreadMapPoints(currentOptions);
+  worldMap.innerHTML=mapBase+currentOptions.map((q,i)=>`
+    <g class="map-marker" id="marker${i}" onclick="chooseMap(${i})" filter="url(#glow)">
+      <circle cx="${points[i].x}" cy="${points[i].y}" r="18"></circle>
+      <text x="${points[i].x}" y="${points[i].y+1}">${String.fromCharCode(65+i)}</text>
+    </g>`).join("")
+}
+
+
+const intrusionChallenges=[
+  {prompt:"CLICK THE OPPOSITE OF LEFT",correct:"RIGHT",options:["LEFT","RIGHT","DOWN"]},
+  {prompt:"CLICK THE ACTION WORD",correct:"JUMP",options:["BLUE","JUMP","HOUSE"]},
+  {prompt:"CLICK THE ANIMAL",correct:"CAT",options:["TABLE","CAT","FAST"]},
+  {prompt:"CLICK THE COLOR",correct:"GREEN",options:["RUN","GREEN","CHAIR"]},
+  {prompt:"CLICK THE OPPOSITE OF UP",correct:"DOWN",options:["RIGHT","UP","DOWN"]},
+  {prompt:"CLICK THE VEHICLE",correct:"CAR",options:["CAR","APPLE","SLEEP"]},
+  {prompt:"CLICK THE NUMBER",correct:"SEVEN",options:["PURPLE","SEVEN","DANCE"]},
+  {prompt:"CLICK THE WORD THAT MEANS STOP",correct:"HALT",options:["GO","HALT","FLY"]},
+  {prompt:"CLICK THE FOOD",correct:"PIZZA",options:["PIZZA","WINDOW","QUICK"]},
+  {prompt:"CLICK THE BODY PART",correct:"HAND",options:["HAND","LOUD","TRAIN"]}
+];
+function prepareIntrusions(){
+  const count=Math.random()<.68?2:1;
+  intrusionIndices=new Set(sample([1,2,3,4,5,6,7,8],count));
+  resolvedIntrusions=new Set()
+}
+function startIntrusion(){
+  intrusionActive=true;locked=true;intrusionOverlay.classList.remove("hidden");
+  tone(120,.25,"sawtooth",.04);tone(90,.32,"square",.035,.16);
+  nextIntrusionChallenge("ARASAKA mercenary has blocked the GEO-NET.")
+}
+function nextIntrusionChallenge(message){
+  clearInterval(intrusionTimerId);
+  currentIntrusion=intrusionChallenges[Math.floor(Math.random()*intrusionChallenges.length)];
+  intrusionPrompt.textContent=currentIntrusion.prompt;
+  intrusionStatus.textContent=message;
+  intrusionOptions.innerHTML=shuffle(currentIntrusion.options).map(option=>
+    `<button class="intrusion-option" onclick="answerIntrusion('${attr(option)}')">${esc(option)}</button>`
+  ).join("");
+  intrusionEndsAt=Date.now()+5200;
+  intrusionTimerFill.style.width="100%";
+  intrusionTimerId=setInterval(()=>{
+    const remain=Math.max(0,intrusionEndsAt-Date.now());
+    intrusionTimerFill.style.width=`${remain/5200*100}%`;
+    if(remain<=0){
+      clearInterval(intrusionTimerId);
+      timeLeft=Math.max(1,timeLeft-5);updateTop();wrongSound();
+      nextIntrusionChallenge("TIMEOUT // 主遊戲時間 -5 秒。重新驗證。")
+    }
+  },80)
+}
+function answerIntrusion(answer){
+  if(!intrusionActive)return;
+  if(answer===currentIntrusion.correct){
+    clearInterval(intrusionTimerId);correctSound();score+=35;updateTop();
+    intrusionStatus.innerHTML=`<span class="score-flash">ACCESS GRANTED // English reaction +35</span>`;
+    [...intrusionOptions.querySelectorAll("button")].forEach(b=>b.disabled=true);
+    setTimeout(()=>{
+      intrusionActive=false;resolvedIntrusions.add(currentIndex);
+      intrusionOverlay.classList.add("hidden");loadQuestion(true)
+    },650)
+  }else{
+    timeLeft=Math.max(1,timeLeft-3);updateTop();wrongSound();
+    nextIntrusionChallenge("WRONG INPUT // 主遊戲時間 -3 秒。再試一次。")
+  }
+}
+
+function loadQuestion(skipIntrusion=false){
+  if(currentIndex>=10){finishGame("ALL NODES CLEARED");return}
+  if(!skipIntrusion&&intrusionIndices.has(currentIndex)&&!resolvedIntrusions.has(currentIndex)){
+    startIntrusion();return
+  }
+  locked=false;skillUsedThisQuestion=false;
+  const q=gameQuestions[currentIndex],hard=currentIndex>=5;currentMapMode=mapIndices.has(currentIndex);
+  currentOptions=currentMapMode?createMapOptions(q,hard):createTextOptions(q,hard);
+  sceneTag.textContent=currentMapMode?(hard?"EXPERT MAP TRACE":"WORLD MAP TRACE"):(hard?`EXPERT // ${q.category}`:"LANDMARK TRACE");
+  if(currentMapMode){
+    clueText.innerHTML=`定位 <span style="color:var(--yellow)">${esc(q.name)}</span><br><span style="font-size:.62em;color:var(--cyan)">${esc(q.en)}</span>`;
+    hintText.textContent=hard?`四個定位點優先來自「${q.category}」地標。請選出真正位置。`:"點選世界地圖上的 A～D，判斷這個地標位於哪裡。";
+    mapShell.classList.remove("hidden");renderMap();
+    optionsEl.innerHTML=currentOptions.map((o,i)=>`
+      <button class="option" data-name="${attr(o.name)}" onclick="chooseMap(${i})">
+        <span class="letter">${String.fromCharCode(65+i)}</span>
+        <span class="option-main">定位點 ${String.fromCharCode(65+i)}<span class="option-en">LOCATION NODE ${String.fromCharCode(65+i)}</span></span>
+      </button>`).join("")
+  }else{
+    clueText.textContent=q.clue;
+    hintText.textContent=hard?`四個答案全部都是「${q.category}」，請根據細節判斷。`:"根據描述選出正確的世界著名地標。";
+    mapShell.classList.add("hidden");worldMap.innerHTML="";
+    optionsEl.innerHTML=currentOptions.map((o,i)=>`
+      <button class="option" data-name="${attr(o.name)}" onclick="chooseAnswer('${attr(o.name)}')">
+        <span class="letter">${String.fromCharCode(65+i)}</span>
+        <span class="option-main">${esc(o.name)}<span class="option-en">${esc(o.en)}</span></span>
+      </button>`).join("")
+  }
+  feedback.innerHTML=`任務 <b>${currentIndex+1}</b>：反應速度正在計分。`;
+  questionStartedAt=performance.now();updateTop()
+}
+function chooseMap(i){if(locked)return;chooseAnswer(currentOptions[i].name,i)}
+function speedBonus(sec){
+  let b=Math.max(0,Math.round(155-sec*7.2));
+  if(selectedRole==="lucy")b+=15;
+  if(selectedRole==="david")b+=sec<=6?40:10;
+  return b
+}
+function chooseAnswer(answer,mapChoiceIndex=null){
+  if(locked)return;locked=true;
+  const q=gameQuestions[currentIndex],correct=answer===q.name,sec=Math.max(.1,(performance.now()-questionStartedAt)/1000);
+  [...document.querySelectorAll(".option")].forEach(btn=>{
+    btn.disabled=true;if(btn.dataset.name===q.name)btn.classList.add("correct");else if(btn.dataset.name===answer)btn.classList.add("wrong")
+  });
+  if(currentMapMode){
+    currentOptions.forEach((o,i)=>{
+      const m=$(`marker${i}`);if(!m)return;if(o.name===q.name)m.classList.add("correct");else if(i===mapChoiceIndex)m.classList.add("wrong")
+    })
+  }
+  if(correct){
+    correctSound();combo++;correctCount++;
+    const speed=speedBonus(sec),hardBonus=currentIndex>=5?45:0,mapBonus=currentMapMode?35:0;
+    let comboBonus=Math.min(100,(combo-1)*16),careerBonus=0;
+    if(selectedRole==="maine")comboBonus+=Math.min(75,(combo-1)*12);
+    if(selectedRole==="lucy"){careerBonus+=25;if(sec<=8)careerBonus+=35}
+    if(selectedRole==="rebecca"&&currentIndex>=5)careerBonus+=55;
+    if(selectedRole==="falco"&&currentMapMode)careerBonus+=50;
+    if(selectedRole==="adam")careerBonus+=100;
+    const gain=100+speed+hardBonus+mapBonus+comboBonus+careerBonus;score+=gain;
+    feedback.innerHTML=`✅ <b>${esc(q.name)}</b>｜${esc(q.en)}<br><span class="score-flash">${sec.toFixed(1)} 秒：速度 +${speed}</span>｜難度 +${hardBonus}｜地圖 +${mapBonus}｜Combo +${comboBonus}${careerBonus?`｜職業 +${careerBonus}`:""}<br>本題 +${gain} 分`
+  }else{
+    wrongSound();let rescue="";
+    if(selectedRole==="adam"&&!adamGuardUsed){
+      adamGuardUsed=true;
+      rescue=`<br><span class="critical">☠️ TOTAL CONVERSION：本次錯誤被裝甲吸收，Combo 保留。</span>`
+    }else combo=0;
+    feedback.innerHTML=`❌ 正確答案：<b>${esc(q.name)}</b>｜${esc(q.en)}<br>所在地：${esc(q.country)}${rescue}`
+  }
+  updateTop();setTimeout(()=>{currentIndex++;currentIndex>=10?finishGame("ALL NODES CLEARED"):loadQuestion()},1650)
+}
+
+function useEliminate(){
+  if(usedEliminate||locked)return;usedEliminate=true;skillUsedThisQuestion=true;$("skillEliminate").disabled=true;
+  const q=gameQuestions[currentIndex],wrong=[...document.querySelectorAll(".option")].filter(b=>b.dataset.name!==q.name);
+  let count=2,extra="";
+  if(selectedRole==="rebecca")count=3;
+  if(selectedRole==="falco"&&currentMapMode)count=3;
+  if(selectedRole==="adam")count=3;
+  if(selectedRole==="lucy"){timeLeft=Math.min(180,timeLeft+3);extra="，ICE Break 回復 3 秒"}
+  if(selectedRole==="david"){timeLeft=Math.min(180,timeLeft+2);extra="，Sandevistan 回復 2 秒"}
+  sample(wrong,count).forEach(btn=>{
+    btn.classList.add("eliminated");btn.disabled=true;
+    if(currentMapMode){const idx=[...document.querySelectorAll(".option")].indexOf(btn);const marker=$(`marker${idx}`);if(marker)marker.style.opacity=".12"}
+  });
+  feedback.innerHTML=`🪓 <b>${roles[selectedRole].eliminate.name}</b>：已移除 ${count} 個錯誤節點${extra}。`;updateTop()
+}
+function useHint(){
+  if(usedHint||locked)return;usedHint=true;skillUsedThisQuestion=true;$("skillHint").disabled=true;
+  const q=gameQuestions[currentIndex];let data="";
+  if(selectedRole==="lucy")data=`國家：<b>${esc(q.country)}</b>｜洲別：<b>${esc(q.continent)}</b>｜中文首尾：<b>${esc(q.name[0])}…${esc(q.name.at(-1))}</b>｜英文首尾：<b>${esc(q.en[0])}…${esc(q.en.at(-1))}</b>`;
+  else if(selectedRole==="david")data=`國家：<b>${esc(q.country)}</b>｜所在洲：<b>${esc(q.continent)}</b>｜中文首字：<b>${esc(q.name[0])}</b>`;
+  else if(selectedRole==="rebecca")data=`類型：<b>${esc(q.category)}</b>｜所在洲：<b>${esc(q.continent)}</b>｜${esc(q.hint)}`;
+  else if(selectedRole==="maine")data=`國家：<b>${esc(q.country)}</b>｜類型：<b>${esc(q.category)}</b>｜${esc(q.hint)}`;
+  else if(selectedRole==="falco")data=`<b>${hemisphere(q)}</b>｜${direction(q)}｜所在洲：<b>${esc(q.continent)}</b>`;
+  else data=`<span class="unlock-flash">TARGET CONFIRMED：</span><b>${esc(q.name)}</b>｜${esc(q.en)}｜國家：<b>${esc(q.country)}</b>｜${hemisphere(q)}`;
+  hintText.innerHTML=`${roles[selectedRole].hint.name} // ${data}`;
+  feedback.innerHTML=`💡 <b>${roles[selectedRole].hint.name}</b> 已注入角色專屬情報。`
+}
+function useProbability(){
+  if(usedProb||locked)return;usedProb=true;skillUsedThisQuestion=true;$("skillProb").disabled=true;
+  const q=gameQuestions[currentIndex],ci=currentOptions.findIndex(o=>o.name===q.name);
+  let min=58,max=76;
+  if(selectedRole==="lucy"){min=84;max=94}
+  if(selectedRole==="david"){min=67;max=82}
+  if(selectedRole==="maine"){min=68;max=84}
+  if(selectedRole==="falco"&&currentMapMode){min=72;max=87}
+  if(selectedRole==="adam"){min=97;max=99}
+  const nums=[0,0,0,0],correct=min+Math.floor(Math.random()*(max-min+1));nums[ci]=correct;
+  let remain=100-correct;const others=[0,1,2,3].filter(i=>i!==ci);
+  others.forEach((idx,i)=>{if(i===others.length-1)nums[idx]=remain;else{const maxPart=Math.max(1,remain-(others.length-i-1));const part=1+Math.floor(Math.random()*maxPart);nums[idx]=part;remain-=part}});
+  [...document.querySelectorAll(".option")].forEach((btn,i)=>{
+    const main=btn.querySelector(".option-main"),letter=String.fromCharCode(65+i);
+    const lock=selectedRole==="adam"&&i===ci?`<span class="option-en unlock-flash">☠ TARGET LOCKED</span>`:
+      selectedRole==="lucy"&&i===nums.indexOf(Math.max(...nums))?`<span class="option-en" style="color:var(--green)">🌙 MOON PATH</span>`:"";
+    if(currentMapMode)main.innerHTML=`定位點 ${letter}<span class="option-en">SIGNAL ${nums[i]}%</span>${lock}`;
+    else main.innerHTML=`${esc(currentOptions[i].name)}<span class="option-en">${esc(currentOptions[i].en)}｜SIGNAL ${nums[i]}%</span>${lock}`
+  });
+  let extra="";
+  if(selectedRole==="lucy"){timeLeft=Math.min(180,timeLeft+4);extra="，Moon Path 回復 4 秒"}
+  if(selectedRole==="david"){timeLeft=Math.min(180,timeLeft+2);extra="，Time Dilation 回復 2 秒"}
+  if(selectedRole==="adam"){
+    timeLeft=Math.min(180,timeLeft+10);extra="，Combat OS 回復 10 秒並標記正確目標";
+    const correctButton=[...document.querySelectorAll(".option")][ci];if(correctButton)correctButton.style.borderColor="var(--red)";
+    const marker=$(`marker${ci}`);if(marker)marker.classList.add("correct")
+  }
+  feedback.innerHTML=`📡 <b>${roles[selectedRole].prob.name}</b>：機率訊號已顯示${extra}。`;updateTop()
+}
+
+function finishGame(reason){
+  clearInterval(timerId);timerId=null;gameScreen.classList.add("hidden");resultScreen.classList.remove("hidden");
+  const beforeTotal=teamTotal(currentTeam);
+  saveRanking(currentTeam,score,correctCount,selectedRole);
+  const afterTotal=teamTotal(currentTeam);
+  resultTeam.textContent=`${currentTeam} // ${roles[selectedRole].name}`;
+  const unlockedNow=beforeTotal<2600&&afterTotal>=2600;
+  resultScore.textContent=score;
+  resultDetail.innerHTML=`${reason}｜答對 ${correctCount}/10｜隊伍累積 ${afterTotal} 分。${unlockedNow?'<br><span class="unlock-flash">☠ SECRET CHARACTER UNLOCKED：ADAM SMASHER</span>':""}`;
+  renderRanking()
+}
+function getRanking(){try{return JSON.parse(localStorage.getItem("cyber_geo_advanced_ranking")||"{}")}catch(e){return{}}}
+function saveRanking(team,points,correct,role){
+  const data=getRanking(),key=team.trim()||"Unknown Squad";
+  if(!data[key])data[key]={team:key,total:0,plays:0,best:0,correct:0,lastRole:role};
+  data[key].total+=points;data[key].plays++;data[key].best=Math.max(data[key].best,points);data[key].correct+=correct;data[key].lastRole=role;
+  localStorage.setItem("cyber_geo_advanced_ranking",JSON.stringify(data))
+}
+function renderRanking(){
+  const rows=Object.values(getRanking()).sort((a,b)=>b.total-a.total||b.best-a.best).slice(0,10);
+  const html=rows.length?rows.map((r,i)=>`
+   <div class="rank"><div class="rank-no">${i+1}</div>
+   <div><div class="rank-name">${esc(r.team)}</div><div class="rank-meta">${roles[r.lastRole]?.icon||"🌐"} ${roles[r.lastRole]?.name||"Runner"}｜RUNS ${r.plays}｜BEST ${r.best}｜CORRECT ${r.correct}</div></div>
+   <div class="rank-score">${r.total}</div></div>`).join(""):`<div class="rule">NO LOCAL DATA // 尚無排行榜紀錄</div>`;
+  homeRanking.innerHTML=html;resultRanking.innerHTML=html
+}
+function clearRanking(){if(confirm("確定清除本機排行榜？")){localStorage.removeItem("cyber_geo_advanced_ranking");renderRanking()}}
+function demoTeam(){teamNameInput.value="EDGERUNNER CLASS";renderRoles()}
+function backHome(){resultScreen.classList.add("hidden");gameScreen.classList.add("hidden");homeScreen.classList.remove("hidden");renderRanking();renderRoles();if(selectedRole==="lucy"||selectedRole==="david")startLobbyMusic()}
+function restartSameTeam(){teamNameInput.value=lastTeam||currentTeam||"EDGERUNNER CLASS";startGame()}
+
+teamNameInput.addEventListener("input",renderRoles);
+renderRoles();renderRanking();
+</script>
+</body>
+</html>

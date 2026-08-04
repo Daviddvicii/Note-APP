@@ -1,0 +1,417 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>CYBER WORLD // Global Knowledge Protocol</title>
+<style>
+:root{
+ --void:#020306;--panel:#080d15;--panel2:#101621;--cyan:#45f3ff;--red:#ff355e;
+ --amber:#ffca3a;--green:#56ffa4;--violet:#ba68ff;--white:#f6fbff;--muted:#91a2b5;--line:#26384c
+}
+*{box-sizing:border-box}html{touch-action:manipulation}
+body{
+ margin:0;min-height:100vh;color:var(--white);font-family:system-ui,-apple-system,"Segoe UI","Noto Sans TC",sans-serif;
+ background:
+ linear-gradient(rgba(69,243,255,.03) 1px,transparent 1px),
+ linear-gradient(90deg,rgba(69,243,255,.03) 1px,transparent 1px),
+ radial-gradient(circle at 5% 0%,rgba(255,53,94,.21),transparent 27%),
+ radial-gradient(circle at 95% 4%,rgba(186,104,255,.16),transparent 25%),#020306;
+ background-size:30px 30px,30px 30px,auto,auto,auto
+}
+body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:1000;background:repeating-linear-gradient(0deg,rgba(255,255,255,.015) 0,rgba(255,255,255,.015) 1px,transparent 1px,transparent 4px)}
+.wrap{max-width:1180px;margin:auto;padding:13px}header{text-align:center;padding:21px 10px 12px}
+.logo{margin:0;font-size:clamp(31px,6vw,60px);font-weight:1000;letter-spacing:.035em;text-shadow:-3px 0 var(--red),3px 0 var(--cyan),0 4px #000}
+.kicker{color:var(--amber);font-size:11px;letter-spacing:.22em;font-weight:1000}.subtitle{max-width:900px;margin:8px auto 0;color:#a8b8ca;line-height:1.6}
+.panel{position:relative;background:linear-gradient(145deg,rgba(12,18,28,.98),rgba(3,7,13,.98));border:2px solid var(--line);padding:16px;box-shadow:0 18px 45px rgba(0,0,0,.5),inset 0 0 28px rgba(69,243,255,.025)}
+.panel::before{content:"";position:absolute;left:-2px;top:20px;width:5px;height:65px;background:var(--red);box-shadow:0 0 15px var(--red)}
+.grid{display:grid;grid-template-columns:1.08fr .92fr;gap:14px;align-items:start}@media(max-width:920px){.grid{grid-template-columns:1fr}.wrap{padding:8px}}
+h2{margin:0 0 10px;font-size:22px}label{display:block;margin:11px 0 6px;color:var(--cyan);font-weight:1000}
+input{width:100%;padding:14px;background:#02060c;border:2px solid #2c4359;color:#fff;font:inherit;outline:none}
+input:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(69,243,255,.12)}
+button{min-height:49px;padding:11px 13px;border:1px solid #000;background:var(--cyan);color:#02060c;font-weight:1000;box-shadow:4px 4px 0 #0b6670;cursor:pointer;touch-action:manipulation}
+button:active:not(:disabled){transform:translate(2px,2px);box-shadow:2px 2px 0 #0b6670}button:disabled{opacity:.35;filter:grayscale(.7);cursor:not-allowed}
+button.green{background:var(--green);box-shadow:4px 4px 0 #157341}button.amber{background:var(--amber);box-shadow:4px 4px 0 #70580e}
+button.red{background:var(--red);box-shadow:4px 4px 0 #7c1730;color:#fff}button.violet{background:var(--violet);box-shadow:4px 4px 0 #5e2a88;color:#fff}
+button.light{background:#dce8f5;box-shadow:4px 4px 0 #586877}.btn-row{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:12px}@media(max-width:520px){.btn-row{grid-template-columns:1fr}}
+.role-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:9px}@media(max-width:850px){.role-grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:450px){.role-grid{grid-template-columns:1fr}}
+.role{padding:10px;background:#040911;border:1px solid #29465c;cursor:pointer;clip-path:polygon(0 0,91% 0,100% 14%,100% 100%,9% 100%,0 86%)}
+.role.active{border-color:var(--amber);box-shadow:inset 0 0 25px rgba(255,202,58,.11),0 0 16px rgba(255,202,58,.13)}
+.role.v{border-color:var(--red);background:linear-gradient(145deg,#23030b,#05070b);box-shadow:inset 0 0 28px rgba(255,53,94,.13),0 0 18px rgba(255,53,94,.12)}
+.avatar{width:86px;height:86px;margin:0 auto 7px;background:#02050a;border:1px solid #34536a;overflow:hidden}
+.avatar svg{width:100%;height:100%;display:block;image-rendering:pixelated}.role-name{text-align:center;font-weight:1000}.role-zh{text-align:center;color:var(--cyan);font-size:11px;margin-top:2px}.role-passive{color:var(--muted);font-size:11px;line-height:1.4;margin-top:6px}
+.rules{display:grid;gap:7px;margin-top:12px}.rule{padding:9px 11px;background:#040911;border-left:3px solid var(--red);color:#c8d7e6;line-height:1.5;font-size:13px}
+.note{color:var(--muted);line-height:1.55;font-size:13px}.unlock{color:var(--red);font-weight:1000;text-shadow:0 0 8px var(--red)}
+.rank-list{display:grid;gap:8px}.rank{display:grid;grid-template-columns:38px 1fr auto;gap:9px;align-items:center;padding:10px;background:#040911;border:1px solid #213b50}
+.rank-no{width:31px;height:31px;display:flex;align-items:center;justify-content:center;background:var(--amber);color:#05070a;font-weight:1000}.rank-name{font-weight:1000}.rank-meta{color:var(--muted);font-size:11px;margin-top:2px}.rank-score{color:var(--green);font-size:20px;font-weight:1000}
+.hidden{display:none!important}.game-top{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;margin-bottom:10px}@media(max-width:760px){.game-top{grid-template-columns:repeat(2,1fr)}}
+.stat{padding:9px;text-align:center;background:#040911;border:1px solid #2a4358}.stat small{display:block;color:#8498ad;font-size:10px;letter-spacing:.1em}.stat b{font-size:clamp(18px,3vw,28px);color:var(--amber)}
+.timer{height:13px;border:1px solid #29465c;background:#02060c;margin-bottom:11px;overflow:hidden}.timer-fill{height:100%;width:100%;background:linear-gradient(90deg,var(--green),var(--cyan),var(--red));box-shadow:0 0 13px var(--cyan)}
+.question-card{min-height:242px;padding:18px;display:flex;flex-direction:column;justify-content:center;text-align:center;background:linear-gradient(145deg,#070d16,#121827);border:1px solid #38536a;position:relative;overflow:hidden}
+.question-card::after{content:"GLOBAL DATA";position:absolute;right:-42px;top:23px;transform:rotate(42deg);background:var(--red);padding:4px 54px;font-size:10px;font-weight:1000}
+.tag{align-self:center;padding:5px 10px;border:1px solid var(--amber);color:var(--amber);font-size:12px;font-weight:1000;letter-spacing:.1em;margin-bottom:10px}.question{font-size:clamp(21px,3.2vw,32px);font-weight:1000;line-height:1.45;text-shadow:2px 2px #000}.question.english{color:var(--cyan);font-size:clamp(24px,4vw,38px)}.meta{margin-top:10px;color:#a7ccdf;line-height:1.5}
+.options{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:12px}@media(max-width:640px){.options{grid-template-columns:1fr}}
+.option{min-height:76px;display:flex;align-items:center;gap:10px;text-align:left;background:#040911;color:#fff;border:1px solid #35516a;box-shadow:4px 4px 0 #111b27}
+.option:hover:not(:disabled){border-color:var(--cyan);box-shadow:4px 4px 0 #0d5660}.letter{flex:0 0 35px;width:35px;height:35px;display:flex;align-items:center;justify-content:center;background:var(--amber);color:#04060a;font-weight:1000}
+.option-main{font-size:16px;font-weight:1000}.option-sub{display:block;color:#8cc4da;font-size:12px;margin-top:3px}.option.correct{background:#08251a;border-color:var(--green)}.option.wrong{background:#2b0b15;border-color:var(--red)}.option.eliminated{opacity:.14;pointer-events:none;text-decoration:line-through}
+.skills{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:11px}@media(max-width:650px){.skills{grid-template-columns:1fr}}.skill{min-height:68px}.skill-title{display:block;font-size:15px}.skill-desc{display:block;font-size:10px;margin-top:3px}
+.feedback{min-height:65px;margin-top:11px;padding:11px;background:#02060c;border:1px solid #29465c;color:#cfe1ef;line-height:1.55}.feedback b{color:var(--amber)}.gain{color:var(--green);font-weight:1000}.danger{color:#ff9bb0;font-weight:1000}
+.result{text-align:center;padding:20px;background:linear-gradient(145deg,rgba(255,53,94,.08),rgba(69,243,255,.055));border:1px solid #405f74}.result-score{font-size:clamp(42px,9vw,80px);color:var(--amber);font-weight:1000;text-shadow:-3px 0 var(--red),3px 0 var(--cyan),0 4px #000}
+.intrusion{position:fixed;inset:0;z-index:1200;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(1,3,6,.9);backdrop-filter:blur(5px)}
+.intrusion-card{width:min(630px,100%);padding:20px;background:linear-gradient(145deg,#26030d,#080b12 60%,#101721);border:2px solid var(--red);box-shadow:0 0 12px var(--red),0 0 45px rgba(255,53,94,.26);position:relative}
+.intrusion-card::after{content:"ARASAKA";position:absolute;right:-45px;top:26px;transform:rotate(42deg);padding:4px 58px;background:var(--red);font-size:10px;font-weight:1000}.intrusion-title{margin:0;font-size:clamp(25px,6vw,43px);text-shadow:-2px 0 var(--red),2px 0 #fff}.intrusion-prompt{margin:14px 0;padding:16px;background:#02060c;border:1px solid #7b2d44;color:var(--amber);font-size:clamp(23px,5vw,35px);font-weight:1000;text-align:center}
+.intrusion-options{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}@media(max-width:540px){.intrusion-options{grid-template-columns:1fr}}.intrusion-option{background:#dce8f5;box-shadow:4px 4px 0 #5d6975;font-size:17px}.intrusion-timer{height:10px;margin:12px 0 6px;background:#02060c;border:1px solid #7b2d44;overflow:hidden}.intrusion-fill{height:100%;width:100%;background:linear-gradient(90deg,var(--green),var(--amber),var(--red))}.intrusion-status{text-align:center;min-height:24px;color:#d0dce9;font-size:13px}
+.footer{text-align:center;padding:18px;color:#718397;font-size:11px}
+</style>
+</head>
+<body>
+<header>
+ <div class="kicker">NIGHT CITY EDUCATION NET // GLOBAL KNOWLEDGE</div>
+ <h1 class="logo">CYBER WORLD</h1>
+ <p class="subtitle">世界知識、國家、城市、自然、文化、飲食與國小英文混合任務｜100 題世界題庫＋每局固定 3 題 Elementary English</p>
+</header>
+
+<main class="wrap">
+<section class="panel" id="homeScreen">
+ <div class="grid">
+  <div>
+   <h2>// CREATE CREW</h2>
+   <label>隊伍名稱 TEAM ID</label>
+   <input id="teamName" maxlength="24" placeholder="例如：Global Runners">
+   <label>選擇角色 SELECT RUNNER</label>
+   <div class="role-grid" id="roleGrid"></div>
+   <div class="btn-row">
+    <button class="green" onclick="startGame()">START RUN</button>
+    <button class="light" onclick="renderRanking()">REFRESH DATA</button>
+   </div>
+   <div class="rules">
+    <div class="rule">🌍 每局共 10 題：固定 7 題世界知識＋3 題國小簡單英文。</div>
+    <div class="rule">🔥 第 6～10 題為 EXPERT：世界題選項優先使用相同類型答案。</div>
+    <div class="rule">⚡ 每題依作答速度計分，越快答對分數越高。</div>
+    <div class="rule">🚨 每局隨機 1～2 次 Arasaka 傭兵亂入，英文反應題只使用 Fruit／Food／Drinks／Animals。</div>
+    <div class="rule">☠️ 單局達到 2800 分後，永久解鎖隱藏角色 Cyberpunk V。</div>
+    <div class="rule">🔇 已移除原本 Lucy／David 大廳 2-bit 音樂。</div>
+   </div>
+  </div>
+  <div>
+   <h2>// CUMULATIVE LEADERBOARD</h2>
+   <div class="rank-list" id="homeRanking"></div>
+   <div class="btn-row">
+    <button class="red" onclick="clearRanking()">PURGE DATA</button>
+    <button class="amber" onclick="demoTeam()">DEMO TEAM</button>
+   </div>
+  </div>
+ </div>
+</section>
+
+<section class="panel hidden" id="gameScreen">
+ <div class="game-top">
+  <div class="stat"><small>TEAM</small><b id="teamDisplay">—</b></div>
+  <div class="stat"><small>RUNNER</small><b id="roleDisplay">—</b></div>
+  <div class="stat"><small>TIME</small><b id="timeDisplay">3:00</b></div>
+  <div class="stat"><small>QUESTION</small><b id="questionDisplay">1/10</b></div>
+  <div class="stat"><small>SCORE</small><b id="scoreDisplay">0</b></div>
+ </div>
+ <div class="timer"><div class="timer-fill" id="timeBar"></div></div>
+ <div class="question-card">
+  <div class="tag" id="sceneTag">GLOBAL DATA</div>
+  <div class="question" id="questionText"></div>
+  <div class="meta" id="hintText"></div>
+ </div>
+ <div class="options" id="options"></div>
+ <div class="skills">
+  <button class="skill amber" id="skillEliminate" onclick="useEliminate()"></button>
+  <button class="skill violet" id="skillHint" onclick="useHint()"></button>
+  <button class="skill green" id="skillProb" onclick="useProbability()"></button>
+ </div>
+ <div class="feedback" id="feedback">WAITING FOR DATA…</div>
+</section>
+
+<section class="panel hidden" id="resultScreen">
+ <div class="result">
+  <h2>// RUN REPORT</h2>
+  <h2 id="resultTeam"></h2>
+  <div class="result-score" id="resultScore">0</div>
+  <p class="note" id="resultDetail"></p>
+  <div class="btn-row">
+   <button class="green" onclick="backHome()">RETURN HUB</button>
+   <button class="amber" onclick="restartSameTeam()">RUN AGAIN</button>
+  </div>
+ </div>
+ <h2 style="margin-top:17px">// CUMULATIVE RANKING</h2>
+ <div class="rank-list" id="resultRanking"></div>
+</section>
+</main>
+
+<div class="intrusion hidden" id="intrusionOverlay">
+ <div class="intrusion-card">
+  <div class="kicker">HOSTILE ENGLISH REACTION TEST</div>
+  <h2 class="intrusion-title">🚨 ARASAKA MERCENARY</h2>
+  <p class="note">完成 Fruit／Food／Drinks／Animals 英文反應題才能繼續。答錯或超時會扣主遊戲時間。</p>
+  <div class="intrusion-prompt" id="intrusionPrompt"></div>
+  <div class="intrusion-options" id="intrusionOptions"></div>
+  <div class="intrusion-timer"><div class="intrusion-fill" id="intrusionFill"></div></div>
+  <div class="intrusion-status" id="intrusionStatus">SECURITY BLOCK ACTIVE</div>
+ </div>
+</div>
+
+<div class="footer">Fan-made cyberpunk classroom quiz｜No lobby background music｜Scores and V unlock stored in this browser</div>
+
+<script>
+const worldBank=[{"q":"日本的首都是哪一座城市？","a":"東京 Tokyo","category":"世界首都","explain":"東京是日本的首都，也是世界人口規模最大的都會區之一。"},{"q":"法國的首都是哪一座城市？","a":"巴黎 Paris","category":"世界首都","explain":"巴黎位於塞納河畔，是法國的政治與文化中心。"},{"q":"澳洲的首都是哪一座城市？","a":"坎培拉 Canberra","category":"世界首都","explain":"澳洲首都是坎培拉，不是雪梨或墨爾本。"},{"q":"加拿大的首都是哪一座城市？","a":"渥太華 Ottawa","category":"世界首都","explain":"渥太華位於安大略省，是加拿大首都。"},{"q":"巴西的首都是哪一座城市？","a":"巴西利亞 Brasilia","category":"世界首都","explain":"巴西利亞是一座規劃型首都，於二十世紀興建。"},{"q":"埃及的首都是哪一座城市？","a":"開羅 Cairo","category":"世界首都","explain":"開羅位於尼羅河附近，是埃及首都。"},{"q":"南韓的首都是哪一座城市？","a":"首爾 Seoul","category":"世界首都","explain":"首爾是南韓的政治、經濟與文化中心。"},{"q":"泰國的首都是哪一座城市？","a":"曼谷 Bangkok","category":"世界首都","explain":"曼谷位於昭披耶河流域，是泰國首都。"},{"q":"義大利的首都是哪一座城市？","a":"羅馬 Rome","category":"世界首都","explain":"羅馬擁有悠久歷史，也是義大利首都。"},{"q":"紐西蘭的首都是哪一座城市？","a":"威靈頓 Wellington","category":"世界首都","explain":"威靈頓位於北島南端，是紐西蘭首都。"},{"q":"哪一個國家位於南美洲？","a":"祕魯 Peru","category":"國家與洲別","explain":"祕魯位於南美洲西部。"},{"q":"哪一個國家位於非洲？","a":"肯亞 Kenya","category":"國家與洲別","explain":"肯亞位於東非。"},{"q":"哪一個國家位於歐洲？","a":"葡萄牙 Portugal","category":"國家與洲別","explain":"葡萄牙位於歐洲伊比利半島西側。"},{"q":"哪一個國家位於東南亞？","a":"越南 Vietnam","category":"國家與洲別","explain":"越南位於東南亞中南半島東側。"},{"q":"冰島位於哪一洲？","a":"歐洲 Europe","category":"國家與洲別","explain":"冰島是位於北大西洋的歐洲島國。"},{"q":"阿根廷位於哪一洲？","a":"南美洲 South America","category":"國家與洲別","explain":"阿根廷位於南美洲南部。"},{"q":"摩洛哥位於哪一洲？","a":"非洲 Africa","category":"國家與洲別","explain":"摩洛哥位於非洲西北部。"},{"q":"菲律賓位於哪一洲？","a":"亞洲 Asia","category":"國家與洲別","explain":"菲律賓是位於東南亞的群島國家。"},{"q":"挪威位於哪一洲？","a":"歐洲 Europe","category":"國家與洲別","explain":"挪威位於北歐斯堪地那維亞半島。"},{"q":"牙買加位於哪一個地區？","a":"加勒比海 Caribbean","category":"國家與洲別","explain":"牙買加是加勒比海中的島國。"},{"q":"哪一條河流經過埃及並對古文明非常重要？","a":"尼羅河 Nile River","category":"河流與水域","explain":"尼羅河長期支撐埃及農業與文明發展。"},{"q":"哪一條河流流經倫敦？","a":"泰晤士河 River Thames","category":"河流與水域","explain":"泰晤士河穿過英國倫敦。"},{"q":"哪一條河流流經巴黎？","a":"塞納河 Seine River","category":"河流與水域","explain":"塞納河流經巴黎市中心。"},{"q":"世界面積最大的海洋是哪一個？","a":"太平洋 Pacific Ocean","category":"河流與水域","explain":"太平洋是地球上面積最大的海洋。"},{"q":"地中海位於歐洲、非洲與哪一洲之間？","a":"亞洲 Asia","category":"河流與水域","explain":"地中海位於歐洲、非洲與亞洲之間。"},{"q":"五大湖主要位於美國與哪個國家之間？","a":"加拿大 Canada","category":"河流與水域","explain":"五大湖位於美國與加拿大交界地區。"},{"q":"死海最著名的特色是什麼？","a":"鹽度非常高 Very salty","category":"河流與水域","explain":"死海鹽度很高，人在水中較容易漂浮。"},{"q":"亞馬遜河主要流經哪一洲？","a":"南美洲 South America","category":"河流與水域","explain":"亞馬遜河流域位於南美洲。"},{"q":"多瑙河流經哪一個地區？","a":"歐洲 Europe","category":"河流與水域","explain":"多瑙河流經中歐與東南歐多國。"},{"q":"大堡礁位於哪一個國家外海？","a":"澳洲 Australia","category":"河流與水域","explain":"大堡礁位於澳洲東北海岸外海。"},{"q":"世界最高峰是哪一座？","a":"聖母峰 Mount Everest","category":"自然地理","explain":"聖母峰位於喜馬拉雅山脈，是地球海拔最高峰。"},{"q":"撒哈拉沙漠位於哪一洲？","a":"非洲 Africa","category":"自然地理","explain":"撒哈拉沙漠橫跨北非多國。"},{"q":"富士山位於哪一個國家？","a":"日本 Japan","category":"自然地理","explain":"富士山是日本最高峰。"},{"q":"安地斯山脈主要位於哪一洲？","a":"南美洲 South America","category":"自然地理","explain":"安地斯山脈沿南美洲西側延伸。"},{"q":"阿爾卑斯山脈位於哪一洲？","a":"歐洲 Europe","category":"自然地理","explain":"阿爾卑斯山脈位於歐洲中南部。"},{"q":"大峽谷位於美國哪一州？","a":"亞利桑那州 Arizona","category":"自然地理","explain":"大峽谷國家公園位於亞利桑那州。"},{"q":"乞力馬扎羅山位於哪一個國家？","a":"坦尚尼亞 Tanzania","category":"自然地理","explain":"乞力馬扎羅山位於東非坦尚尼亞。"},{"q":"烏魯魯位於哪一個國家？","a":"澳洲 Australia","category":"自然地理","explain":"烏魯魯是澳洲內陸的重要砂岩景觀。"},{"q":"極光最常在地球哪一帶看到？","a":"高緯度地區 Polar regions","category":"自然地理","explain":"極光常出現在接近南北極的高緯度地區。"},{"q":"火山環太平洋帶常被稱為什麼？","a":"火環 Ring of Fire","category":"自然地理","explain":"環太平洋火山與地震帶常被稱為火環。"},{"q":"哪一座城市以威尼斯水道與貢多拉聞名？","a":"威尼斯 Venice","category":"世界城市","explain":"威尼斯建於潟湖島嶼上，以水道交通聞名。"},{"q":"哪一座城市以時代廣場與中央公園聞名？","a":"紐約 New York City","category":"世界城市","explain":"時代廣場與中央公園都位於紐約。"},{"q":"哪一座城市以歌劇院與港灣大橋聞名？","a":"雪梨 Sydney","category":"世界城市","explain":"雪梨歌劇院與港灣大橋都在澳洲雪梨。"},{"q":"哪一座城市以紅場與克里姆林宮聞名？","a":"莫斯科 Moscow","category":"世界城市","explain":"紅場與克里姆林宮位於莫斯科。"},{"q":"哪一座城市以雙子星塔聞名？","a":"吉隆坡 Kuala Lumpur","category":"世界城市","explain":"雙子星塔位於馬來西亞吉隆坡。"},{"q":"哪一座城市以濱海灣金沙與魚尾獅聞名？","a":"新加坡 Singapore","category":"世界城市","explain":"這兩個景點都位於新加坡。"},{"q":"哪一座城市以聖家堂聞名？","a":"巴塞隆納 Barcelona","category":"世界城市","explain":"高第設計的聖家堂位於巴塞隆納。"},{"q":"哪一座城市以比薩斜塔聞名？","a":"比薩 Pisa","category":"世界城市","explain":"比薩斜塔位於義大利比薩。"},{"q":"哪一座城市以泰姬瑪哈陵聞名？","a":"阿格拉 Agra","category":"世界城市","explain":"泰姬瑪哈陵位於印度阿格拉。"},{"q":"哪一座城市以藍色清真寺與博斯普魯斯海峽聞名？","a":"伊斯坦堡 Istanbul","category":"世界城市","explain":"伊斯坦堡橫跨歐亞兩洲。"},{"q":"西班牙主要使用哪一種語言？","a":"西班牙語 Spanish","category":"語言與貨幣","explain":"西班牙的主要語言是西班牙語。"},{"q":"巴西主要使用哪一種語言？","a":"葡萄牙語 Portuguese","category":"語言與貨幣","explain":"巴西因殖民歷史主要使用葡萄牙語。"},{"q":"日本使用哪一種貨幣？","a":"日圓 Yen","category":"語言與貨幣","explain":"日本貨幣是日圓。"},{"q":"英國使用哪一種貨幣？","a":"英鎊 Pound sterling","category":"語言與貨幣","explain":"英國主要使用英鎊。"},{"q":"美國使用哪一種貨幣？","a":"美元 US dollar","category":"語言與貨幣","explain":"美國的貨幣是美元。"},{"q":"韓文字母系統常稱為什麼？","a":"韓文／諺文 Hangul","category":"語言與貨幣","explain":"Hangul 是韓語使用的字母系統。"},{"q":"楓葉常被視為哪一個國家的象徵？","a":"加拿大 Canada","category":"語言與貨幣","explain":"加拿大國旗中央有紅色楓葉。"},{"q":"袋鼠常被視為哪一個國家的代表動物？","a":"澳洲 Australia","category":"語言與貨幣","explain":"袋鼠是澳洲最具代表性的動物之一。"},{"q":"瑞士使用的貨幣是什麼？","a":"瑞士法郎 Swiss franc","category":"語言與貨幣","explain":"瑞士使用瑞士法郎，不使用歐元作為官方貨幣。"},{"q":"印度的貨幣是什麼？","a":"印度盧比 Indian rupee","category":"語言與貨幣","explain":"印度使用盧比。"},{"q":"古代奧林匹克運動會起源於哪一個國家？","a":"希臘 Greece","category":"歷史與發明","explain":"古代奧運起源於古希臘。"},{"q":"文藝復興最早蓬勃發展於哪一個國家？","a":"義大利 Italy","category":"歷史與發明","explain":"文藝復興早期在義大利城市蓬勃發展。"},{"q":"紙張最早在古代哪一個文明中發展？","a":"中國 China","category":"歷史與發明","explain":"紙張的早期改良與普及和古代中國有關。"},{"q":"古埃及人使用哪一種圖像文字？","a":"象形文字 Hieroglyphs","category":"歷史與發明","explain":"古埃及象形文字使用圖像與符號記錄語言。"},{"q":"印加文明主要發展於哪一洲？","a":"南美洲 South America","category":"歷史與發明","explain":"印加帝國主要位於安地斯山區。"},{"q":"馬雅文明主要發展於哪一個地區？","a":"中美洲 Mesoamerica","category":"歷史與發明","explain":"馬雅文明主要分布於墨西哥南部與中美洲。"},{"q":"工業革命最早大規模發生於哪一個國家？","a":"英國 United Kingdom","category":"歷史與發明","explain":"第一次工業革命最早在英國快速發展。"},{"q":"活字印刷術在歐洲常與哪一位人物相關？","a":"古騰堡 Gutenberg","category":"歷史與發明","explain":"古騰堡以改良歐洲金屬活字印刷聞名。"},{"q":"古羅馬競技場主要位於哪一座城市？","a":"羅馬 Rome","category":"歷史與發明","explain":"羅馬競技場位於義大利羅馬。"},{"q":"阿茲特克帝國主要位於今天哪一個國家？","a":"墨西哥 Mexico","category":"歷史與發明","explain":"阿茲特克帝國中心位於今日墨西哥地區。"},{"q":"壽司最常與哪一個國家聯想在一起？","a":"日本 Japan","category":"世界飲食","explain":"壽司是日本料理的重要代表。"},{"q":"披薩最常與哪一個國家聯想在一起？","a":"義大利 Italy","category":"世界飲食","explain":"現代披薩文化與義大利拿坡里密切相關。"},{"q":"塔可最常與哪一個國家聯想在一起？","a":"墨西哥 Mexico","category":"世界飲食","explain":"塔可是墨西哥料理的代表食物。"},{"q":"泡菜 Kimchi 最常與哪一個國家聯想在一起？","a":"南韓 South Korea","category":"世界飲食","explain":"泡菜是韓國飲食文化的重要部分。"},{"q":"可頌 Croissant 最常與哪一個國家的飲食文化聯想？","a":"法國 France","category":"世界飲食","explain":"可頌是法式烘焙的代表之一。"},{"q":"咖哩香料料理常與哪一個國家的飲食文化密切相關？","a":"印度 India","category":"世界飲食","explain":"印度各地有多樣的咖哩與香料料理。"},{"q":"西班牙海鮮飯 Paella 起源於哪一個國家？","a":"西班牙 Spain","category":"世界飲食","explain":"Paella 起源於西班牙瓦倫西亞地區。"},{"q":"泰式冬蔭功湯來自哪一個國家？","a":"泰國 Thailand","category":"世界飲食","explain":"冬蔭功是著名泰國酸辣湯。"},{"q":"巴西烤肉 Churrasco 最常與哪一國聯想？","a":"巴西 Brazil","category":"世界飲食","explain":"Churrasco 是巴西著名烤肉形式。"},{"q":"楓糖漿最常與哪一個國家聯想？","a":"加拿大 Canada","category":"世界飲食","explain":"加拿大是世界知名的楓糖漿生產地。"},{"q":"大貓熊原生於哪一個國家？","a":"中國 China","category":"動物與生態","explain":"野生大貓熊主要分布於中國山區。"},{"q":"無尾熊原生於哪一個國家？","a":"澳洲 Australia","category":"動物與生態","explain":"無尾熊是澳洲特有的有袋類動物。"},{"q":"狐猴主要生活在哪一個島國？","a":"馬達加斯加 Madagascar","category":"動物與生態","explain":"大多數狐猴原生於馬達加斯加。"},{"q":"帝王企鵝主要生活在哪一洲？","a":"南極洲 Antarctica","category":"動物與生態","explain":"帝王企鵝生活於南極地區。"},{"q":"長頸鹿原生於哪一洲？","a":"非洲 Africa","category":"動物與生態","explain":"野生長頸鹿分布於非洲。"},{"q":"美洲野牛主要與哪一洲相關？","a":"北美洲 North America","category":"動物與生態","explain":"美洲野牛原生於北美洲。"},{"q":"紅毛猩猩主要生活於婆羅洲與哪一座島？","a":"蘇門答臘 Sumatra","category":"動物與生態","explain":"紅毛猩猩主要分布於婆羅洲與蘇門答臘。"},{"q":"加拉巴哥象龜原生於哪一個群島？","a":"加拉巴哥群島 Galapagos Islands","category":"動物與生態","explain":"加拉巴哥象龜原生於厄瓜多的加拉巴哥群島。"},{"q":"北極熊主要生活在哪一個地區？","a":"北極 Arctic","category":"動物與生態","explain":"北極熊主要生活於北極海冰區域。"},{"q":"袋獾 Tasmanian devil 原生於哪一個島？","a":"塔斯馬尼亞 Tasmania","category":"動物與生態","explain":"袋獾原生於澳洲塔斯馬尼亞島。"},{"q":"聯合國總部位於哪一座城市？","a":"紐約 New York City","category":"世界常識","explain":"聯合國總部位於美國紐約。"},{"q":"世界衛生組織 WHO 總部位於哪一座城市？","a":"日內瓦 Geneva","category":"世界常識","explain":"WHO 總部位於瑞士日內瓦。"},{"q":"奧林匹克五環代表什麼？","a":"五大洲的團結 Unity of five continents","category":"世界常識","explain":"五環象徵奧林匹克運動與世界各洲的連結。"},{"q":"地球上面積最大的國家是哪一個？","a":"俄羅斯 Russia","category":"世界常識","explain":"俄羅斯是世界國土面積最大的國家。"},{"q":"地球上面積最小的國家是哪一個？","a":"梵蒂岡 Vatican City","category":"世界常識","explain":"梵蒂岡是世界面積最小的主權國家。"},{"q":"格林威治本初子午線通過哪一個國家？","a":"英國 United Kingdom","category":"世界常識","explain":"本初子午線通過英國倫敦格林威治。"},{"q":"赤道將地球分成哪兩個半球？","a":"北半球與南半球 Northern and Southern Hemispheres","category":"世界常識","explain":"赤道是南北半球的分界線。"},{"q":"UTC 是用來表示什麼的標準？","a":"世界協調時間 Coordinated Universal Time","category":"世界常識","explain":"UTC 是全球時間協調的重要標準。"},{"q":"哪一個儀器用來指出方向？","a":"指南針 Compass","category":"世界常識","explain":"指南針利用磁場協助判斷方向。"},{"q":"地圖上通常用哪一個方向表示上方？","a":"北方 North","category":"世界常識","explain":"多數一般地圖將北方畫在上方。"}];
+const englishBank=[{"q":"Which one is a fruit?","a":"apple","category":"Elementary English｜Vocabulary","explain":"An apple is a fruit.","options":["apple","chair","pencil","shoe"]},{"q":"Which one is an animal?","a":"tiger","category":"Elementary English｜Vocabulary","explain":"A tiger is an animal.","options":["tiger","juice","bread","table"]},{"q":"Which one is a drink?","a":"milk","category":"Elementary English｜Vocabulary","explain":"Milk is a drink.","options":["milk","rice","cat","book"]},{"q":"Which one is food?","a":"pizza","category":"Elementary English｜Vocabulary","explain":"Pizza is food.","options":["pizza","window","blue","jump"]},{"q":"The sun is ___.","a":"hot","category":"Elementary English｜Adjectives","explain":"The sun is hot.","options":["hot","cold","small","quiet"]},{"q":"Ice is ___.","a":"cold","category":"Elementary English｜Adjectives","explain":"Ice is cold.","options":["cold","hot","loud","tall"]},{"q":"A giraffe is ___.","a":"tall","category":"Elementary English｜Adjectives","explain":"A giraffe is tall.","options":["tall","short","cold","slow"]},{"q":"A mouse is usually ___.","a":"small","category":"Elementary English｜Adjectives","explain":"A mouse is small.","options":["small","huge","hot","purple"]},{"q":"I ___ a student.","a":"am","category":"Elementary English｜Be verbs","explain":"Use am after I.","options":["am","is","are","be"]},{"q":"She ___ happy.","a":"is","category":"Elementary English｜Be verbs","explain":"Use is after she.","options":["is","am","are","do"]},{"q":"They ___ my friends.","a":"are","category":"Elementary English｜Be verbs","explain":"Use are after they.","options":["are","is","am","has"]},{"q":"The dog ___ cute.","a":"is","category":"Elementary English｜Be verbs","explain":"Dog is singular, so use is.","options":["is","are","am","have"]},{"q":"I ___ soccer after school.","a":"play","category":"Elementary English｜Verbs","explain":"We play soccer.","options":["play","drink","sleep","read"]},{"q":"We ___ water when we are thirsty.","a":"drink","category":"Elementary English｜Verbs","explain":"We drink water.","options":["drink","eat","draw","open"]},{"q":"Birds can ___.","a":"fly","category":"Elementary English｜Verbs","explain":"Birds can fly.","options":["fly","cook","write","swim"]},{"q":"Please ___ the door.","a":"open","category":"Elementary English｜Verbs","explain":"Open the door is the correct phrase.","options":["open","eat","sing","drink"]},{"q":"What color is grass?","a":"green","category":"Elementary English｜Colors","explain":"Grass is usually green.","options":["green","purple","black","pink"]},{"q":"What color is a banana?","a":"yellow","category":"Elementary English｜Colors","explain":"A ripe banana is yellow.","options":["yellow","blue","gray","purple"]},{"q":"What color is the sky on a clear day?","a":"blue","category":"Elementary English｜Colors","explain":"The sky is blue on a clear day.","options":["blue","brown","orange","black"]},{"q":"What color is snow?","a":"white","category":"Elementary English｜Colors","explain":"Snow is white.","options":["white","green","red","purple"]},{"q":"One, two, three, ___.","a":"four","category":"Elementary English｜Numbers","explain":"Four comes after three.","options":["four","seven","nine","ten"]},{"q":"Ten minus one is ___.","a":"nine","category":"Elementary English｜Numbers","explain":"10 - 1 = 9.","options":["nine","six","four","two"]},{"q":"Which number comes after seven?","a":"eight","category":"Elementary English｜Numbers","explain":"Eight comes after seven.","options":["eight","five","three","one"]},{"q":"How many days are in a week?","a":"seven","category":"Elementary English｜Numbers","explain":"There are seven days in a week.","options":["seven","five","six","eight"]},{"q":"My mother's son is my ___.","a":"brother","category":"Elementary English｜Family","explain":"Your mother's son can be your brother.","options":["brother","aunt","grandma","teacher"]},{"q":"My father's mother is my ___.","a":"grandmother","category":"Elementary English｜Family","explain":"Your father's mother is your grandmother.","options":["grandmother","sister","uncle","friend"]},{"q":"A doctor works in a ___.","a":"hospital","category":"Elementary English｜Places","explain":"A doctor works in a hospital.","options":["hospital","zoo","park","farm"]},{"q":"Students study at ___.","a":"school","category":"Elementary English｜Places","explain":"Students study at school.","options":["school","airport","restaurant","beach"]},{"q":"We sleep in the ___.","a":"bedroom","category":"Elementary English｜Places","explain":"We sleep in the bedroom.","options":["bedroom","kitchen","garden","classroom"]},{"q":"We can borrow books from a ___.","a":"library","category":"Elementary English｜Places","explain":"We borrow books from a library.","options":["library","bakery","station","pool"]}];
+const roles={"king":{"name":"Weak Kingsley","short":"King","zh":"落日老兵","passive":"Old Guard：每局第一次答錯不斷 Combo 並回復 6 秒；Combo 3 以上每題再 +35。","eliminate":{"name":"Veteran Cover","desc":"刪除兩個錯誤選項，並獲得一次失誤護盾。"},"hint":{"name":"Old War Memory","desc":"顯示題目類型、答案首字與關鍵情報。"},"prob":{"name":"Battlefield Sense","desc":"顯示戰場判斷機率，並回復 3 秒。"}},"d":{"name":"D","short":"D","zh":"Snake Nation 網路駭客","passive":"Venom Trace：每題速度獎勵 +20；機率技能精度最高。","eliminate":{"name":"Snakebite Daemon","desc":"刪除兩個錯誤資料，下一題答對額外 +40。"},"hint":{"name":"Clan Backdoor","desc":"顯示類型、答案字數及首尾字母。"},"prob":{"name":"Revenge Algorithm","desc":"86～95% 高精度預測，並回復 4 秒。"}},"roman":{"name":"Roman Carax","short":"Roman","zh":"真實影像導演","passive":"Director's Cut：英文題、文化、歷史與城市題答對額外 +55。","eliminate":{"name":"Cut the Scene","desc":"剪掉兩個錯誤鏡頭。"},"hint":{"name":"Freeze Frame","desc":"顯示類型、答案長度與完整畫面提示。"},"prob":{"name":"Final Edit","desc":"標記最高機率選項，並暫停感般回復 5 秒。"}},"talia":{"name":"Talia Yang","short":"Talia","zh":"企業塔戰士","passive":"Maelstrom Reflex：第 6～10 題答對額外 +70。","eliminate":{"name":"Riot Breaker","desc":"直接擊破三個錯誤選項。"},"hint":{"name":"Tower Instinct","desc":"顯示題目類型、正解首字與關鍵提示。"},"prob":{"name":"Combat Read","desc":"顯示高機率目標並回復 2 秒。"}},"v":{"name":"Cyberpunk V","short":"V","zh":"Relic 傳奇傭兵","passive":"Relic Overclock：每題答對 +150、速度獎勵最低 70；前兩次答錯保留 Combo。","eliminate":{"name":"Quickhack Overload","desc":"直接清除全部三個錯誤選項。"},"hint":{"name":"Kiroshi Oracle","desc":"直接揭露正確答案與完整解說。"},"prob":{"name":"Relic Singularity","desc":"99% 鎖定正解、回復 10 秒，下一題得分 ×2。"}}};
+const $=id=>document.getElementById(id);
+const homeScreen=$("homeScreen"),gameScreen=$("gameScreen"),resultScreen=$("resultScreen");
+const teamNameInput=$("teamName"),roleGrid=$("roleGrid"),teamDisplay=$("teamDisplay"),roleDisplay=$("roleDisplay");
+const timeDisplay=$("timeDisplay"),questionDisplay=$("questionDisplay"),scoreDisplay=$("scoreDisplay"),timeBar=$("timeBar");
+const sceneTag=$("sceneTag"),questionText=$("questionText"),hintText=$("hintText"),optionsEl=$("options"),feedback=$("feedback");
+const homeRanking=$("homeRanking"),resultRanking=$("resultRanking"),resultTeam=$("resultTeam"),resultScore=$("resultScore"),resultDetail=$("resultDetail");
+const intrusionOverlay=$("intrusionOverlay"),intrusionPrompt=$("intrusionPrompt"),intrusionOptions=$("intrusionOptions"),intrusionFill=$("intrusionFill"),intrusionStatus=$("intrusionStatus");
+
+let selectedRole="king",currentTeam="",lastTeam="",gameQuestions=[],currentOptions=[];
+let currentIndex=0,score=0,correctCount=0,combo=0,timeLeft=180,timerId=null,locked=false;
+let usedEliminate=false,usedHint=false,usedProb=false,questionStartedAt=0,skillUsedThisQuestion=false;
+let kingGuardUsed=false,kingSkillGuard=false,dNextBonus=false,vGuards=0,vDoubleNext=false,audioCtx=null;
+let intrusionIndices=new Set(),resolvedIntrusions=new Set(),intrusionActive=false,intrusionTimerId=null,intrusionEndsAt=0,currentIntrusion=null;
+
+function shuffle(arr){const a=[...arr];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function sample(arr,n){return shuffle(arr).slice(0,n)}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function attr(s){return esc(s).replace(/"/g,"&quot;")}
+function clock(s){s=Math.max(0,s);return `${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}`}
+function ensureAudio(){if(audioCtx)return;const AC=window.AudioContext||window.webkitAudioContext;if(AC)audioCtx=new AC()}
+function tone(freq,dur,type="square",vol=.045,delay=0){ensureAudio();if(!audioCtx)return;const t=audioCtx.currentTime+delay,o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type=type;o.frequency.setValueAtTime(freq,t);g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(vol,t+.015);g.gain.exponentialRampToValueAtTime(.0001,t+dur);o.connect(g);g.connect(audioCtx.destination);o.start(t);o.stop(t+dur+.03)}
+function correctSound(){tone(660,.1,"square",.04);tone(980,.14,"triangle",.065,.09);tone(1420,.16,"sine",.055,.19)}
+function wrongSound(){tone(230,.17,"sawtooth",.04);tone(145,.24,"square",.035,.13)}
+function ranking(){try{return JSON.parse(localStorage.getItem("cyber_world_global_ranking")||"{}")}catch(e){return{}}}
+function vUnlocked(){return localStorage.getItem("cyber_world_v_unlocked")==="true"}
+
+function avatarSVG(id){
+ const bg=`<rect width="72" height="72" fill="#02060b"/><path d="M0 54L20 35 43 42 72 18V72H0Z" fill="#0a1b28"/><path d="M0 64L29 42 72 51V72H0Z" fill="#111827"/>`;
+ const frame=`<path d="M1 1H63L71 9V71H9L1 63Z" fill="none" stroke="#35627b" stroke-width="2"/>`;
+ const art={
+  king:`<path d="M18 16L27 7H47L56 18 52 48 44 56H25L16 45Z" fill="#9d684d"/><path d="M17 18L26 7 48 8 56 18 49 22 39 16 27 20Z" fill="#3a2720"/><rect x="24" y="29" width="9" height="3" fill="#ffca3a"/><rect x="41" y="29" width="9" height="3" fill="#ffca3a"/><path d="M21 44H52L48 57H26Z" fill="#6e7b84"/><path d="M7 55H65L72 72H0Z" fill="#53616b"/><rect x="5" y="50" width="15" height="22" fill="#778994"/><rect x="52" y="50" width="15" height="22" fill="#778994"/>`,
+  d:`<path d="M19 17L28 8H46L54 19 50 47 42 55H25L17 44Z" fill="#b98362"/><path d="M16 19L23 8 38 4 55 14 49 21 37 16 25 23Z" fill="#151b24"/><rect x="23" y="28" width="11" height="4" fill="#45f3ff"/><rect x="40" y="28" width="11" height="4" fill="#45f3ff"/><path d="M22 54H52L65 72H8Z" fill="#173849"/><path d="M27 55L36 66 46 55" fill="none" stroke="#56ffa4" stroke-width="3"/><path d="M14 14L7 22 15 30" fill="none" stroke="#56ffa4" stroke-width="3"/>`,
+  roman:`<path d="M20 18L28 9H45L53 21 49 48 41 55H25L17 44Z" fill="#c18465"/><path d="M17 19L25 7 42 6 55 16 47 21 37 16 26 23Z" fill="#33211d"/><rect x="21" y="27" width="14" height="6" fill="#0d1118"/><rect x="39" y="27" width="14" height="6" fill="#0d1118"/><path d="M35 29H39" stroke="#ba68ff" stroke-width="2"/><path d="M17 55H55L66 72H6Z" fill="#4a284f"/><rect x="50" y="50" width="14" height="11" fill="#263848"/><circle cx="57" cy="55" r="4" fill="#45f3ff"/>`,
+  talia:`<path d="M19 18L27 8H45L54 19 50 47 42 55H25L16 43Z" fill="#b97355"/><path d="M15 23L20 8 33 3 50 10 57 22 45 18 36 23 25 17Z" fill="#161a21"/><path d="M48 8L62 15 55 34 47 28Z" fill="#ff355e"/><rect x="23" y="28" width="10" height="4" fill="#ff355e"/><rect x="41" y="28" width="10" height="4" fill="#45f3ff"/><path d="M13 54H59L70 72H2Z" fill="#3e4652"/><path d="M18 51L29 64 20 72H6Z" fill="#76253b"/>`,
+  v:`<path d="M16 15L26 5H48L58 17 54 48 45 58H23L13 45Z" fill="#a3adb5"/><path d="M17 17L28 8H47L56 18 48 24 37 18 25 25Z" fill="#29333c"/><rect x="20" y="28" width="14" height="5" fill="#ff355e"/><rect x="41" y="28" width="14" height="5" fill="#45f3ff"/><path d="M24 43L36 52 49 42" fill="none" stroke="#1c262d" stroke-width="4"/><path d="M8 54H64L72 72H0Z" fill="#414b54"/><path d="M31 55L36 64 42 55" fill="none" stroke="#ffca3a" stroke-width="3"/><text x="36" y="69" fill="#ffca3a" font-size="10" text-anchor="middle" font-weight="900">V</text>`
+ };
+ return `<svg viewBox="0 0 72 72" shape-rendering="crispEdges">${bg}${art[id]||art.king}${frame}</svg>`
+}
+function renderRoles(){
+ if(selectedRole==="v"&&!vUnlocked())selectedRole="king";
+ roleGrid.innerHTML=Object.entries(roles).filter(([id])=>id!=="v"||vUnlocked()).map(([id,r])=>`
+  <div class="role ${id==="v"?"v":""} ${selectedRole===id?"active":""}" onclick="selectRole('${id}')">
+   <div class="avatar">${avatarSVG(id)}</div><div class="role-name">${r.name}${id==="king"?' ("King")':""}</div>
+   <div class="role-zh">${r.zh}</div><div class="role-passive">${r.passive}</div>
+  </div>`).join("")
+}
+function selectRole(id){if(id==="v"&&!vUnlocked())return;selectedRole=id;renderRoles()}
+function renderSkills(){
+ const r=roles[selectedRole];
+ $("skillEliminate").innerHTML=`<span class="skill-title">🪓 ${r.eliminate.name}</span><span class="skill-desc">${r.eliminate.desc}</span>`;
+ $("skillHint").innerHTML=`<span class="skill-title">💡 ${r.hint.name}</span><span class="skill-desc">${r.hint.desc}</span>`;
+ $("skillProb").innerHTML=`<span class="skill-title">📡 ${r.prob.name}</span><span class="skill-desc">${r.prob.desc}</span>`
+}
+
+function prepareQuestions(){
+ const worlds=sample(worldBank,7).map(x=>({...x,type:"world"}));
+ const english=sample(englishBank,3).map(x=>({...x,type:"english"}));
+ gameQuestions=shuffle([...worlds,...english])
+}
+function prepareIntrusions(){
+ const count=Math.random()<.68?2:1;
+ intrusionIndices=new Set(sample([1,2,3,4,5,6,7,8],count));resolvedIntrusions=new Set()
+}
+function startGame(){
+ ensureAudio();currentTeam=teamNameInput.value.trim()||"Unknown Crew";lastTeam=currentTeam;
+ prepareQuestions();prepareIntrusions();currentIndex=0;score=0;correctCount=0;combo=0;timeLeft=180;locked=false;
+ usedEliminate=false;usedHint=false;usedProb=false;skillUsedThisQuestion=false;
+ kingGuardUsed=false;kingSkillGuard=false;dNextBonus=false;vGuards=selectedRole==="v"?2:0;vDoubleNext=false;
+ ["skillEliminate","skillHint","skillProb"].forEach(id=>$(id).disabled=false);renderSkills();
+ homeScreen.classList.add("hidden");resultScreen.classList.add("hidden");gameScreen.classList.remove("hidden");
+ teamDisplay.textContent=currentTeam.length>9?currentTeam.slice(0,9)+"…":currentTeam;roleDisplay.textContent=roles[selectedRole].short;
+ updateTop();loadQuestion();clearInterval(timerId);
+ timerId=setInterval(()=>{if(intrusionActive)return;timeLeft--;updateTop();if(timeLeft<=0)finishGame("TIMEOUT")},1000)
+}
+function updateTop(){timeDisplay.textContent=clock(timeLeft);questionDisplay.textContent=`${Math.min(currentIndex+1,10)}/10`;scoreDisplay.textContent=score;timeBar.style.width=`${Math.max(0,timeLeft/180*100)}%`}
+
+function categoryAnswers(category,current){
+ return worldBank.filter(x=>x.category===category&&x.a!==current).map(x=>x.a)
+}
+function createOptions(q,hard){
+ if(q.type==="english")return shuffle([...q.options]);
+ const all=worldBank.filter(x=>x.a!==q.a).map(x=>x.a);
+ const preferred=hard?categoryAnswers(q.category,q.a):[
+  ...categoryAnswers(q.category,q.a).slice(0,1),...all
+ ];
+ const chosen=[];
+ for(const answer of shuffle(preferred)){if(chosen.length>=3)break;if(!chosen.includes(answer))chosen.push(answer)}
+ return shuffle([q.a,...chosen])
+}
+function loadQuestion(skipIntrusion=false){
+ if(currentIndex>=10){finishGame("ALL QUESTIONS CLEARED");return}
+ if(!skipIntrusion&&intrusionIndices.has(currentIndex)&&!resolvedIntrusions.has(currentIndex)){startIntrusion();return}
+ locked=false;skillUsedThisQuestion=false;const q=gameQuestions[currentIndex],hard=currentIndex>=5;
+ currentOptions=createOptions(q,hard);
+ sceneTag.textContent=q.type==="english"?"ELEMENTARY ENGLISH":hard?`EXPERT // ${q.category}`:`WORLD DATA // ${q.category}`;
+ questionText.className=`question ${q.type==="english"?"english":""}`;questionText.textContent=q.q;
+ hintText.textContent=q.type==="english"
+  ?"Choose the best English answer."
+  :hard?"第 6 題起：錯誤選項優先來自相同世界知識類型。":"根據世界知識選出正確答案。";
+ optionsEl.innerHTML=currentOptions.map((answer,i)=>`
+  <button class="option" data-answer="${attr(answer)}" onclick="chooseAnswer('${attr(answer)}')">
+   <span class="letter">${String.fromCharCode(65+i)}</span>
+   <span class="option-main">${esc(answer)}<span class="option-sub">${q.type==="english"?"Elementary English":"Global Answer Node"}</span></span>
+  </button>`).join("");
+ feedback.innerHTML=`第 <b>${currentIndex+1}</b> 題：速度正在計分。`;
+ questionStartedAt=performance.now();updateTop()
+}
+function speedBonus(sec){
+ let b=Math.max(0,Math.round(160-sec*7.4));
+ if(selectedRole==="d")b+=20;
+ if(selectedRole==="v")b=Math.max(70,b);
+ return b
+}
+function roleCorrectBonus(q,sec){
+ let b=0;
+ if(selectedRole==="king"&&combo>=3)b+=35;
+ if(selectedRole==="d"&&dNextBonus){b+=40;dNextBonus=false}
+ if(selectedRole==="roman"&&(q.type==="english"||["歷史與發明","世界城市","語言與貨幣"].includes(q.category)))b+=55;
+ if(selectedRole==="talia"&&currentIndex>=5)b+=70;
+ if(selectedRole==="v")b+=150;
+ return b
+}
+function chooseAnswer(answer){
+ if(locked)return;locked=true;const q=gameQuestions[currentIndex],correct=answer===q.a;
+ const sec=Math.max(.1,(performance.now()-questionStartedAt)/1000);
+ [...document.querySelectorAll(".option")].forEach(btn=>{
+  btn.disabled=true;if(btn.dataset.answer===q.a)btn.classList.add("correct");else if(btn.dataset.answer===answer)btn.classList.add("wrong")
+ });
+ if(correct){
+  correctSound();combo++;correctCount++;
+  let base=q.type==="english"?100:110,speed=speedBonus(sec),hard=currentIndex>=5?45:0,comboBonus=Math.min(105,(combo-1)*17);
+  let career=roleCorrectBonus(q,sec),gain=base+speed+hard+comboBonus+career;
+  if(vDoubleNext){gain*=2;vDoubleNext=false}
+  score+=gain;
+  feedback.innerHTML=`✅ <b>${esc(q.a)}</b><br>${esc(q.explain)}<br><span class="gain">${sec.toFixed(1)} 秒：速度 +${speed}｜困難 +${hard}｜Combo +${comboBonus}｜角色 +${career}｜本題 +${gain}</span>`
+ }else{
+  wrongSound();let guard="";
+  if(selectedRole==="king"&&(!kingGuardUsed||kingSkillGuard)){
+   if(!kingGuardUsed)kingGuardUsed=true;else kingSkillGuard=false;
+   timeLeft=Math.min(180,timeLeft+6);guard='<br><span class="danger">🛡️ Old Guard：Combo 保留，回復 6 秒。</span>'
+  }else if(selectedRole==="v"&&vGuards>0){
+   vGuards--;guard=`<br><span class="danger">☠️ Relic Guard：失誤被吸收，剩餘護盾 ${vGuards}。</span>`
+  }else combo=0;
+  feedback.innerHTML=`❌ 正確答案：<b>${esc(q.a)}</b><br>${esc(q.explain)}${guard}`
+ }
+ updateTop();setTimeout(()=>{currentIndex++;currentIndex>=10?finishGame("ALL QUESTIONS CLEARED"):loadQuestion()},1600)
+}
+function useEliminate(){
+ if(usedEliminate||locked)return;usedEliminate=true;skillUsedThisQuestion=true;$("skillEliminate").disabled=true;
+ const q=gameQuestions[currentIndex],wrong=[...document.querySelectorAll(".option")].filter(b=>b.dataset.answer!==q.a);
+ let count=2,extra="";
+ if(selectedRole==="talia"||selectedRole==="v")count=3;
+ if(selectedRole==="king"){kingSkillGuard=true;extra="，並獲得一次失誤護盾"}
+ if(selectedRole==="d"){dNextBonus=true;extra="，下一題答對 +40"}
+ sample(wrong,count).forEach(btn=>{btn.classList.add("eliminated");btn.disabled=true});
+ feedback.innerHTML=`🪓 <b>${roles[selectedRole].eliminate.name}</b>：已移除 ${count} 個錯誤選項${extra}。`
+}
+function useHint(){
+ if(usedHint||locked)return;usedHint=true;skillUsedThisQuestion=true;$("skillHint").disabled=true;
+ const q=gameQuestions[currentIndex];let data="";
+ if(selectedRole==="king")data=`類型：<b>${esc(q.category)}</b>｜正解首字：<b>${esc(q.a[0])}</b>｜${esc(q.explain)}`;
+ else if(selectedRole==="d")data=`類型：<b>${esc(q.category)}</b>｜答案長度：<b>${q.a.length}</b>｜首尾：<b>${esc(q.a[0])}…${esc(q.a.at(-1))}</b>`;
+ else if(selectedRole==="roman")data=`Freeze Frame：<b>${esc(q.category)}</b>｜答案長度 ${q.a.length}｜${esc(q.explain)}`;
+ else if(selectedRole==="talia")data=`類型：<b>${esc(q.category)}</b>｜正解首字：<b>${esc(q.a[0])}</b>｜${esc(q.explain)}`;
+ else data=`<span class="unlock">KIROSHI CONFIRMED：</span><b>${esc(q.a)}</b>｜${esc(q.explain)}`;
+ hintText.innerHTML=`${roles[selectedRole].hint.name} // ${data}`;
+ feedback.innerHTML=`💡 <b>${roles[selectedRole].hint.name}</b> 已提供角色情報。`
+}
+function useProbability(){
+ if(usedProb||locked)return;usedProb=true;skillUsedThisQuestion=true;$("skillProb").disabled=true;
+ const q=gameQuestions[currentIndex],ci=currentOptions.indexOf(q.a);
+ let min=60,max=78,heal=0;
+ if(selectedRole==="d"){min=86;max=95;heal=4}
+ if(selectedRole==="roman"){min=70;max=86;heal=5}
+ if(selectedRole==="talia"){min=68;max=84;heal=2}
+ if(selectedRole==="king"){min=66;max=82;heal=3}
+ if(selectedRole==="v"){min=99;max=99;heal=10;vDoubleNext=true}
+ const nums=[0,0,0,0],good=min+Math.floor(Math.random()*(max-min+1));nums[ci]=good;
+ let remain=100-good,others=[0,1,2,3].filter(i=>i!==ci);
+ others.forEach((idx,i)=>{if(i===others.length-1)nums[idx]=remain;else{const maxPart=Math.max(1,remain-(others.length-i-1));const part=1+Math.floor(Math.random()*maxPart);nums[idx]=part;remain-=part}});
+ [...document.querySelectorAll(".option")].forEach((btn,i)=>{
+  const main=btn.querySelector(".option-main"),mark=selectedRole==="v"&&i===ci?'<span class="option-sub unlock">☠ CORRECT TARGET</span>':"";
+  main.innerHTML=`${esc(currentOptions[i])}<span class="option-sub">SIGNAL ${nums[i]}%</span>${mark}`
+ });
+ timeLeft=Math.min(180,timeLeft+heal);updateTop();
+ feedback.innerHTML=`📡 <b>${roles[selectedRole].prob.name}</b>：機率已顯示，回復 ${heal} 秒${selectedRole==="v"?"，下一題得分 ×2":""}。`
+}
+
+const intrusionChallenges=[
+ {prompt:"CLICK THE FRUIT",correct:"APPLE",options:["APPLE","PIZZA","CAT"]},
+ {prompt:"CLICK THE DRINK",correct:"WATER",options:["BREAD","WATER","DOG"]},
+ {prompt:"CLICK THE ANIMAL",correct:"TIGER",options:["JUICE","RICE","TIGER"]},
+ {prompt:"CLICK THE FOOD",correct:"BURGER",options:["MILK","HORSE","BURGER"]},
+ {prompt:"WHICH ONE IS A FRUIT?",correct:"BANANA",options:["BANANA","COFFEE","FISH"]},
+ {prompt:"WHICH ONE IS A DRINK?",correct:"TEA",options:["CHICKEN","TEA","MONKEY"]},
+ {prompt:"WHICH ONE IS AN ANIMAL?",correct:"RABBIT",options:["CAKE","RABBIT","SODA"]},
+ {prompt:"WHICH ONE IS FOOD?",correct:"NOODLES",options:["NOODLES","LION","JUICE"]},
+ {prompt:"FIND THE DRINK",correct:"ORANGE JUICE",options:["ORANGE JUICE","PANDA","PIZZA"]},
+ {prompt:"FIND THE ANIMAL",correct:"ELEPHANT",options:["BREAD","ELEPHANT","MILK"]}
+];
+function startIntrusion(){
+ intrusionActive=true;locked=true;intrusionOverlay.classList.remove("hidden");tone(115,.24,"sawtooth",.04);tone(85,.3,"square",.03,.15);
+ nextIntrusion("ARASAKA SECURITY BLOCK")
+}
+function nextIntrusion(message){
+ clearInterval(intrusionTimerId);currentIntrusion=intrusionChallenges[Math.floor(Math.random()*intrusionChallenges.length)];
+ intrusionPrompt.textContent=currentIntrusion.prompt;intrusionStatus.textContent=message;
+ intrusionOptions.innerHTML=shuffle(currentIntrusion.options).map(o=>`<button class="intrusion-option" onclick="answerIntrusion('${attr(o)}')">${esc(o)}</button>`).join("");
+ intrusionEndsAt=Date.now()+5200;intrusionFill.style.width="100%";
+ intrusionTimerId=setInterval(()=>{const remain=Math.max(0,intrusionEndsAt-Date.now());intrusionFill.style.width=`${remain/5200*100}%`;if(remain<=0){clearInterval(intrusionTimerId);timeLeft=Math.max(1,timeLeft-5);updateTop();wrongSound();nextIntrusion("TIMEOUT // MAIN TIME -5")}},80)
+}
+function answerIntrusion(answer){
+ if(!intrusionActive)return;
+ if(answer===currentIntrusion.correct){
+  clearInterval(intrusionTimerId);correctSound();score+=40;updateTop();intrusionStatus.innerHTML='<span class="gain">ACCESS GRANTED // +40</span>';
+  [...intrusionOptions.querySelectorAll("button")].forEach(b=>b.disabled=true);
+  setTimeout(()=>{intrusionActive=false;resolvedIntrusions.add(currentIndex);intrusionOverlay.classList.add("hidden");loadQuestion(true)},650)
+ }else{
+  timeLeft=Math.max(1,timeLeft-3);updateTop();wrongSound();nextIntrusion("WRONG // MAIN TIME -3")
+ }
+}
+
+function finishGame(reason){
+ clearInterval(timerId);timerId=null;gameScreen.classList.add("hidden");resultScreen.classList.remove("hidden");
+ const unlockedBefore=vUnlocked(),unlockNow=score>=2800&&!unlockedBefore;
+ if(score>=2800)localStorage.setItem("cyber_world_v_unlocked","true");
+ saveRanking(currentTeam,score,correctCount,selectedRole);
+ resultTeam.textContent=`${currentTeam} // ${roles[selectedRole].short}`;resultScore.textContent=score;
+ resultDetail.innerHTML=`${reason}｜答對 ${correctCount}/10｜本局 ${score} 分。${unlockNow?'<br><span class="unlock">☠️ SECRET RUNNER UNLOCKED：CYBERPUNK V</span>':""}`;
+ renderRanking()
+}
+function saveRanking(team,points,correct,role){
+ const data=ranking(),key=team.trim()||"Unknown Crew";
+ if(!data[key])data[key]={team:key,total:0,plays:0,best:0,correct:0,lastRole:role};
+ data[key].total+=points;data[key].plays++;data[key].best=Math.max(data[key].best,points);data[key].correct+=correct;data[key].lastRole=role;
+ localStorage.setItem("cyber_world_global_ranking",JSON.stringify(data))
+}
+function renderRanking(){
+ const rows=Object.values(ranking()).sort((a,b)=>b.total-a.total||b.best-a.best).slice(0,10);
+ const markup=rows.length?rows.map((r,i)=>`
+  <div class="rank"><div class="rank-no">${i+1}</div><div><div class="rank-name">${esc(r.team)}</div>
+  <div class="rank-meta">${roles[r.lastRole]?.short||"Runner"}｜RUNS ${r.plays}｜BEST ${r.best}｜CORRECT ${r.correct}</div></div>
+  <div class="rank-score">${r.total}</div></div>`).join(""):'<div class="rule">NO LOCAL DATA // 尚無排行榜紀錄</div>';
+ homeRanking.innerHTML=markup;resultRanking.innerHTML=markup
+}
+function clearRanking(){if(confirm("清除排行榜與 V 解鎖紀錄？")){localStorage.removeItem("cyber_world_global_ranking");localStorage.removeItem("cyber_world_v_unlocked");selectedRole="king";renderRoles();renderRanking()}}
+function demoTeam(){teamNameInput.value="WORLD EDGERUNNERS"}
+function backHome(){resultScreen.classList.add("hidden");gameScreen.classList.add("hidden");homeScreen.classList.remove("hidden");renderRoles();renderRanking()}
+function restartSameTeam(){teamNameInput.value=lastTeam||currentTeam||"WORLD EDGERUNNERS";startGame()}
+
+renderRoles();renderRanking();
+</script>
+</body>
+</html>

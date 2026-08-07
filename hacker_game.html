@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TERMINAL: THE MATRIX PROTOCOL</title>
+    <style>
+        :root {
+            --matrix-green: #00FF41;
+            --matrix-dark-green: #008F11;
+            --matrix-bg: #0d0208;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            background-color: var(--matrix-bg);
+            color: var(--matrix-green);
+            font-family: 'Courier New', Courier, monospace;
+            height: 100%;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #terminal {
+            flex-grow: 1;
+            padding: 20px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            line-height: 1.5;
+            text-shadow: 0 0 5px var(--matrix-green);
+        }
+
+        #input-line {
+            display: flex;
+            padding: 10px 20px;
+            background-color: var(--matrix-bg);
+            border-top: 1px solid var(--matrix-dark-green);
+        }
+
+        #prompt {
+            margin-right: 10px;
+        }
+
+        #user-input {
+            background: transparent;
+            border: none;
+            color: var(--matrix-green);
+            font-family: inherit;
+            font-size: inherit;
+            outline: none;
+            flex-grow: 1;
+            text-shadow: 0 0 5px var(--matrix-green);
+        }
+
+        /* 滾動條樣式 */
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: var(--matrix-bg); }
+        ::-webkit-scrollbar-thumb { background: var(--matrix-dark-green); }
+
+        .error { color: #ff3131; text-shadow: 0 0 5px #ff3131; }
+        .success { color: #00ff41; font-weight: bold; }
+        .system { color: #888; font-style: italic; }
+        .highlight { background-color: var(--matrix-dark-green); color: black; }
+    </style>
+</head>
+<body>
+
+    <div id="terminal"></div>
+    
+    <div id="input-line">
+        <span id="prompt">></span>
+        <input type="text" id="user-input" autofocus autocomplete="off">
+    </div>
+
+    <script>
+        const terminal = document.getElementById('terminal');
+        const userInput = document.getElementById('user-input');
+        
+        let gameState = 'LOGIN';
+        let hackerName = '';
+        let difficulty = '';
+        let target = '';
+        let currentQuestion = 0;
+        let lives = 3;
+        let startTime = 0;
+
+        const targets = [
+            "1. 全球銀行中央伺服器 (Global Bank)",
+            "2. 城市電網控制中心 (City Power Grid)",
+            "3. 國家航太局 (National Aerospace Agency)",
+            "4. 科技巨頭 Macrosoft",
+            "5. 地鐵安保網絡 (Metro Security)",
+            "6. 全球健康數據庫 (Health DB)"
+        ];
+
+        const questions = [
+            { q: "系統偵測到負面評價。請輸入 Hacker 一詞通常帶有的「負面聯想感」單字。", a: "connotation", hint: "c__________" },
+            { q: "追溯 1969 年 MIT 歷史。當時 Hacker 是用來形容學生玩的什麼「惡作劇」？", a: "pranks", hint: "p_____" },
+            { q: "早期學生沒有「說明書」，必須自己摸索。請找出對應單字。", a: "manuals", hint: "m______" },
+            { q: "偵測到惡意入侵者！他們被稱為 Black Hats，但在文中他們正式名稱是？", a: "crackers", hint: "c_______" },
+            { q: "真正的黑客會「探查」系統但不會破壞。請輸入該動詞 (p開頭)。", a: "probe", hint: "p____" },
+            { q: "黑客遵循「道德的」信念，不造成傷害。請輸入該形容詞。", a: "ethical", hint: "e______" },
+            { q: "當黑客發現弱點，他們會通知系統「管理者」。請輸入該單字。", a: "administrator", hint: "a___________" },
+            { q: "Firefox 或 Linux 這種由黑客貢獻、開放原始碼的軟體稱為？ (用-連接兩個單字)", a: "open-source", hint: "o___-s_____" }
+        ];
+
+        // 初始啟動
+        window.onload = () => {
+            printLine("[SYSTEM] INITIALIZING TERMINAL...");
+            setTimeout(() => {
+                printLine("[SYSTEM] ACCESSING ENCRYPTED DATA...");
+                printLine("------------------------------------");
+                printLine("WELCOME TO THE MATRIX. WHO ARE YOU?");
+                printLine("ENTER YOUR CODENAME:");
+            }, 1000);
+        };
+
+        userInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                const val = userInput.value.trim().toLowerCase();
+                handleInput(val);
+                userInput.value = '';
+            }
+        });
+
+        // 點擊任何地方都聚焦輸入框
+        document.addEventListener('click', () => userInput.focus());
+
+        function printLine(text, className = '') {
+            const div = document.createElement('div');
+            div.className = className;
+            div.innerHTML = text;
+            terminal.appendChild(div);
+            terminal.scrollTop = terminal.scrollHeight;
+        }
+
+        function handleInput(input) {
+            if (!input && gameState !== 'QUESTION') return;
+
+            switch(gameState) {
+                case 'LOGIN':
+                    hackerName = input.toUpperCase();
+                    gameState = 'DIFFICULTY';
+                    printLine(`> ${hackerName}`, 'success');
+                    printLine(`\n[SYSTEM] WELCOME, ${hackerName}.`);
+                    printLine("SELECT DIFFICULTY LEVEL:");
+                    printLine("1. [WHITE HAT] 簡單 (提供首字母提示)");
+                    printLine("2. [GREY HAT] 中等 (標準模式)");
+                    printLine("3. [BLACK HAT] 困難 (3次錯誤即鎖定)");
+                    break;
+
+                case 'DIFFICULTY':
+                    if (['1', '2', '3'].includes(input)) {
+                        difficulty = input;
+                        gameState = 'TARGET';
+                        printLine(`> LEVEL ${difficulty}`, 'success');
+                        printLine("\n[SYSTEM] SELECT YOUR TARGET AGENCY:");
+                        targets.forEach(t => printLine(t));
+                    } else {
+                        printLine("[ERROR] INVALID SELECTION. CHOOSE 1, 2, OR 3.", "error");
+                    }
+                    break;
+
+                case 'TARGET':
+                    let idx = parseInt(input) - 1;
+                    if (idx >= 0 && idx < 6) {
+                        target = targets[idx];
+                        gameState = 'QUESTION';
+                        startTime = Date.now();
+                        printLine(`> TARGETING: ${target}`, 'success');
+                        printLine("\n[SYSTEM] BYPASSING FIREWALL... START CRACKING.");
+                        printLine("----------------------------------------------");
+                        askQuestion();
+                    } else {
+                        printLine("[ERROR] TARGET NOT FOUND. CHOOSE 1-6.", "error");
+                    }
+                    break;
+
+                case 'QUESTION':
+                    checkAnswer(input);
+                    break;
+            }
+        }
+
+        function askQuestion() {
+            if (currentQuestion < questions.length) {
+                printLine(`\n[TASK ${currentQuestion + 1}/8]`);
+                printLine(questions[currentQuestion].q);
+                
+                if (difficulty === '1') {
+                    printLine(`HINT: ${questions[currentQuestion].hint}`, 'system');
+                }
+            } else {
+                endGame();
+            }
+        }
+
+        function checkAnswer(input) {
+            const correct = questions[currentQuestion].a;
+            if (input === correct) {
+                printLine(">> [ACCESS GRANTED] CORRECT.", "success");
+                currentQuestion++;
+                setTimeout(askQuestion, 500);
+            } else {
+                if (difficulty === '3') {
+                    lives--;
+                    printLine(`>> [WARNING] ACCESS DENIED. LIVES REMAINING: ${lives}`, "error");
+                    if (lives <= 0) {
+                        printLine("\n[FATAL ERROR] SYSTEM LOCKED. YOU WERE CAUGHT.", "error");
+                        gameState = 'GAMEOVER';
+                        userInput.disabled = true;
+                        return;
+                    }
+                } else {
+                    printLine(">> [ERROR] WRONG CODE. TRY AGAIN.", "error");
+                }
+            }
+        }
+
+        function endGame() {
+            gameState = 'FINISHED';
+            const totalTime = Math.floor((Date.now() - startTime) / 1000);
+            printLine("\n============================================");
+            printLine("MISSION ACCOMPLISHED", "success");
+            printLine(`HACKER: ${hackerName}`);
+            printLine(`TOTAL TIME: ${totalTime} SECONDS`);
+            printLine(`RANK: ${difficulty === '3' ? 'ELITE AGENT' : 'PROBATIONARY HACKER'}`);
+            printLine("--------------------------------------------");
+            printLine("真正的黑客是為了解決問題與學習，而不是為了破壞。");
+            printLine("感謝參與，矩陣連線已斷開...");
+            userInput.disabled = true;
+        }
+    </script>
+</body>
+</html>

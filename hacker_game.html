@@ -1,238 +1,398 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TERMINAL: THE MATRIX PROTOCOL</title>
-    <style>
-        :root {
-            --matrix-green: #00FF41;
-            --matrix-dark-green: #008F11;
-            --matrix-bg: #0d0208;
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DAVID'S CYBER LAB | GAME HUB</title>
+  <meta name="description" content="David's interactive learning game hub — enter the Cyber Lab and begin your mission." />
+  <style>
+    :root {
+      --matrix-green: #00ff41;
+      --matrix-green-soft: #00c934;
+      --matrix-dark: #061009;
+      --matrix-bg: #030806;
+      --panel: rgba(0, 22, 8, 0.78);
+      --line: rgba(0, 255, 65, 0.28);
+      --text-muted: #88a991;
+    }
 
-        body, html {
-            margin: 0;
-            padding: 0;
-            background-color: var(--matrix-bg);
-            color: var(--matrix-green);
-            font-family: 'Courier New', Courier, monospace;
-            height: 100%;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-        }
+    * { box-sizing: border-box; }
 
-        #terminal {
-            flex-grow: 1;
-            padding: 20px;
-            overflow-y: auto;
-            white-space: pre-wrap;
-            word-wrap: break-word;
-            line-height: 1.5;
-            text-shadow: 0 0 5px var(--matrix-green);
-        }
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      background: var(--matrix-bg);
+      color: var(--matrix-green);
+      font-family: "Courier New", Courier, monospace;
+    }
 
-        #input-line {
-            display: flex;
-            padding: 10px 20px;
-            background-color: var(--matrix-bg);
-            border-top: 1px solid var(--matrix-dark-green);
-        }
+    body {
+      min-height: 100vh;
+      overflow-x: hidden;
+      background:
+        radial-gradient(circle at 50% 25%, rgba(0,255,65,.10), transparent 35%),
+        linear-gradient(rgba(0,255,65,.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,255,65,.025) 1px, transparent 1px),
+        var(--matrix-bg);
+      background-size: auto, 28px 28px, 28px 28px, auto;
+    }
 
-        #prompt {
-            margin-right: 10px;
-        }
+    #matrix-rain {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      opacity: .18;
+      pointer-events: none;
+      z-index: 0;
+    }
 
-        #user-input {
-            background: transparent;
-            border: none;
-            color: var(--matrix-green);
-            font-family: inherit;
-            font-size: inherit;
-            outline: none;
-            flex-grow: 1;
-            text-shadow: 0 0 5px var(--matrix-green);
-        }
+    .scanline {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 3;
+      background: repeating-linear-gradient(
+        to bottom,
+        transparent 0,
+        transparent 3px,
+        rgba(0,0,0,.12) 4px
+      );
+      mix-blend-mode: multiply;
+    }
 
-        /* 滾動條樣式 */
-        ::-webkit-scrollbar { width: 5px; }
-        ::-webkit-scrollbar-track { background: var(--matrix-bg); }
-        ::-webkit-scrollbar-thumb { background: var(--matrix-dark-green); }
+    .shell {
+      position: relative;
+      z-index: 1;
+      width: min(1120px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 42px 0 64px;
+    }
 
-        .error { color: #ff3131; text-shadow: 0 0 5px #ff3131; }
-        .success { color: #00ff41; font-weight: bold; }
-        .system { color: #888; font-style: italic; }
-        .highlight { background-color: var(--matrix-dark-green); color: black; }
-    </style>
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 24px;
+      margin-bottom: 56px;
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 18px;
+    }
+
+    .brand {
+      font-size: clamp(1rem, 2vw, 1.25rem);
+      font-weight: 700;
+      letter-spacing: .12em;
+      text-shadow: 0 0 10px rgba(0,255,65,.55);
+    }
+
+    .status {
+      color: var(--text-muted);
+      font-size: .82rem;
+      white-space: nowrap;
+    }
+
+    .status::before {
+      content: "●";
+      color: var(--matrix-green);
+      margin-right: 7px;
+      animation: pulse 1.6s infinite;
+    }
+
+    .hero {
+      max-width: 850px;
+      margin-bottom: 42px;
+    }
+
+    .eyebrow {
+      color: var(--text-muted);
+      letter-spacing: .16em;
+      font-size: .82rem;
+      margin-bottom: 14px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(2.4rem, 7vw, 6.2rem);
+      line-height: .94;
+      letter-spacing: -.045em;
+      text-shadow: 0 0 18px rgba(0,255,65,.38);
+    }
+
+    .hero p {
+      max-width: 720px;
+      color: #b6c9bb;
+      line-height: 1.8;
+      font-size: clamp(.95rem, 1.7vw, 1.08rem);
+      margin: 24px 0 0;
+    }
+
+    .command {
+      margin-top: 28px;
+      color: var(--matrix-green-soft);
+      font-size: .9rem;
+    }
+
+    .command .cursor {
+      display: inline-block;
+      width: 9px;
+      height: 1em;
+      background: var(--matrix-green);
+      vertical-align: -.15em;
+      animation: blink .85s steps(1) infinite;
+      box-shadow: 0 0 8px var(--matrix-green);
+    }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: var(--text-muted);
+      font-size: .8rem;
+      letter-spacing: .14em;
+      margin: 46px 0 16px;
+    }
+
+    .section-title::after {
+      content: "";
+      height: 1px;
+      flex: 1;
+      background: var(--line);
+    }
+
+    .games {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 18px;
+    }
+
+    .game-card {
+      position: relative;
+      display: flex;
+      min-height: 310px;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 24px;
+      border: 1px solid var(--line);
+      background: linear-gradient(145deg, rgba(0,35,12,.88), rgba(1,10,5,.92));
+      box-shadow: inset 0 0 30px rgba(0,255,65,.03), 0 16px 50px rgba(0,0,0,.35);
+      overflow: hidden;
+      transition: transform .22s ease, border-color .22s ease, box-shadow .22s ease;
+    }
+
+    .game-card::before {
+      content: "";
+      position: absolute;
+      width: 180px;
+      height: 180px;
+      border: 1px solid rgba(0,255,65,.14);
+      border-radius: 50%;
+      top: -92px;
+      right: -60px;
+      box-shadow: 0 0 55px rgba(0,255,65,.08);
+    }
+
+    .game-card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(0,255,65,.75);
+      box-shadow: 0 20px 65px rgba(0,0,0,.48), 0 0 24px rgba(0,255,65,.08);
+    }
+
+    .tag {
+      width: fit-content;
+      padding: 5px 8px;
+      border: 1px solid rgba(0,255,65,.25);
+      color: #87c798;
+      font-size: .72rem;
+      letter-spacing: .08em;
+    }
+
+    .game-card h2 {
+      margin: 22px 0 10px;
+      font-size: clamp(1.45rem, 3vw, 2rem);
+      line-height: 1.05;
+    }
+
+    .game-card p {
+      margin: 0;
+      color: #9bad9f;
+      line-height: 1.65;
+      font-size: .9rem;
+    }
+
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 20px;
+    }
+
+    .meta span {
+      color: #6f9178;
+      font-size: .73rem;
+    }
+
+    .enter-btn {
+      margin-top: 26px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      width: 100%;
+      padding: 14px 15px;
+      color: #001505;
+      background: var(--matrix-green);
+      border: 1px solid var(--matrix-green);
+      text-decoration: none;
+      font-family: inherit;
+      font-weight: 900;
+      letter-spacing: .08em;
+      transition: background .18s ease, color .18s ease, box-shadow .18s ease;
+    }
+
+    .enter-btn:hover {
+      background: transparent;
+      color: var(--matrix-green);
+      box-shadow: 0 0 18px rgba(0,255,65,.18);
+    }
+
+    .placeholder {
+      opacity: .43;
+      filter: saturate(.65);
+    }
+
+    .placeholder .enter-btn {
+      background: transparent;
+      color: #7d9c84;
+      border-color: rgba(125,156,132,.35);
+      pointer-events: none;
+    }
+
+    footer {
+      margin-top: 52px;
+      padding-top: 18px;
+      border-top: 1px solid var(--line);
+      color: #536d59;
+      font-size: .73rem;
+      line-height: 1.8;
+    }
+
+    @keyframes blink { 50% { opacity: 0; } }
+    @keyframes pulse { 50% { opacity: .35; } }
+
+    @media (max-width: 640px) {
+      .shell { width: min(100% - 22px, 1120px); padding-top: 24px; }
+      header { margin-bottom: 38px; align-items: flex-start; flex-direction: column; gap: 8px; }
+      .hero p { line-height: 1.65; }
+      .game-card { min-height: 285px; padding: 20px; }
+    }
+  </style>
 </head>
 <body>
+  <canvas id="matrix-rain"></canvas>
+  <div class="scanline"></div>
 
-    <div id="terminal"></div>
-    
-    <div id="input-line">
-        <span id="prompt">></span>
-        <input type="text" id="user-input" autofocus autocomplete="off">
-    </div>
+  <main class="shell">
+    <header>
+      <div class="brand">DAVID // CYBER LAB</div>
+      <div class="status">SYSTEM ONLINE</div>
+    </header>
 
-    <script>
-        const terminal = document.getElementById('terminal');
-        const userInput = document.getElementById('user-input');
-        
-        let gameState = 'LOGIN';
-        let hackerName = '';
-        let difficulty = '';
-        let target = '';
-        let currentQuestion = 0;
-        let lives = 3;
-        let startTime = 0;
+    <section class="hero">
+      <div class="eyebrow">[ INTERACTIVE LEARNING SYSTEM ]</div>
+      <h1>ENTER THE<br>CYBER LAB.</h1>
+      <p>
+        歡迎進入 David's Game Hub。這裡不是普通的練習題網站——每一個任務都把學習變成遊戲。
+        選擇你的任務、進入系統，看看你能不能完成挑戰。
+      </p>
+      <div class="command">root@cyberlab:~$ select_mission <span class="cursor"></span></div>
+    </section>
 
-        const targets = [
-            "1. 全球銀行中央伺服器 (Global Bank)",
-            "2. 城市電網控制中心 (City Power Grid)",
-            "3. 國家航太局 (National Aerospace Agency)",
-            "4. 科技巨頭 Macrosoft",
-            "5. 地鐵安保網絡 (Metro Security)",
-            "6. 全球健康數據庫 (Health DB)"
-        ];
+    <div class="section-title">AVAILABLE MISSIONS</div>
 
-        const questions = [
-            { q: "系統偵測到負面評價。請輸入 Hacker 一詞通常帶有的「負面聯想感」單字。", a: "connotation", hint: "c__________" },
-            { q: "追溯 1969 年 MIT 歷史。當時 Hacker 是用來形容學生玩的什麼「惡作劇」？", a: "pranks", hint: "p_____" },
-            { q: "早期學生沒有「說明書」，必須自己摸索。請找出對應單字。", a: "manuals", hint: "m______" },
-            { q: "偵測到惡意入侵者！他們被稱為 Black Hats，但在文中他們正式名稱是？", a: "crackers", hint: "c_______" },
-            { q: "真正的黑客會「探查」系統但不會破壞。請輸入該動詞 (p開頭)。", a: "probe", hint: "p____" },
-            { q: "黑客遵循「道德的」信念，不造成傷害。請輸入該形容詞。", a: "ethical", hint: "e______" },
-            { q: "當黑客發現弱點，他們會通知系統「管理者」。請輸入該單字。", a: "administrator", hint: "a___________" },
-            { q: "Firefox 或 Linux 這種由黑客貢獻、開放原始碼的軟體稱為？ (用-連接兩個單字)", a: "open-source", hint: "o___-s_____" }
-        ];
+    <section class="games">
+      <article class="game-card">
+        <div>
+          <div class="tag">MISSION_001 // ONLINE</div>
+          <h2>THE MATRIX<br>PROTOCOL</h2>
+          <p>
+            化身白帽駭客，選擇 Hacker codename、難度與滲透目標，在終端機中完成英文與資安任務。
+            Your mission begins now.
+          </p>
+          <div class="meta">
+            <span># ENGLISH</span>
+            <span># CYBERSECURITY</span>
+            <span># TERMINAL</span>
+            <span># 3 LEVELS</span>
+          </div>
+        </div>
+        <a class="enter-btn" href="./hacker_game.html">
+          <span>ENTER MISSION</span>
+          <span>→</span>
+        </a>
+      </article>
 
-        // 初始啟動
-        window.onload = () => {
-            printLine("[SYSTEM] INITIALIZING TERMINAL...");
-            setTimeout(() => {
-                printLine("[SYSTEM] ACCESSING ENCRYPTED DATA...");
-                printLine("------------------------------------");
-                printLine("WELCOME TO THE MATRIX. WHO ARE YOU?");
-                printLine("ENTER YOUR CODENAME:");
-            }, 1000);
-        };
+      <article class="game-card placeholder" aria-disabled="true">
+        <div>
+          <div class="tag">MISSION_002 // LOCKED</div>
+          <h2>NEW MISSION<br>INCOMING</h2>
+          <p>
+            下一個互動任務可直接新增到這個 Game Hub。只要複製一張遊戲卡並改掉連結即可擴充。
+          </p>
+          <div class="meta">
+            <span># COMING_SOON</span>
+            <span># GAME_HUB</span>
+          </div>
+        </div>
+        <span class="enter-btn">ACCESS LOCKED <span>×</span></span>
+      </article>
+    </section>
 
-        userInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                const val = userInput.value.trim().toLowerCase();
-                handleInput(val);
-                userInput.value = '';
-            }
-        });
+    <footer>
+      © 2026 DAVID'S CYBER LAB // EDUCATIONAL GAME SYSTEM<br>
+      Built for learning. Use knowledge ethically.
+    </footer>
+  </main>
 
-        // 點擊任何地方都聚焦輸入框
-        document.addEventListener('click', () => userInput.focus());
+  <script>
+    // Lightweight Matrix rain background
+    const canvas = document.getElementById('matrix-rain');
+    const ctx = canvas.getContext('2d');
+    const chars = '01ABCDEFGHIJKLMNOPQRSTUVWXYZ#$%&*+-<>/';
+    let drops = [];
+    let fontSize = 14;
 
-        function printLine(text, className = '') {
-            const div = document.createElement('div');
-            div.className = className;
-            div.innerHTML = text;
-            terminal.appendChild(div);
-            terminal.scrollTop = terminal.scrollHeight;
-        }
+    function resize() {
+      const ratio = window.devicePixelRatio || 1;
+      canvas.width = Math.floor(window.innerWidth * ratio);
+      canvas.height = Math.floor(window.innerHeight * ratio);
+      canvas.style.width = window.innerWidth + 'px';
+      canvas.style.height = window.innerHeight + 'px';
+      ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+      const columns = Math.ceil(window.innerWidth / fontSize);
+      drops = Array.from({ length: columns }, () => Math.random() * -40);
+    }
 
-        function handleInput(input) {
-            if (!input && gameState !== 'QUESTION') return;
+    function draw() {
+      ctx.fillStyle = 'rgba(3, 8, 6, 0.075)';
+      ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
+      ctx.fillStyle = '#00ff41';
+      ctx.font = fontSize + 'px Courier New';
 
-            switch(gameState) {
-                case 'LOGIN':
-                    hackerName = input.toUpperCase();
-                    gameState = 'DIFFICULTY';
-                    printLine(`> ${hackerName}`, 'success');
-                    printLine(`\n[SYSTEM] WELCOME, ${hackerName}.`);
-                    printLine("SELECT DIFFICULTY LEVEL:");
-                    printLine("1. [WHITE HAT] 簡單 (提供首字母提示)");
-                    printLine("2. [GREY HAT] 中等 (標準模式)");
-                    printLine("3. [BLACK HAT] 困難 (3次錯誤即鎖定)");
-                    break;
+      drops.forEach((y, i) => {
+        const text = chars[Math.floor(Math.random() * chars.length)];
+        const x = i * fontSize;
+        ctx.fillText(text, x, y * fontSize);
+        if (y * fontSize > window.innerHeight && Math.random() > 0.975) drops[i] = 0;
+        drops[i]++;
+      });
 
-                case 'DIFFICULTY':
-                    if (['1', '2', '3'].includes(input)) {
-                        difficulty = input;
-                        gameState = 'TARGET';
-                        printLine(`> LEVEL ${difficulty}`, 'success');
-                        printLine("\n[SYSTEM] SELECT YOUR TARGET AGENCY:");
-                        targets.forEach(t => printLine(t));
-                    } else {
-                        printLine("[ERROR] INVALID SELECTION. CHOOSE 1, 2, OR 3.", "error");
-                    }
-                    break;
+      requestAnimationFrame(draw);
+    }
 
-                case 'TARGET':
-                    let idx = parseInt(input) - 1;
-                    if (idx >= 0 && idx < 6) {
-                        target = targets[idx];
-                        gameState = 'QUESTION';
-                        startTime = Date.now();
-                        printLine(`> TARGETING: ${target}`, 'success');
-                        printLine("\n[SYSTEM] BYPASSING FIREWALL... START CRACKING.");
-                        printLine("----------------------------------------------");
-                        askQuestion();
-                    } else {
-                        printLine("[ERROR] TARGET NOT FOUND. CHOOSE 1-6.", "error");
-                    }
-                    break;
-
-                case 'QUESTION':
-                    checkAnswer(input);
-                    break;
-            }
-        }
-
-        function askQuestion() {
-            if (currentQuestion < questions.length) {
-                printLine(`\n[TASK ${currentQuestion + 1}/8]`);
-                printLine(questions[currentQuestion].q);
-                
-                if (difficulty === '1') {
-                    printLine(`HINT: ${questions[currentQuestion].hint}`, 'system');
-                }
-            } else {
-                endGame();
-            }
-        }
-
-        function checkAnswer(input) {
-            const correct = questions[currentQuestion].a;
-            if (input === correct) {
-                printLine(">> [ACCESS GRANTED] CORRECT.", "success");
-                currentQuestion++;
-                setTimeout(askQuestion, 500);
-            } else {
-                if (difficulty === '3') {
-                    lives--;
-                    printLine(`>> [WARNING] ACCESS DENIED. LIVES REMAINING: ${lives}`, "error");
-                    if (lives <= 0) {
-                        printLine("\n[FATAL ERROR] SYSTEM LOCKED. YOU WERE CAUGHT.", "error");
-                        gameState = 'GAMEOVER';
-                        userInput.disabled = true;
-                        return;
-                    }
-                } else {
-                    printLine(">> [ERROR] WRONG CODE. TRY AGAIN.", "error");
-                }
-            }
-        }
-
-        function endGame() {
-            gameState = 'FINISHED';
-            const totalTime = Math.floor((Date.now() - startTime) / 1000);
-            printLine("\n============================================");
-            printLine("MISSION ACCOMPLISHED", "success");
-            printLine(`HACKER: ${hackerName}`);
-            printLine(`TOTAL TIME: ${totalTime} SECONDS`);
-            printLine(`RANK: ${difficulty === '3' ? 'ELITE AGENT' : 'PROBATIONARY HACKER'}`);
-            printLine("--------------------------------------------");
-            printLine("真正的黑客是為了解決問題與學習，而不是為了破壞。");
-            printLine("感謝參與，矩陣連線已斷開...");
-            userInput.disabled = true;
-        }
-    </script>
+    window.addEventListener('resize', resize);
+    resize();
+    draw();
+  </script>
 </body>
 </html>

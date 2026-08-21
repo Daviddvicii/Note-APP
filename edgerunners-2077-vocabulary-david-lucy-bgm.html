@@ -1,0 +1,455 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>EDGERUNNERS 2077 // VOCAB RUN // Global Knowledge Protocol</title>
+<style>
+:root{
+ --void:#020306;--panel:#080d15;--panel2:#101621;--cyan:#45f3ff;--red:#ff355e;
+ --amber:#ffca3a;--green:#56ffa4;--violet:#ba68ff;--white:#f6fbff;--muted:#91a2b5;--line:#26384c
+}
+*{box-sizing:border-box}html{touch-action:manipulation}
+body{
+ margin:0;min-height:100vh;color:var(--white);font-family:system-ui,-apple-system,"Segoe UI","Noto Sans TC",sans-serif;
+ background:
+ linear-gradient(rgba(69,243,255,.03) 1px,transparent 1px),
+ linear-gradient(90deg,rgba(69,243,255,.03) 1px,transparent 1px),
+ radial-gradient(circle at 5% 0%,rgba(255,53,94,.21),transparent 27%),
+ radial-gradient(circle at 95% 4%,rgba(186,104,255,.16),transparent 25%),#020306;
+ background-size:30px 30px,30px 30px,auto,auto,auto
+}
+body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:1000;background:repeating-linear-gradient(0deg,rgba(255,255,255,.015) 0,rgba(255,255,255,.015) 1px,transparent 1px,transparent 4px)}
+.wrap{max-width:1180px;margin:auto;padding:13px}header{text-align:center;padding:21px 10px 12px}
+.logo{margin:0;font-size:clamp(31px,6vw,60px);font-weight:1000;letter-spacing:.035em;text-shadow:-3px 0 var(--red),3px 0 var(--cyan),0 4px #000}
+.kicker{color:var(--amber);font-size:11px;letter-spacing:.22em;font-weight:1000}.subtitle{max-width:900px;margin:8px auto 0;color:#a8b8ca;line-height:1.6}
+.panel{position:relative;background:linear-gradient(145deg,rgba(12,18,28,.98),rgba(3,7,13,.98));border:2px solid var(--line);padding:16px;box-shadow:0 18px 45px rgba(0,0,0,.5),inset 0 0 28px rgba(69,243,255,.025)}
+.panel::before{content:"";position:absolute;left:-2px;top:20px;width:5px;height:65px;background:var(--red);box-shadow:0 0 15px var(--red)}
+.grid{display:grid;grid-template-columns:1.08fr .92fr;gap:14px;align-items:start}@media(max-width:920px){.grid{grid-template-columns:1fr}.wrap{padding:8px}}
+h2{margin:0 0 10px;font-size:22px}label{display:block;margin:11px 0 6px;color:var(--cyan);font-weight:1000}
+input{width:100%;padding:14px;background:#02060c;border:2px solid #2c4359;color:#fff;font:inherit;outline:none}
+input:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(69,243,255,.12)}
+button{min-height:49px;padding:11px 13px;border:1px solid #000;background:var(--cyan);color:#02060c;font-weight:1000;box-shadow:4px 4px 0 #0b6670;cursor:pointer;touch-action:manipulation}
+button:active:not(:disabled){transform:translate(2px,2px);box-shadow:2px 2px 0 #0b6670}button:disabled{opacity:.35;filter:grayscale(.7);cursor:not-allowed}
+button.green{background:var(--green);box-shadow:4px 4px 0 #157341}button.amber{background:var(--amber);box-shadow:4px 4px 0 #70580e}
+button.red{background:var(--red);box-shadow:4px 4px 0 #7c1730;color:#fff}button.violet{background:var(--violet);box-shadow:4px 4px 0 #5e2a88;color:#fff}
+button.light{background:#dce8f5;box-shadow:4px 4px 0 #586877}.btn-row{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:12px}@media(max-width:520px){.btn-row{grid-template-columns:1fr}}
+.role-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:9px}@media(max-width:850px){.role-grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:450px){.role-grid{grid-template-columns:1fr}}
+.role{padding:10px;background:#040911;border:1px solid #29465c;cursor:pointer;clip-path:polygon(0 0,91% 0,100% 14%,100% 100%,9% 100%,0 86%)}
+.role.active{border-color:var(--amber);box-shadow:inset 0 0 25px rgba(255,202,58,.11),0 0 16px rgba(255,202,58,.13)}
+.role.v{border-color:var(--red);background:linear-gradient(145deg,#23030b,#05070b);box-shadow:inset 0 0 28px rgba(255,53,94,.13),0 0 18px rgba(255,53,94,.12)}
+.avatar{width:86px;height:86px;margin:0 auto 7px;background:#02050a;border:1px solid #34536a;overflow:hidden}
+.avatar svg{width:100%;height:100%;display:block;image-rendering:pixelated}.role-name{text-align:center;font-weight:1000}.role-zh{text-align:center;color:var(--cyan);font-size:11px;margin-top:2px}.role-passive{color:var(--muted);font-size:11px;line-height:1.4;margin-top:6px}
+.rules{display:grid;gap:7px;margin-top:12px}.rule{padding:9px 11px;background:#040911;border-left:3px solid var(--red);color:#c8d7e6;line-height:1.5;font-size:13px}
+.note{color:var(--muted);line-height:1.55;font-size:13px}.unlock{color:var(--red);font-weight:1000;text-shadow:0 0 8px var(--red)}
+.rank-list{display:grid;gap:8px}.rank{display:grid;grid-template-columns:38px 1fr auto;gap:9px;align-items:center;padding:10px;background:#040911;border:1px solid #213b50}
+.rank-no{width:31px;height:31px;display:flex;align-items:center;justify-content:center;background:var(--amber);color:#05070a;font-weight:1000}.rank-name{font-weight:1000}.rank-meta{color:var(--muted);font-size:11px;margin-top:2px}.rank-score{color:var(--green);font-size:20px;font-weight:1000}
+.hidden{display:none!important}.game-top{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;margin-bottom:10px}@media(max-width:760px){.game-top{grid-template-columns:repeat(2,1fr)}}
+.stat{padding:9px;text-align:center;background:#040911;border:1px solid #2a4358}.stat small{display:block;color:#8498ad;font-size:10px;letter-spacing:.1em}.stat b{font-size:clamp(18px,3vw,28px);color:var(--amber)}
+.timer{height:13px;border:1px solid #29465c;background:#02060c;margin-bottom:11px;overflow:hidden}.timer-fill{height:100%;width:100%;background:linear-gradient(90deg,var(--green),var(--cyan),var(--red));box-shadow:0 0 13px var(--cyan)}
+.question-card{min-height:242px;padding:18px;display:flex;flex-direction:column;justify-content:center;text-align:center;background:linear-gradient(145deg,#070d16,#121827);border:1px solid #38536a;position:relative;overflow:hidden}
+.question-card::after{content:"GLOBAL DATA";position:absolute;right:-42px;top:23px;transform:rotate(42deg);background:var(--red);padding:4px 54px;font-size:10px;font-weight:1000}
+.tag{align-self:center;padding:5px 10px;border:1px solid var(--amber);color:var(--amber);font-size:12px;font-weight:1000;letter-spacing:.1em;margin-bottom:10px}.question{font-size:clamp(21px,3.2vw,32px);font-weight:1000;line-height:1.45;text-shadow:2px 2px #000}.question.english{color:var(--cyan);font-size:clamp(24px,4vw,38px)}.meta{margin-top:10px;color:#a7ccdf;line-height:1.5}
+.options{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:12px}@media(max-width:640px){.options{grid-template-columns:1fr}}
+.option{min-height:76px;display:flex;align-items:center;gap:10px;text-align:left;background:#040911;color:#fff;border:1px solid #35516a;box-shadow:4px 4px 0 #111b27}
+.option:hover:not(:disabled){border-color:var(--cyan);box-shadow:4px 4px 0 #0d5660}.letter{flex:0 0 35px;width:35px;height:35px;display:flex;align-items:center;justify-content:center;background:var(--amber);color:#04060a;font-weight:1000}
+.option-main{font-size:16px;font-weight:1000}.option-sub{display:block;color:#8cc4da;font-size:12px;margin-top:3px}.option.correct{background:#08251a;border-color:var(--green)}.option.wrong{background:#2b0b15;border-color:var(--red)}.option.eliminated{opacity:.14;pointer-events:none;text-decoration:line-through}
+.skills{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:11px}@media(max-width:650px){.skills{grid-template-columns:1fr}}.skill{min-height:68px}.skill-title{display:block;font-size:15px}.skill-desc{display:block;font-size:10px;margin-top:3px}
+.feedback{min-height:65px;margin-top:11px;padding:11px;background:#02060c;border:1px solid #29465c;color:#cfe1ef;line-height:1.55}.feedback b{color:var(--amber)}.gain{color:var(--green);font-weight:1000}.danger{color:#ff9bb0;font-weight:1000}
+.result{text-align:center;padding:20px;background:linear-gradient(145deg,rgba(255,53,94,.08),rgba(69,243,255,.055));border:1px solid #405f74}.result-score{font-size:clamp(42px,9vw,80px);color:var(--amber);font-weight:1000;text-shadow:-3px 0 var(--red),3px 0 var(--cyan),0 4px #000}
+.intrusion{position:fixed;inset:0;z-index:1200;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(1,3,6,.9);backdrop-filter:blur(5px)}
+.intrusion-card{width:min(630px,100%);padding:20px;background:linear-gradient(145deg,#26030d,#080b12 60%,#101721);border:2px solid var(--red);box-shadow:0 0 12px var(--red),0 0 45px rgba(255,53,94,.26);position:relative}
+.intrusion-card::after{content:"ARASAKA";position:absolute;right:-45px;top:26px;transform:rotate(42deg);padding:4px 58px;background:var(--red);font-size:10px;font-weight:1000}.intrusion-title{margin:0;font-size:clamp(25px,6vw,43px);text-shadow:-2px 0 var(--red),2px 0 #fff}.intrusion-prompt{margin:14px 0;padding:16px;background:#02060c;border:1px solid #7b2d44;color:var(--amber);font-size:clamp(23px,5vw,35px);font-weight:1000;text-align:center}
+.intrusion-options{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}@media(max-width:540px){.intrusion-options{grid-template-columns:1fr}}.intrusion-option{background:#dce8f5;box-shadow:4px 4px 0 #5d6975;font-size:17px}.intrusion-timer{height:10px;margin:12px 0 6px;background:#02060c;border:1px solid #7b2d44;overflow:hidden}.intrusion-fill{height:100%;width:100%;background:linear-gradient(90deg,var(--green),var(--amber),var(--red))}.intrusion-status{text-align:center;min-height:24px;color:#d0dce9;font-size:13px}
+.footer{text-align:center;padding:18px;color:#718397;font-size:11px}
+</style>
+</head>
+<body>
+<header>
+ <div class="kicker">NIGHT CITY EDUCATION NET // GLOBAL KNOWLEDGE</div>
+ <h1 class="logo">EDGERUNNERS 2077 // VOCAB RUN</h1>
+ <p class="subtitle">課本單字任務｜25 題英文選中文｜Night City Vocabulary Protocol</p>
+</header>
+
+<main class="wrap">
+<section class="panel" id="homeScreen">
+ <div class="grid">
+  <div>
+   <h2>// CREATE CREW</h2>
+   <label>隊伍名稱 TEAM ID</label>
+   <input id="teamName" maxlength="24" placeholder="例如：Global Runners">
+   <label>選擇角色 SELECT RUNNER</label>
+   <div class="role-grid" id="roleGrid"></div>
+   <div class="rule" id="roleMusicStatus" style="border-left-color:var(--cyan)">
+    🎵 David / Lucy 專屬原創 Night City 2-bit BGM
+   </div>
+   <div class="btn-row">
+    <button class="green" onclick="startGame()">START RUN</button>
+    <button class="light" onclick="renderRanking()">REFRESH DATA</button>
+   </div>
+   <div class="rules">
+    <div class="rule">🌍 共 25 題：全部使用你提供圖片中的課本單字。</div>
+    <div class="rule">🔥 第 13～25 題進入 HARD：中文干擾選項會更接近。</div>
+    <div class="rule">⚡ 每題依作答速度計分，越快答對分數越高。</div>
+    <div class="rule">🚨 三種技能各可使用一次：刪去法、提示法、機率法。</div>
+    <div class="rule">☠️ 角色：Lucy、David、Rebecca、Maine，各有不同被動與技能。</div>
+    <div class="rule">🔇 題型固定為英文單字 → 中文意思四選一。</div>
+   </div>
+  </div>
+  <div>
+   <h2>// CUMULATIVE LEADERBOARD</h2>
+   <div class="rank-list" id="homeRanking"></div>
+   <div class="btn-row">
+    <button class="red" onclick="clearRanking()">PURGE DATA</button>
+    <button class="amber" onclick="demoTeam()">DEMO TEAM</button>
+   </div>
+  </div>
+ </div>
+</section>
+
+<section class="panel hidden" id="gameScreen">
+ <div class="game-top">
+  <div class="stat"><small>TEAM</small><b id="teamDisplay">—</b></div>
+  <div class="stat"><small>RUNNER</small><b id="roleDisplay">—</b></div>
+  <div class="stat"><small>TIME</small><b id="timeDisplay">3:00</b></div>
+  <div class="stat"><small>QUESTION</small><b id="questionDisplay">1/25</b></div>
+  <div class="stat"><small>SCORE</small><b id="scoreDisplay">0</b></div>
+ </div>
+ <div class="timer"><div class="timer-fill" id="timeBar"></div></div>
+ <div class="question-card">
+  <div class="tag" id="sceneTag">GLOBAL DATA</div>
+  <div class="question" id="questionText"></div>
+  <div class="meta" id="hintText"></div>
+ </div>
+ <div class="options" id="options"></div>
+ <div class="skills">
+  <button class="skill amber" id="skillEliminate" onclick="useEliminate()"></button>
+  <button class="skill violet" id="skillHint" onclick="useHint()"></button>
+  <button class="skill green" id="skillProb" onclick="useProbability()"></button>
+ </div>
+ <div class="feedback" id="feedback">WAITING FOR DATA…</div>
+</section>
+
+<section class="panel hidden" id="resultScreen">
+ <div class="result">
+  <h2>// RUN REPORT</h2>
+  <h2 id="resultTeam"></h2>
+  <div class="result-score" id="resultScore">0</div>
+  <p class="note" id="resultDetail"></p>
+  <div class="btn-row">
+   <button class="green" onclick="backHome()">RETURN HUB</button>
+   <button class="amber" onclick="restartSameTeam()">RUN AGAIN</button>
+  </div>
+ </div>
+ <h2 style="margin-top:17px">// CUMULATIVE RANKING</h2>
+ <div class="rank-list" id="resultRanking"></div>
+</section>
+</main>
+
+<div class="intrusion hidden" id="intrusionOverlay">
+ <div class="intrusion-card">
+  <div class="kicker">HOSTILE ENGLISH REACTION TEST</div>
+  <h2 class="intrusion-title">🚨 ARASAKA MERCENARY</h2>
+  <p class="note">完成 Fruit／Food／Drinks／Animals 英文反應題才能繼續。答錯或超時會扣主遊戲時間。</p>
+  <div class="intrusion-prompt" id="intrusionPrompt"></div>
+  <div class="intrusion-options" id="intrusionOptions"></div>
+  <div class="intrusion-timer"><div class="intrusion-fill" id="intrusionFill"></div></div>
+  <div class="intrusion-status" id="intrusionStatus">SECURITY BLOCK ACTIVE</div>
+ </div>
+</div>
+
+<div class="footer">Fan-made Cyberpunk: Edgerunners classroom vocabulary game｜25 words from the supplied textbook images｜Local leaderboard</div>
+
+<script>
+const worldBank=[{"q":"extraordinary","a":"非凡的；令人驚奇的","category":"Vocabulary","explain":"extraordinary = 非凡的；令人驚奇的","pos":"adj."},{"q":"wildlife","a":"野生生物","category":"Vocabulary","explain":"wildlife = 野生生物","pos":"n."},{"q":"turn to sb/sth","a":"（在遭遇困境時）開始使用……；開始做……","category":"Vocabulary","explain":"turn to sb/sth = （在遭遇困境時）開始使用……；開始做……","pos":"phr."},{"q":"researcher","a":"研究人員","category":"Vocabulary","explain":"researcher = 研究人員","pos":"n."},{"q":"identify","a":"確認；識別","category":"Vocabulary","explain":"identify = 確認；識別","pos":"v."},{"q":"mammal","a":"哺乳動物","category":"Vocabulary","explain":"mammal = 哺乳動物","pos":"n."},{"q":"behavior","a":"行為","category":"Vocabulary","explain":"behavior = 行為","pos":"n."},{"q":"ultimately","a":"歸根究柢","category":"Vocabulary","explain":"ultimately = 歸根究柢","pos":"adv."},{"q":"issue","a":"問題；議題","category":"Vocabulary","explain":"issue = 問題；議題","pos":"n."},{"q":"amphibian","a":"兩棲類動物","category":"Vocabulary","explain":"amphibian = 兩棲類動物","pos":"n."},{"q":"deforestation","a":"毀林","category":"Vocabulary","explain":"deforestation = 毀林","pos":"n."},{"q":"bull","a":"公牛","category":"Vocabulary","explain":"bull = 公牛","pos":"n."},{"q":"bullring","a":"鬥牛場","category":"Vocabulary","explain":"bullring = 鬥牛場","pos":"n."},{"q":"bullfighting","a":"鬥牛","category":"Vocabulary","explain":"bullfighting = 鬥牛","pos":"n."},{"q":"bullfighter","a":"鬥牛士","category":"Vocabulary","explain":"bullfighter = 鬥牛士","pos":"n."},{"q":"horn","a":"（牛、羊等動物的）角","category":"Vocabulary","explain":"horn = （牛、羊等動物的）角","pos":"n."},{"q":"perform","a":"執行","category":"Vocabulary","explain":"perform = 執行","pos":"v."},{"q":"charge","a":"猛衝","category":"Vocabulary","explain":"charge = 猛衝","pos":"v."},{"q":"sacred","a":"神聖的","category":"Vocabulary","explain":"sacred = 神聖的","pos":"adj."},{"q":"momentum","a":"衝力","category":"Vocabulary","explain":"momentum = 衝力","pos":"n."},{"q":"flip","a":"翻轉","category":"Vocabulary","explain":"flip = 翻轉","pos":"v."},{"q":"look at sth","a":"檢視；審視","category":"Vocabulary","explain":"look at sth = 檢視；審視","pos":"phr."},{"q":"invent","a":"發明；創造","category":"Vocabulary","explain":"invent = 發明；創造","pos":"v."},{"q":"sword","a":"劍；刀","category":"Vocabulary","explain":"sword = 劍；刀","pos":"n."},{"q":"lower","a":"降下；放下","category":"Vocabulary","explain":"lower = 降下；放下","pos":"v."}];
+const englishBank=[];
+const roles={"lucy":{"name":"Lucy","short":"Lucy","zh":"Netrunner","passive":"Moon Runner｜強項：速度獎勵 +25，SCAN 準確度最高。弱點：Combo 加分只有一般角色的 70%。","eliminate":{"name":"ICE Break","desc":"刪除 2 個錯誤選項。"},"hint":{"name":"Deep Dive","desc":"顯示中文答案前 2 個字。"},"prob":{"name":"Moon Scan","desc":"86～94% 高精度機率掃描。"}},"david":{"name":"David","short":"David","zh":"Sandevistan Runner","passive":"Sandevistan｜強項：5 秒內答對額外 +45，平常速度 +15。弱點：答錯額外扣 15 分。","eliminate":{"name":"Sandevistan Cut","desc":"刪除 2 個錯誤選項並回復 2 秒。"},"hint":{"name":"Chrome Focus","desc":"顯示答案字數與第一個中文字。"},"prob":{"name":"Time Dilation","desc":"75～88% 機率掃描並回復 2 秒。"}},"rebecca":{"name":"Rebecca","short":"Rebecca","zh":"Heavy Gunner","passive":"Guts｜強項：第 13～25 題答對額外 +40。弱點：前 12 題速度獎勵 -10。","eliminate":{"name":"Shotgun Sweep","desc":"直接刪除 3 個錯誤選項。"},"hint":{"name":"Trigger Instinct","desc":"顯示詞性與中文首字。"},"prob":{"name":"Bullet Spread","desc":"68～82% 機率掃描。"}},"falco":{"name":"Falco","short":"Falco","zh":"Getaway Driver","passive":"Driver's Eye｜強項：作答再慢，速度分最低仍有 +55。弱點：Combo 加分最多只有 +45。","eliminate":{"name":"Escape Route","desc":"刪除 2 個錯誤選項。"},"hint":{"name":"Road Memory","desc":"顯示詞性與中文意思前段。"},"prob":{"name":"Route Forecast","desc":"72～86% 穩定機率掃描。"}},"maine":{"name":"Maine","short":"Maine","zh":"Heavy Solo","passive":"Crew Leader｜強項：Combo ≥3 後連勝分數最強。弱點：前 2 題速度獎勵 -20。","eliminate":{"name":"Heavy Suppression","desc":"刪除 2 個錯誤選項。"},"hint":{"name":"Command Scan","desc":"顯示詞性與中文首字。"},"prob":{"name":"Chrome Targeting","desc":"70～85% 機率掃描。"}}};
+const $=id=>document.getElementById(id);
+const homeScreen=$("homeScreen"),gameScreen=$("gameScreen"),resultScreen=$("resultScreen");
+const teamNameInput=$("teamName"),roleGrid=$("roleGrid"),teamDisplay=$("teamDisplay"),roleDisplay=$("roleDisplay");
+const timeDisplay=$("timeDisplay"),questionDisplay=$("questionDisplay"),scoreDisplay=$("scoreDisplay"),timeBar=$("timeBar");
+const sceneTag=$("sceneTag"),questionText=$("questionText"),hintText=$("hintText"),optionsEl=$("options"),feedback=$("feedback");
+const homeRanking=$("homeRanking"),resultRanking=$("resultRanking"),resultTeam=$("resultTeam"),resultScore=$("resultScore"),resultDetail=$("resultDetail");
+const intrusionOverlay=$("intrusionOverlay"),intrusionPrompt=$("intrusionPrompt"),intrusionOptions=$("intrusionOptions"),intrusionFill=$("intrusionFill"),intrusionStatus=$("intrusionStatus");
+
+let selectedRole="david",currentTeam="",lastTeam="",gameQuestions=[],currentOptions=[];
+let currentIndex=0,score=0,correctCount=0,combo=0,timeLeft=180,timerId=null,locked=false;
+let usedEliminate=false,usedHint=false,usedProb=false,questionStartedAt=0,skillUsedThisQuestion=false;
+let kingGuardUsed=false,kingSkillGuard=false,dNextBonus=false,vGuards=0,vDoubleNext=false,audioCtx=null;
+let intrusionIndices=new Set(),resolvedIntrusions=new Set(),intrusionActive=false,intrusionTimerId=null,intrusionEndsAt=0,currentIntrusion=null;
+
+function shuffle(arr){const a=[...arr];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function sample(arr,n){return shuffle(arr).slice(0,n)}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function attr(s){return esc(s).replace(/"/g,"&quot;")}
+function clock(s){s=Math.max(0,s);return `${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}`}
+function ensureAudio(){if(audioCtx)return;const AC=window.AudioContext||window.webkitAudioContext;if(AC)audioCtx=new AC()}
+function tone(freq,dur,type="square",vol=.045,delay=0){ensureAudio();if(!audioCtx)return;const t=audioCtx.currentTime+delay,o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type=type;o.frequency.setValueAtTime(freq,t);g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(vol,t+.015);g.gain.exponentialRampToValueAtTime(.0001,t+dur);o.connect(g);g.connect(audioCtx.destination);o.start(t);o.stop(t+dur+.03)}
+function correctSound(){tone(660,.1,"square",.04);tone(980,.14,"triangle",.065,.09);tone(1420,.16,"sine",.055,.19)}
+function wrongSound(){tone(230,.17,"sawtooth",.04);tone(145,.24,"square",.035,.13)}
+let roleMusicCtx=null,roleMusicTimer=null,roleMusicOn=false,roleMusicStep=0;
+const roleMusicNotes=[392,494,587,659,587,494,440,392,330,392,494,440,370,330,294,330];
+function ensureRoleMusic(){
+ if(roleMusicCtx)return;
+ const AC=window.AudioContext||window.webkitAudioContext;
+ if(AC)roleMusicCtx=new AC()
+}
+function roleChip(freq,dur=.20,vol=.016,type="square"){
+ ensureRoleMusic();if(!roleMusicCtx)return;
+ const t=roleMusicCtx.currentTime,o=roleMusicCtx.createOscillator(),g=roleMusicCtx.createGain();
+ o.type=type;o.frequency.setValueAtTime(freq,t);
+ g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(vol,t+.015);
+ g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+ o.connect(g);g.connect(roleMusicCtx.destination);o.start(t);o.stop(t+dur+.03)
+}
+function roleMusicTick(){
+ if(!roleMusicOn)return;
+ const f=roleMusicNotes[roleMusicStep%roleMusicNotes.length];
+ roleChip(f,.20,.014,roleMusicStep%4===0?"square":"triangle");
+ if(roleMusicStep%4===0)roleChip(f/2,.30,.007,"square");
+ roleMusicStep++
+}
+function startRoleMusic(){
+ if(!(selectedRole==="david"||selectedRole==="lucy"))return stopRoleMusic();
+ ensureRoleMusic();
+ if(roleMusicCtx&&roleMusicCtx.state==="suspended")roleMusicCtx.resume();
+ if(roleMusicOn){updateMusicStatus();return}
+ roleMusicOn=true;roleMusicStep=0;roleMusicTick();
+ roleMusicTimer=setInterval(roleMusicTick,350);updateMusicStatus()
+}
+function stopRoleMusic(){
+ roleMusicOn=false;
+ if(roleMusicTimer){clearInterval(roleMusicTimer);roleMusicTimer=null}
+ updateMusicStatus()
+}
+function updateMusicStatus(){
+ const el=$("roleMusicStatus");if(!el)return;
+ if((selectedRole==="david"||selectedRole==="lucy")&&roleMusicOn){
+   el.innerHTML=`🎵 <b>${roles[selectedRole].name}</b> // Original Night City 2-bit BGM playing`
+ }else if(selectedRole==="david"||selectedRole==="lucy"){
+   el.innerHTML=`🎵 <b>${roles[selectedRole].name}</b>：點選角色後啟動原創 2-bit Night City BGM`
+ }else{
+   el.innerHTML="🔇 Rebecca / Falco / Maine：無背景音樂"
+ }
+}
+function ranking(){try{return JSON.parse(localStorage.getItem("edgerunners_vocab_25_rank")||"{}")}catch(e){return{}}}
+
+function avatarSVG(id){
+ const bg=`<rect width="72" height="72" fill="#02060b"/><path d="M0 56L22 36 44 42 72 20V72H0Z" fill="#0a1b28"/>`;
+ const frame=`<path d="M1 1H63L71 9V71H9L1 63Z" fill="none" stroke="#35627b" stroke-width="2"/>`;
+ const art={
+  lucy:`<path d="M18 18L28 7H46L55 19 50 49 42 57H25L16 45Z" fill="#d9e4ec"/><path d="M16 20L24 7 42 5 56 15 48 22 36 16 25 24Z" fill="#f4f7fb"/><rect x="23" y="29" width="11" height="4" fill="#00f5ff"/><rect x="40" y="29" width="11" height="4" fill="#ff2bd6"/><path d="M15 55H57L67 72H5Z" fill="#24293d"/>`,
+  david:`<path d="M19 18L28 8H45L54 20 50 48 42 56H25L17 44Z" fill="#c89068"/><path d="M16 22L23 8 40 5 55 15 47 21 36 15 25 24Z" fill="#34211b"/><rect x="24" y="29" width="10" height="3" fill="#111827"/><rect x="41" y="29" width="10" height="3" fill="#111827"/><path d="M12 54H60L70 72H2Z" fill="#d7df23"/><path d="M28 54L36 64 45 54" fill="none" stroke="#00f5ff" stroke-width="3"/>`,
+  rebecca:`<path d="M18 19L27 10H45L54 22 50 49 42 57H24L16 44Z" fill="#ddd9d7"/><circle cx="15" cy="16" r="9" fill="#45d8e3"/><circle cx="55" cy="16" r="9" fill="#ff6bc8"/><path d="M16 25L21 10 33 7 50 12 55 25 42 20 34 25 25 19Z" fill="#63e0df"/><rect x="23" y="30" width="11" height="4" fill="#ff2bd6"/><rect x="41" y="30" width="11" height="4" fill="#00f5ff"/><path d="M9 55H63L72 72H0Z" fill="#ee4aa8"/>`,
+  falco:`<path d="M19 20L28 10H45L53 22 49 49 41 57H25L17 45Z" fill="#bd815d"/><path d="M10 16H58L51 8H20Z" fill="#7a4c28"/><path d="M17 18L25 7H46L53 18Z" fill="#9d6333"/><rect x="24" y="30" width="10" height="3" fill="#111827"/><rect x="41" y="30" width="10" height="3" fill="#111827"/><path d="M24 42Q36 50 48 42" fill="#4d2b1a"/><path d="M11 55H61L70 72H2Z" fill="#5b3925"/>`,
+  maine:`<path d="M16 17L26 6H47L57 19 52 49 44 58H24L14 45Z" fill="#80543f"/><path d="M16 19L25 7 48 8 57 19 50 23 39 16 26 20Z" fill="#251b18"/><rect x="22" y="30" width="12" height="4" fill="#ff355e"/><rect x="41" y="30" width="12" height="4" fill="#ff355e"/><path d="M18 44L25 53H46L53 43 49 58H22Z" fill="#a9bdc8"/><path d="M4 54H68L72 72H0Z" fill="#596a76"/>`
+ };
+ return `<svg viewBox="0 0 72 72" shape-rendering="crispEdges">${bg}${art[id]||art.david}${frame}</svg>`
+}
+function renderRoles(){
+ roleGrid.innerHTML=Object.entries(roles).map(([id,r])=>`
+  <div class="role ${selectedRole===id?"active":""}" onclick="selectRole('${id}')">
+   <div class="avatar">${avatarSVG(id)}</div><div class="role-name">${r.name}</div>
+   <div class="role-zh">${r.zh}</div><div class="role-passive">${r.passive}</div>
+  </div>`).join("");
+ updateMusicStatus()
+}
+function selectRole(id){
+ selectedRole=id;renderRoles();
+ if(id==="david"||id==="lucy")startRoleMusic();else stopRoleMusic()
+}
+function renderSkills(){
+ const r=roles[selectedRole];
+ $("skillEliminate").innerHTML=`<span class="skill-title">🪓 ${r.eliminate.name}</span><span class="skill-desc">${r.eliminate.desc}</span>`;
+ $("skillHint").innerHTML=`<span class="skill-title">💡 ${r.hint.name}</span><span class="skill-desc">${r.hint.desc}</span>`;
+ $("skillProb").innerHTML=`<span class="skill-title">📡 ${r.prob.name}</span><span class="skill-desc">${r.prob.desc}</span>`
+}
+
+function prepareQuestions(){ gameQuestions=shuffle(worldBank.map(x=>({...x,type:"world"}))); }
+function prepareIntrusions(){intrusionIndices=new Set();resolvedIntrusions=new Set()}
+function startGame(){
+ ensureAudio();currentTeam=teamNameInput.value.trim()||"Unknown Crew";lastTeam=currentTeam;if(selectedRole==="david"||selectedRole==="lucy")startRoleMusic();else stopRoleMusic();
+ prepareQuestions();prepareIntrusions();currentIndex=0;score=0;correctCount=0;combo=0;timeLeft=180;locked=false;
+ usedEliminate=false;usedHint=false;usedProb=false;skillUsedThisQuestion=false;
+ kingGuardUsed=false;kingSkillGuard=false;dNextBonus=false;
+ ["skillEliminate","skillHint","skillProb"].forEach(id=>$(id).disabled=false);renderSkills();
+ homeScreen.classList.add("hidden");resultScreen.classList.add("hidden");gameScreen.classList.remove("hidden");
+ teamDisplay.textContent=currentTeam.length>9?currentTeam.slice(0,9)+"…":currentTeam;roleDisplay.textContent=roles[selectedRole].short;
+ updateTop();loadQuestion();clearInterval(timerId);
+ timerId=setInterval(()=>{if(intrusionActive)return;timeLeft--;updateTop();if(timeLeft<=0)finishGame("TIMEOUT")},1000)
+}
+function updateTop(){timeDisplay.textContent=clock(timeLeft);questionDisplay.textContent=`${Math.min(currentIndex+1,25)}/25`;scoreDisplay.textContent=score;timeBar.style.width=`${Math.max(0,timeLeft/180*100)}%`}
+
+function categoryAnswers(category,current){return worldBank.filter(x=>x.a!==current).map(x=>x.a)}
+function createOptions(q,hard){
+ if(q.type==="english")return shuffle([...q.options]);
+ const all=worldBank.filter(x=>x.a!==q.a).map(x=>x.a);
+ const preferred=hard?categoryAnswers(q.category,q.a):[
+  ...categoryAnswers(q.category,q.a).slice(0,1),...all
+ ];
+ const chosen=[];
+ for(const answer of shuffle(preferred)){if(chosen.length>=3)break;if(!chosen.includes(answer))chosen.push(answer)}
+ return shuffle([q.a,...chosen])
+}
+function loadQuestion(skipIntrusion=false){
+ if(currentIndex>=25){finishGame("ALL QUESTIONS CLEARED");return}
+ if(!skipIntrusion&&intrusionIndices.has(currentIndex)&&!resolvedIntrusions.has(currentIndex)){startIntrusion();return}
+ locked=false;skillUsedThisQuestion=false;const q=gameQuestions[currentIndex],hard=currentIndex>=12;
+ currentOptions=createOptions(q,hard);
+ sceneTag.textContent=hard?"HARD VOCAB TRACE":"VOCAB TRACE";
+ questionText.className="question english";questionText.innerHTML=`<span style="font-size:1.35em">${esc(q.q)}</span><br><span style="font-size:.5em;color:var(--cyan)">${esc(q.pos||"")}</span>`;
+ hintText.textContent=q.type==="english"
+  ?"Choose the best English answer."
+  :hard?"第 6 題起：錯誤選項優先來自相同世界知識類型。":"根據世界知識選出正確答案。";
+ optionsEl.innerHTML=currentOptions.map((answer,i)=>`
+  <button class="option" data-answer="${attr(answer)}" onclick="chooseAnswer('${attr(answer)}')">
+   <span class="letter">${String.fromCharCode(65+i)}</span>
+   <span class="option-main">${esc(answer)}<span class="option-sub">${q.type==="english"?"Elementary English":"Global Answer Node"}</span></span>
+  </button>`).join("");
+ feedback.innerHTML=`第 <b>${currentIndex+1}</b> 題：速度正在計分。`;
+ questionStartedAt=performance.now();updateTop()
+}
+function speedBonus(sec){
+ let b=Math.max(0,Math.round(160-sec*7.4));
+ if(selectedRole==="david"){b+=15;if(sec<=5)b+=45}
+ if(selectedRole==="lucy")b+=25;
+ if(selectedRole==="rebecca"&&currentIndex<12)b=Math.max(0,b-10);
+ if(selectedRole==="falco")b=Math.max(55,b);
+ if(selectedRole==="maine"&&currentIndex<2)b=Math.max(0,b-20);
+ return b
+}
+function roleCorrectBonus(q,sec){
+ let b=0;
+ if(selectedRole==="rebecca"&&currentIndex>=12)b+=40;
+ if(selectedRole==="maine"&&combo>=3)b+=Math.min(90,(combo-2)*14);
+ return b
+}
+function chooseAnswer(answer){
+ if(locked)return;locked=true;const q=gameQuestions[currentIndex],correct=answer===q.a;
+ const sec=Math.max(.1,(performance.now()-questionStartedAt)/2500);
+ [...document.querySelectorAll(".option")].forEach(btn=>{
+  btn.disabled=true;if(btn.dataset.answer===q.a)btn.classList.add("correct");else if(btn.dataset.answer===answer)btn.classList.add("wrong")
+ });
+ if(correct){
+  correctSound();combo++;correctCount++;
+  let base=q.type==="english"?100:110,speed=speedBonus(sec),hard=currentIndex>=12?45:0,comboBonus=Math.min(105,(combo-1)*17);
+  if(selectedRole==="lucy")comboBonus=Math.round(comboBonus*.7);
+  if(selectedRole==="falco")comboBonus=Math.min(45,comboBonus);
+  let career=roleCorrectBonus(q,sec),gain=base+speed+hard+comboBonus+career;
+  if(vDoubleNext){gain*=2;vDoubleNext=false}
+  score+=gain;
+  feedback.innerHTML=`✅ <b>${esc(q.a)}</b><br>${esc(q.explain)}<br><span class="gain">${sec.toFixed(1)} 秒：速度 +${speed}｜困難 +${hard}｜Combo +${comboBonus}｜角色 +${career}｜本題 +${gain}</span>`
+ }else{
+  wrongSound();let guard="";
+  combo=0;
+  feedback.innerHTML=`❌ 正確答案：<b>${esc(q.a)}</b><br>${esc(q.explain)}${guard}`
+ }
+ updateTop();setTimeout(()=>{currentIndex++;currentIndex>=25?finishGame("ALL QUESTIONS CLEARED"):loadQuestion()},1600)
+}
+function useEliminate(){
+ if(usedEliminate||locked)return;usedEliminate=true;skillUsedThisQuestion=true;$("skillEliminate").disabled=true;
+ const q=gameQuestions[currentIndex],wrong=[...document.querySelectorAll(".option")].filter(b=>b.dataset.answer!==q.a);
+ let count=2,extra="";
+ if(selectedRole==="rebecca")count=3;
+ if(selectedRole==="david"){timeLeft=Math.min(180,timeLeft+2);extra="，回復 2 秒"}
+ 
+ sample(wrong,count).forEach(btn=>{btn.classList.add("eliminated");btn.disabled=true});
+ feedback.innerHTML=`🪓 <b>${roles[selectedRole].eliminate.name}</b>：已移除 ${count} 個錯誤選項${extra}。`
+}
+function useHint(){
+ if(usedHint||locked)return;usedHint=true;skillUsedThisQuestion=true;$("skillHint").disabled=true;
+ const q=gameQuestions[currentIndex];let data="";
+ if(selectedRole==="lucy")data=`中文答案開頭：<b>${esc(q.a.slice(0,2))}</b>…`;
+ else if(selectedRole==="david")data=`答案共 <b>${q.a.length}</b> 個字元｜首字：<b>${esc(q.a[0])}</b>`;
+ else if(selectedRole==="rebecca")data=`詞性：<b>${esc(q.pos||"")}</b>｜中文首字：<b>${esc(q.a[0])}</b>`;
+ else if(selectedRole==="falco")data=`詞性：<b>${esc(q.pos||"")}</b>｜中文：<b>${esc(q.a.split("；")[0])}</b>`;
+ else if(selectedRole==="maine")data=`詞性：<b>${esc(q.pos||"")}</b>｜中文首字：<b>${esc(q.a[0])}</b>`;
+ else data=`${esc(q.explain)}`;
+ hintText.innerHTML=`${roles[selectedRole].hint.name} // ${data}`;feedback.innerHTML=`💡 <b>${roles[selectedRole].hint.name}</b> 已提供提示。`
+}
+function useProbability(){
+ if(usedProb||locked)return;usedProb=true;skillUsedThisQuestion=true;$("skillProb").disabled=true;
+ const q=gameQuestions[currentIndex],ci=currentOptions.indexOf(q.a);
+ let min=60,max=78,heal=0;
+ if(selectedRole==="lucy"){min=82;max=92;heal=0}
+ if(selectedRole==="david"){min=75;max=88;heal=2}
+ if(selectedRole==="rebecca"){min=68;max=82;heal=0}
+ if(selectedRole==="maine"){min=70;max=85;heal=0}
+ if(selectedRole==="falco"){min=72;max=86;heal=0}
+ 
+ const nums=[0,0,0,0],good=min+Math.floor(Math.random()*(max-min+1));nums[ci]=good;
+ let remain=100-good,others=[0,1,2,3].filter(i=>i!==ci);
+ others.forEach((idx,i)=>{if(i===others.length-1)nums[idx]=remain;else{const maxPart=Math.max(1,remain-(others.length-i-1));const part=1+Math.floor(Math.random()*maxPart);nums[idx]=part;remain-=part}});
+ [...document.querySelectorAll(".option")].forEach((btn,i)=>{
+  const main=btn.querySelector(".option-main"),mark="";
+  main.innerHTML=`${esc(currentOptions[i])}<span class="option-sub">SIGNAL ${nums[i]}%</span>${mark}`
+ });
+ timeLeft=Math.min(180,timeLeft+heal);updateTop();
+ feedback.innerHTML=`📡 <b>${roles[selectedRole].prob.name}</b>：機率已顯示，回復 ${heal} 秒。`
+}
+
+const intrusionChallenges=[
+ {prompt:"CLICK THE FRUIT",correct:"APPLE",options:["APPLE","PIZZA","CAT"]},
+ {prompt:"CLICK THE DRINK",correct:"WATER",options:["BREAD","WATER","DOG"]},
+ {prompt:"CLICK THE ANIMAL",correct:"TIGER",options:["JUICE","RICE","TIGER"]},
+ {prompt:"CLICK THE FOOD",correct:"BURGER",options:["MILK","HORSE","BURGER"]},
+ {prompt:"WHICH ONE IS A FRUIT?",correct:"BANANA",options:["BANANA","COFFEE","FISH"]},
+ {prompt:"WHICH ONE IS A DRINK?",correct:"TEA",options:["CHICKEN","TEA","MONKEY"]},
+ {prompt:"WHICH ONE IS AN ANIMAL?",correct:"RABBIT",options:["CAKE","RABBIT","SODA"]},
+ {prompt:"WHICH ONE IS FOOD?",correct:"NOODLES",options:["NOODLES","LION","JUICE"]},
+ {prompt:"FIND THE DRINK",correct:"ORANGE JUICE",options:["ORANGE JUICE","PANDA","PIZZA"]},
+ {prompt:"FIND THE ANIMAL",correct:"ELEPHANT",options:["BREAD","ELEPHANT","MILK"]}
+];
+function startIntrusion(){
+ intrusionActive=true;locked=true;intrusionOverlay.classList.remove("hidden");tone(115,.24,"sawtooth",.04);tone(85,.3,"square",.03,.15);
+ nextIntrusion("ARASAKA SECURITY BLOCK")
+}
+function nextIntrusion(message){
+ clearInterval(intrusionTimerId);currentIntrusion=intrusionChallenges[Math.floor(Math.random()*intrusionChallenges.length)];
+ intrusionPrompt.textContent=currentIntrusion.prompt;intrusionStatus.textContent=message;
+ intrusionOptions.innerHTML=shuffle(currentIntrusion.options).map(o=>`<button class="intrusion-option" onclick="answerIntrusion('${attr(o)}')">${esc(o)}</button>`).join("");
+ intrusionEndsAt=Date.now()+5200;intrusionFill.style.width="100%";
+ intrusionTimerId=setInterval(()=>{const remain=Math.max(0,intrusionEndsAt-Date.now());intrusionFill.style.width=`${remain/5200*100}%`;if(remain<=0){clearInterval(intrusionTimerId);timeLeft=Math.max(1,timeLeft-5);updateTop();wrongSound();nextIntrusion("TIMEOUT // MAIN TIME -5")}},80)
+}
+function answerIntrusion(answer){
+ if(!intrusionActive)return;
+ if(answer===currentIntrusion.correct){
+  clearInterval(intrusionTimerId);correctSound();score+=40;updateTop();intrusionStatus.innerHTML='<span class="gain">ACCESS GRANTED // +40</span>';
+  [...intrusionOptions.querySelectorAll("button")].forEach(b=>b.disabled=true);
+  setTimeout(()=>{intrusionActive=false;resolvedIntrusions.add(currentIndex);intrusionOverlay.classList.add("hidden");loadQuestion(true)},650)
+ }else{
+  timeLeft=Math.max(1,timeLeft-3);updateTop();wrongSound();nextIntrusion("WRONG // MAIN TIME -3")
+ }
+}
+
+function finishGame(reason){
+ clearInterval(timerId);timerId=null;gameScreen.classList.add("hidden");resultScreen.classList.remove("hidden");
+ const unlockNow=false;
+ saveRanking(currentTeam,score,correctCount,selectedRole);
+ resultTeam.textContent=`${currentTeam} // ${roles[selectedRole].short}`;resultScore.textContent=score;
+ resultDetail.innerHTML=`${reason}｜答對 ${correctCount}/25｜本局 ${score} 分。`;
+ renderRanking()
+}
+function saveRanking(team,points,correct,role){
+ const data=ranking(),key=team.trim()||"Unknown Crew";
+ if(!data[key])data[key]={team:key,total:0,plays:0,best:0,correct:0,lastRole:role};
+ data[key].total+=points;data[key].plays++;data[key].best=Math.max(data[key].best,points);data[key].correct+=correct;data[key].lastRole=role;
+ localStorage.setItem("edgerunners_vocab_25_rank",JSON.stringify(data))
+}
+function renderRanking(){
+ const rows=Object.values(ranking()).sort((a,b)=>b.total-a.total||b.best-a.best).slice(0,10);
+ const markup=rows.length?rows.map((r,i)=>`
+  <div class="rank"><div class="rank-no">${i+1}</div><div><div class="rank-name">${esc(r.team)}</div>
+  <div class="rank-meta">${roles[r.lastRole]?.short||"Runner"}｜RUNS ${r.plays}｜BEST ${r.best}｜CORRECT ${r.correct}</div></div>
+  <div class="rank-score">${r.total}</div></div>`).join(""):'<div class="rule">NO LOCAL DATA // 尚無排行榜紀錄</div>';
+ homeRanking.innerHTML=markup;resultRanking.innerHTML=markup
+}
+function clearRanking(){if(confirm("清除排行榜？")){localStorage.removeItem("edgerunners_vocab_25_rank");selectedRole="david";renderRoles();renderRanking()}}
+function demoTeam(){teamNameInput.value="WORLD EDGERUNNERS"}
+function backHome(){resultScreen.classList.add("hidden");gameScreen.classList.add("hidden");homeScreen.classList.remove("hidden");renderRoles();renderRanking()}
+function restartSameTeam(){teamNameInput.value=lastTeam||currentTeam||"WORLD EDGERUNNERS";startGame()}
+
+renderRoles();renderRanking();
+</script>
+</body>
+</html>

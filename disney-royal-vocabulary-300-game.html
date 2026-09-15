@@ -1,0 +1,409 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Royal Vocabulary Rush｜300 Words</title>
+<style>
+:root{
+ --night:#12102a;--deep:#231742;--panel:#2e2050;--cream:#fff9ea;--gold:#ffd96b;
+ --rose:#ff8fb8;--blue:#8ed8ff;--ice:#bff2ff;--green:#88efb2;--red:#ff647a;
+ --purple:#c599ff;--muted:#d7cceb;
+}
+*{box-sizing:border-box}
+body{
+ margin:0;min-height:100vh;color:var(--cream);
+ font-family:system-ui,-apple-system,"Segoe UI","Noto Sans TC",sans-serif;
+ background:
+   radial-gradient(circle at 15% 0%,rgba(255,143,184,.23),transparent 28%),
+   radial-gradient(circle at 88% 4%,rgba(142,216,255,.20),transparent 27%),
+   linear-gradient(180deg,#100d28,#251847 60%,#100d28);
+}
+body:before{
+ content:"✦";position:fixed;left:5vw;top:8vh;font-size:60px;color:rgba(255,217,107,.08);pointer-events:none;
+ text-shadow:32vw 18vh rgba(255,217,107,.06),70vw 4vh rgba(255,217,107,.08),52vw 60vh rgba(255,217,107,.05),12vw 70vh rgba(255,217,107,.05)
+}
+.wrap{max-width:1160px;margin:auto;padding:12px}
+header{text-align:center;padding:20px 8px 12px}
+.kicker{font-size:11px;letter-spacing:.23em;color:var(--gold);font-weight:1000}
+.logo{
+ margin:4px 0;font-family:Georgia,"Times New Roman",serif;font-size:clamp(35px,7vw,64px);
+ font-weight:900;color:#fff7d2;text-shadow:0 3px #6d477b,0 0 18px rgba(255,217,107,.3)
+}
+.subtitle{max-width:900px;margin:7px auto;color:var(--muted);line-height:1.6}
+.panel{
+ background:linear-gradient(145deg,rgba(49,34,83,.98),rgba(24,17,49,.98));
+ border:2px solid #8064a2;border-radius:22px;padding:16px;box-shadow:0 20px 48px rgba(0,0,0,.42)
+}
+.grid{display:grid;grid-template-columns:1.12fr .88fr;gap:14px}
+@media(max-width:900px){.grid{grid-template-columns:1fr}}
+label{display:block;margin:10px 0 6px;color:var(--ice);font-weight:1000}
+input{
+ width:100%;padding:13px;background:#17112c;border:2px solid #765d9b;border-radius:12px;color:white;font:inherit;outline:none
+}
+button{
+ min-height:50px;border:0;border-radius:13px;padding:10px 13px;font-weight:1000;cursor:pointer;
+ background:var(--blue);color:#151225;box-shadow:0 4px 0 #417797;touch-action:manipulation
+}
+button:disabled{opacity:.4}.gold{background:var(--gold);box-shadow:0 4px 0 #997f2e}.rose{background:var(--rose);box-shadow:0 4px 0 #9a4161}.green{background:var(--green);box-shadow:0 4px 0 #39815a}.purple{background:var(--purple);box-shadow:0 4px 0 #71509a;color:#201631}.red{background:var(--red);color:#fff;box-shadow:0 4px 0 #973345}
+.btn-row{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:11px}
+@media(max-width:520px){.btn-row{grid-template-columns:1fr}}
+.char-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+@media(max-width:760px){.char-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:450px){.char-grid{grid-template-columns:1fr}}
+.char{
+ padding:9px;border:2px solid #775c9b;border-radius:18px;background:#18112f;cursor:pointer;
+ transition:.15s transform,.15s border-color,.15s box-shadow
+}
+.char:hover{transform:translateY(-2px)}
+.char.active{border-color:var(--gold);box-shadow:0 0 20px rgba(255,217,107,.22)}
+.char.legend{border-color:#b8e9ff;background:linear-gradient(145deg,#253b59,#271535)}
+.portrait{height:145px;display:flex;align-items:center;justify-content:center}
+.portrait svg{width:100%;height:100%;filter:drop-shadow(0 8px 10px rgba(0,0,0,.28))}
+.char-name{text-align:center;font-family:Georgia,serif;font-size:17px;font-weight:900;color:#fff4cf}
+.char-role{text-align:center;font-size:10px;color:#e4caee;text-transform:uppercase;letter-spacing:.12em}
+.char-passive{font-size:10.5px;color:#d9d0e5;line-height:1.45;margin-top:5px}
+.rule{margin-top:8px;padding:9px 11px;border-radius:12px;background:#17112c;border-left:4px solid var(--gold);font-size:13px;line-height:1.55}
+.rank{display:grid;grid-template-columns:38px 1fr auto;gap:9px;align-items:center;padding:9px;background:#17112c;border:1px solid #705594;border-radius:12px;margin-top:8px}
+.rank-no{width:31px;height:31px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--gold);color:#24182b;font-weight:1000}
+.rank-score{font-size:19px;color:var(--green);font-weight:1000}.rank-meta{font-size:10px;color:#bdb0cd}
+.hidden{display:none!important}
+.top{display:grid;grid-template-columns:repeat(6,1fr);gap:7px}
+@media(max-width:760px){.top{grid-template-columns:repeat(2,1fr)}}
+.stat{padding:8px;background:#17112c;border:1px solid #705594;border-radius:12px;text-align:center}
+.stat small{display:block;font-size:9px;color:#bdb0cd}.stat b{font-size:clamp(17px,3vw,26px);color:var(--gold)}
+.timer{height:16px;margin:10px 0;background:#130e27;border:1px solid #705594;border-radius:999px;overflow:hidden}
+.timer-fill{height:100%;width:100%;background:linear-gradient(90deg,var(--green),var(--gold),var(--rose),var(--red))}
+.progress{height:9px;background:#130e27;border:1px solid #705594;border-radius:999px;overflow:hidden}.progress-fill{height:100%;width:0;background:linear-gradient(90deg,var(--blue),var(--purple))}
+.qcard{
+ min-height:245px;padding:18px;border:2px solid #8169a4;border-radius:20px;
+ background:linear-gradient(145deg,#22173d,#3c275f);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center
+}
+.tag{padding:5px 11px;border:1px solid var(--gold);border-radius:999px;color:var(--gold);font-size:11px;font-weight:1000}
+.question{font-size:clamp(28px,5vw,48px);font-weight:1000;line-height:1.35;margin-top:12px}
+.direction{margin-top:9px;color:#d8c8eb;font-size:13px}
+.options{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:11px}
+@media(max-width:620px){.options{grid-template-columns:1fr}}
+.option{
+ min-height:76px;background:#17112c;color:white;border:2px solid #745b98;border-radius:14px;
+ text-align:left;display:flex;align-items:center;gap:10px;box-shadow:0 4px 0 #0c0918
+}
+.option:hover:not(:disabled){border-color:var(--ice)}
+.letter{width:36px;height:36px;flex:0 0 36px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--gold);color:#271a30;font-weight:1000}
+.option.correct{background:#123522;border-color:var(--green)}.option.wrong{background:#3a1320;border-color:var(--red)}
+.skills{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:11px}
+@media(max-width:620px){.skills{grid-template-columns:1fr}}
+.skill small{display:block;font-size:9.5px;margin-top:3px}
+.feedback{min-height:66px;margin-top:11px;padding:10px;border-radius:12px;background:#130e27;border:1px solid #705594;line-height:1.55}
+.gain{color:var(--green);font-weight:1000}.unlock{color:#dcbdff;font-weight:1000;text-shadow:0 0 8px #8f59bd}
+.result{text-align:center;padding:10px}.result-score{font-size:clamp(50px,10vw,90px);font-weight:1000;color:var(--gold);text-shadow:0 4px #5c4770}
+.crown{font-size:42px}
+.footer{text-align:center;color:#9487a8;font-size:10px;padding:18px}
+</style>
+</head>
+<body>
+<header>
+ <div class="kicker">ROYAL VOCABULARY CHALLENGE</div>
+ <h1 class="logo">Disney Royal Vocabulary Rush</h1>
+ <p class="subtitle">300 單字題庫｜每局重新洗牌隨機 25 題｜中翻英＋英翻中｜90 秒｜全對＋夠快才有資格突破 6000</p>
+</header>
+
+<main class="wrap">
+<section class="panel" id="home">
+ <div class="grid">
+  <div>
+   <h2>👑 Choose Princess / Prince</h2>
+   <label>隊伍名稱 TEAM NAME</label><input id="teamName" maxlength="24" placeholder="例如：Royal English">
+   <label>選擇角色</label><div class="char-grid" id="charGrid"></div>
+   <div class="btn-row"><button class="green" onclick="startGame()">START ROYAL RUSH</button><button class="gold" onclick="demoTeam()">DEMO TEAM</button></div>
+   <div class="rule">📚 題庫完整使用檔案中的 300 個單字，每局重新 shuffle 後抽 25 題。</div>
+   <div class="rule">🔄 同一局會混合「英文選中文」與「中文選英文」。</div>
+   <div class="rule">⏱️ 限時 1:30。答得越快，Speed Bonus 越高。</div>
+   <div class="rule">✨ 每位角色有 3 個不同技能：純加分、速度加成或答錯保護。</div>
+   <div class="rule">🏆 一般角色必須 25/25 全對，而且完成速度夠快，結算才允許突破 6000。</div>
+   <div class="rule">🔐 第一次達到 6000，只會隨機永久解鎖 Elsa 或 Scar 其中一位。</div>
+   <div class="rule">❄️🦁 Elsa / Scar 為 Legendary，正常完成即可輕鬆突破 9000。</div>
+  </div>
+  <div><h2>🏰 Royal Ranking</h2><div id="ranking"></div><div class="btn-row"><button class="red" onclick="clearData()">CLEAR DATA</button></div></div>
+ </div>
+</section>
+
+<section class="panel hidden" id="game">
+ <div class="top">
+  <div class="stat"><small>TEAM</small><b id="teamDisplay"></b></div>
+  <div class="stat"><small>CHARACTER</small><b id="charDisplay"></b></div>
+  <div class="stat"><small>TIME</small><b id="timeDisplay"></b></div>
+  <div class="stat"><small>QUESTION</small><b id="qDisplay"></b></div>
+  <div class="stat"><small>COMBO</small><b id="comboDisplay"></b></div>
+  <div class="stat"><small>SCORE</small><b id="scoreDisplay"></b></div>
+ </div>
+ <div class="timer"><div class="timer-fill" id="timerFill"></div></div>
+ <div class="progress"><div class="progress-fill" id="progressFill"></div></div>
+ <div class="qcard">
+  <div class="tag" id="directionTag"></div>
+  <div class="question" id="question"></div>
+  <div class="direction" id="direction"></div>
+ </div>
+ <div class="options" id="options"></div>
+ <div class="skills">
+  <button class="skill gold" id="skill1" onclick="useSkill(1)"></button>
+  <button class="skill purple" id="skill2" onclick="useSkill(2)"></button>
+  <button class="skill green" id="skill3" onclick="useSkill(3)"></button>
+ </div>
+ <div class="feedback" id="feedback"></div>
+</section>
+
+<section class="panel hidden" id="result">
+ <div class="result">
+  <div class="crown">♛</div><h2>ROYAL RUN COMPLETE</h2>
+  <h2 id="resultName"></h2>
+  <div class="result-score" id="resultScore"></div>
+  <div id="resultDetail"></div>
+  <div class="btn-row"><button class="green" onclick="goHome()">CASTLE</button><button class="gold" onclick="restart()">PLAY AGAIN</button></div>
+ </div>
+</section>
+</main>
+<div class="footer">Fan-made classroom vocabulary game｜Original vector portraits｜Vocabulary taken from the uploaded 300-word list｜No official artwork embedded</div>
+
+<script>
+const VOCAB=[{"id":1,"en":"thank","zh":"感謝","lesson":"B1GR","dup":false},{"id":2,"en":"name","zh":"名字","lesson":"B1GR","dup":false},{"id":3,"en":"How old...?","zh":"……幾歲？","lesson":"B1GR","dup":false},{"id":4,"en":"year(s) old","zh":"……歲","lesson":"B1GR","dup":false},{"id":5,"en":"family","zh":"家庭；家人","lesson":"B1L1","dup":false},{"id":6,"en":"wife","zh":"妻子","lesson":"B1L1","dup":false},{"id":7,"en":"daughter","zh":"女兒","lesson":"B1L1","dup":false},{"id":8,"en":"husband","zh":"丈夫","lesson":"B1L1","dup":false},{"id":9,"en":"son","zh":"兒子","lesson":"B1L1","dup":false},{"id":10,"en":"uncle","zh":"叔（伯）父；姑（姨）丈；舅舅","lesson":"B1L1","dup":false},{"id":11,"en":"aunt","zh":"嬸嬸；伯母；姑（姨）媽；舅媽","lesson":"B1L1","dup":false},{"id":12,"en":"cousin","zh":"堂（表）兄弟姐妹","lesson":"B1L1","dup":false},{"id":13,"en":"birthday","zh":"生日","lesson":"B1L1","dup":false},{"id":14,"en":"young","zh":"年輕的","lesson":"B1L1","dup":false},{"id":15,"en":"man","zh":"男人（men [mEn] 為複數形）","lesson":"B1L1","dup":false},{"id":16,"en":"Nice to meet you.","zh":"很高興認識你。","lesson":"B1L1","dup":false},{"id":17,"en":"too","zh":"也","lesson":"B1L1","dup":false},{"id":18,"en":"gift","zh":"禮物","lesson":"B1L1","dup":false},{"id":19,"en":"for","zh":"給；為了","lesson":"B1L1","dup":false},{"id":20,"en":"beautiful","zh":"漂亮的；美麗的","lesson":"B1L1","dup":false},{"id":21,"en":"kitchen","zh":"廚房","lesson":"B1L1","dup":false},{"id":22,"en":"junior high school","zh":"國民中學","lesson":"B1L1","dup":false},{"id":23,"en":"PE","zh":"體育","lesson":"B1L1","dup":false},{"id":24,"en":"warm","zh":"溫暖的","lesson":"B1L1","dup":false},{"id":25,"en":"farmer","zh":"農夫","lesson":"B1L1","dup":false},{"id":26,"en":"cook","zh":"廚師；煮","lesson":"B1L1","dup":false},{"id":27,"en":"nurse","zh":"護理師；護士","lesson":"B1L1","dup":false},{"id":28,"en":"woman","zh":"女人（women 為複數形）","lesson":"B1L1","dup":false},{"id":29,"en":"doctor","zh":"醫生","lesson":"B1L1","dup":false},{"id":30,"en":"our","zh":"我們的","lesson":"B1L1","dup":false},{"id":31,"en":"pet","zh":"寵物","lesson":"B1L1","dup":false},{"id":32,"en":"sheep","zh":"綿羊（複數形亦為 sheep）","lesson":"B1L2","dup":false},{"id":33,"en":"fox","zh":"狐狸","lesson":"B1L2","dup":false},{"id":34,"en":"kangaroo","zh":"袋鼠","lesson":"B1L2","dup":false},{"id":35,"en":"rabbit","zh":"兔子","lesson":"B1L2","dup":false},{"id":36,"en":"mouse","zh":"老鼠（mice 為複數形）","lesson":"B1L2","dup":false},{"id":37,"en":"horse","zh":"馬","lesson":"B1L2","dup":false},{"id":38,"en":"monkey","zh":"猴子","lesson":"B1L2","dup":false},{"id":39,"en":"elephant","zh":"大象","lesson":"B1L2","dup":false},{"id":40,"en":"zebra","zh":"斑馬","lesson":"B1L2","dup":false},{"id":41,"en":"tiger","zh":"老虎","lesson":"B1L2","dup":false},{"id":42,"en":"picture","zh":"照片；圖畫","lesson":"B1L2","dup":false},{"id":43,"en":"parent","zh":"雙親之一","lesson":"B1L2","dup":false},{"id":44,"en":"their","zh":"他（她、牠）們的","lesson":"B1L2","dup":false},{"id":45,"en":"animal","zh":"動物","lesson":"B1L2","dup":false},{"id":46,"en":"lion","zh":"獅子","lesson":"B1L2","dup":false},{"id":47,"en":"scary","zh":"令人害怕的","lesson":"B1L2","dup":false},{"id":48,"en":"What about...?","zh":"……怎麼樣？","lesson":"B1L2","dup":false},{"id":49,"en":"cute","zh":"可愛的","lesson":"B1L2","dup":false},{"id":50,"en":"wrong","zh":"錯誤的","lesson":"B1L2","dup":false},{"id":51,"en":"again","zh":"再一次","lesson":"B1L2","dup":false},{"id":52,"en":"bear","zh":"熊","lesson":"B1L2","dup":false},{"id":53,"en":"No way!","zh":"不會吧！","lesson":"B1L2","dup":false},{"id":54,"en":"some","zh":"一些（的）","lesson":"B1L2","dup":false},{"id":55,"en":"people","zh":"人們（person為單數形）","lesson":"B1L2","dup":false},{"id":56,"en":"koala","zh":"無尾熊","lesson":"B1L2","dup":false},{"id":57,"en":"leg","zh":"腿","lesson":"B1L2","dup":false},{"id":58,"en":"bedroom","zh":"臥室","lesson":"B1L3","dup":false},{"id":59,"en":"living room","zh":"客廳","lesson":"B1L3","dup":false},{"id":60,"en":"bathroom","zh":"浴室","lesson":"B1L3","dup":false},{"id":61,"en":"dining room","zh":"飯廳","lesson":"B1L3","dup":false},{"id":62,"en":"cellphone","zh":"手機","lesson":"B1L3","dup":false},{"id":63,"en":"behind","zh":"在……後面","lesson":"B1L3","dup":false},{"id":64,"en":"in front of","zh":"在……前面","lesson":"B1L3","dup":false},{"id":65,"en":"between","zh":"在……中間","lesson":"B1L3","dup":false},{"id":66,"en":"newspaper","zh":"報紙","lesson":"B1L3","dup":false},{"id":67,"en":"minute","zh":"分鐘","lesson":"B1L3","dup":false},{"id":68,"en":"later","zh":"稍後","lesson":"B1L3","dup":false},{"id":69,"en":"place","zh":"地方","lesson":"B1L3","dup":false},{"id":70,"en":"stair","zh":"樓梯","lesson":"B1L3","dup":false},{"id":71,"en":"different","zh":"不同的","lesson":"B1L3","dup":false},{"id":72,"en":"bed","zh":"床鋪","lesson":"B1L3","dup":false},{"id":73,"en":"next to","zh":"在……旁邊","lesson":"B1L3","dup":false},{"id":74,"en":"roommate","zh":"室友","lesson":"B1L3","dup":false},{"id":75,"en":"magic","zh":"魔法（的）；魔術（的）","lesson":"B1L3","dup":false},{"id":76,"en":"castle","zh":"城堡","lesson":"B1L3","dup":false},{"id":77,"en":"near","zh":"在……附近","lesson":"B1L3","dup":false},{"id":78,"en":"lake","zh":"湖","lesson":"B1L3","dup":false},{"id":79,"en":"soft","zh":"柔軟的","lesson":"B1L3","dup":false},{"id":80,"en":"or","zh":"或者","lesson":"B1L3","dup":false},{"id":81,"en":"hard","zh":"硬的","lesson":"B1L3","dup":true},{"id":82,"en":"in fact","zh":"事實上","lesson":"B1L3","dup":false},{"id":83,"en":"around","zh":"圍繞；到處","lesson":"B1L3","dup":false},{"id":84,"en":"world","zh":"世界","lesson":"B1L3","dup":false},{"id":85,"en":"sofa","zh":"沙發","lesson":"B1L3","dup":false},{"id":86,"en":"outside","zh":"在……外面；在室外","lesson":"B1L3","dup":false},{"id":87,"en":"house","zh":"房子","lesson":"B1L3","dup":false},{"id":88,"en":"blanket","zh":"毛毯","lesson":"B1L3","dup":false},{"id":89,"en":"nice","zh":"好心的；好的","lesson":"B1L3","dup":false},{"id":90,"en":"library","zh":"圖書館","lesson":"B1L4","dup":false},{"id":91,"en":"basketball court","zh":"籃球場","lesson":"B1L4","dup":false},{"id":92,"en":"gate","zh":"大門","lesson":"B1L4","dup":false},{"id":93,"en":"sports field","zh":"運動場","lesson":"B1L4","dup":false},{"id":94,"en":"gym","zh":"體育館","lesson":"B1L4","dup":false},{"id":95,"en":"playground","zh":"遊樂場；操場","lesson":"B1L4","dup":false},{"id":96,"en":"restroom","zh":"廁所","lesson":"B1L4","dup":false},{"id":97,"en":"classroom","zh":"教室","lesson":"B1L4","dup":false},{"id":98,"en":"class","zh":"班級；課程","lesson":"B1L4","dup":false},{"id":99,"en":"photo","zh":"相片","lesson":"B1L4","dup":false},{"id":100,"en":"screen","zh":"螢幕","lesson":"B1L4","dup":false},{"id":101,"en":"any","zh":"任何（的）","lesson":"B1L4","dup":false},{"id":102,"en":"whole","zh":"全部的","lesson":"B1L4","dup":false},{"id":103,"en":"very","zh":"非常地；很","lesson":"B1L4","dup":false},{"id":104,"en":"special","zh":"特別的","lesson":"B1L4","dup":false},{"id":105,"en":"mountain","zh":"山","lesson":"B1L4","dup":false},{"id":106,"en":"pond","zh":"池塘","lesson":"B1L4","dup":false},{"id":107,"en":"a lot of","zh":"許多的（= lots of）","lesson":"B1L4","dup":false},{"id":108,"en":"storybook","zh":"故事書","lesson":"B1L4","dup":false},{"id":109,"en":"test","zh":"考試","lesson":"B1L4","dup":false},{"id":110,"en":"fun","zh":"樂趣；有趣的","lesson":"B1L4","dup":false},{"id":111,"en":"grade","zh":"成績","lesson":"B1L4","dup":false},{"id":112,"en":"favorite","zh":"最喜愛（的）","lesson":"B1L4","dup":false},{"id":113,"en":"stand up","zh":"站起來","lesson":"B1L5","dup":false},{"id":114,"en":"sit down","zh":"坐下","lesson":"B1L5","dup":false},{"id":115,"en":"listen","zh":"聽","lesson":"B1L5","dup":false},{"id":116,"en":"don’t","zh":"不要；別（do not 的縮寫）","lesson":"B1L5","dup":false},{"id":117,"en":"late","zh":"遲到的；晚的","lesson":"B1L5","dup":false},{"id":118,"en":"make","zh":"製造","lesson":"B1L5","dup":false},{"id":119,"en":"noise","zh":"噪音","lesson":"B1L5","dup":false},{"id":120,"en":"quiet","zh":"安靜的","lesson":"B1L5","dup":false},{"id":121,"en":"talk","zh":"講話","lesson":"B1L5","dup":false},{"id":122,"en":"metro","zh":"大眾捷運系統","lesson":"B1L5","dup":false},{"id":123,"en":"hungry","zh":"飢餓的","lesson":"B1L5","dup":false},{"id":124,"en":"let’s...","zh":"我們一起……吧","lesson":"B1L5","dup":false},{"id":125,"en":"pineapple","zh":"鳳梨","lesson":"B1L5","dup":false},{"id":126,"en":"rule","zh":"規定","lesson":"B1L5","dup":false},{"id":127,"en":"lady","zh":"女士","lesson":"B1L5","dup":false},{"id":128,"en":"please","zh":"請","lesson":"B1L5","dup":false},{"id":129,"en":"take a seat","zh":"坐下","lesson":"B1L5","dup":false},{"id":130,"en":"so","zh":"那麼；如此","lesson":"B1L5","dup":false},{"id":131,"en":"kind","zh":"友善的；親切的","lesson":"B1L5","dup":false},{"id":132,"en":"Watch out.","zh":"注意。","lesson":"B1L5","dup":false},{"id":133,"en":"problem","zh":"問題","lesson":"B1L5","dup":false},{"id":134,"en":"station","zh":"車站","lesson":"B1L5","dup":false},{"id":135,"en":"Here we are.","zh":"我們到了。","lesson":"B1L5","dup":false},{"id":136,"en":"dos and don’ts","zh":"守則；可做和不可做的事","lesson":"B1L5","dup":false},{"id":137,"en":"museum","zh":"博物館","lesson":"B1L5","dup":false},{"id":138,"en":"follow","zh":"遵守；跟隨","lesson":"B1L5","dup":false},{"id":139,"en":"shout","zh":"喊叫","lesson":"B1L5","dup":false},{"id":140,"en":"stand in line","zh":"站著排隊","lesson":"B1L5","dup":false},{"id":141,"en":"go into","zh":"進到……裡面","lesson":"B1L5","dup":false},{"id":142,"en":"next","zh":"下一個的","lesson":"B1L5","dup":false},{"id":143,"en":"week","zh":"星期","lesson":"B1L6","dup":false},{"id":144,"en":"Monday","zh":"星期一","lesson":"B1L6","dup":false},{"id":145,"en":"Tuesday","zh":"星期二","lesson":"B1L6","dup":false},{"id":146,"en":"Wednesday","zh":"星期三","lesson":"B1L6","dup":false},{"id":147,"en":"Thursday","zh":"星期四","lesson":"B1L6","dup":false},{"id":148,"en":"Friday","zh":"星期五","lesson":"B1L6","dup":false},{"id":149,"en":"Saturday","zh":"星期六","lesson":"B1L6","dup":false},{"id":150,"en":"Sunday","zh":"星期日","lesson":"B1L6","dup":false},{"id":151,"en":"day","zh":"日","lesson":"B1L6","dup":false},{"id":152,"en":"weekend","zh":"週末","lesson":"B1L6","dup":false},{"id":153,"en":"time","zh":"時間","lesson":"B1L6","dup":false},{"id":154,"en":"look for","zh":"尋找","lesson":"B1L6","dup":false},{"id":155,"en":"Hurry up.","zh":"快一點。","lesson":"B1L6","dup":false},{"id":156,"en":"by the way","zh":"順帶一提","lesson":"B1L6","dup":false},{"id":157,"en":"group","zh":"團體；隊伍","lesson":"B1L6","dup":false},{"id":158,"en":"chat","zh":"談話","lesson":"B1L6","dup":false},{"id":159,"en":"tonight","zh":"今晚","lesson":"B1L6","dup":false},{"id":160,"en":"meeting","zh":"會議","lesson":"B1L6","dup":false},{"id":161,"en":"with","zh":"與......一起","lesson":"B1L6","dup":false},{"id":162,"en":"the USA","zh":"美國","lesson":"B1L6","dup":false},{"id":163,"en":"p.m.","zh":"下午；晚上","lesson":"B1L6","dup":false},{"id":164,"en":"about","zh":"關於","lesson":"B1L6","dup":false},{"id":165,"en":"life","zh":"生活","lesson":"B1L6","dup":false},{"id":166,"en":"prepare","zh":"準備","lesson":"B1L6","dup":false},{"id":167,"en":"o’clock","zh":"點鐘","lesson":"B1L6","dup":false},{"id":168,"en":"everyone (everybody)","zh":"每個人；各位","lesson":"B1L6","dup":false},{"id":169,"en":"a.m.","zh":"上午；凌晨","lesson":"B1L6","dup":false},{"id":170,"en":"city","zh":"城市","lesson":"B1L6","dup":false},{"id":171,"en":"say","zh":"說","lesson":"B1L6","dup":false},{"id":172,"en":"dinner","zh":"晚餐","lesson":"B1L6","dup":false},{"id":173,"en":"only","zh":"僅僅；只","lesson":"B1L6","dup":false},{"id":174,"en":"fruit","zh":"水果","lesson":"B2GR","dup":false},{"id":175,"en":"papaya","zh":"木瓜","lesson":"B2GR","dup":false},{"id":176,"en":"watermelon","zh":"西瓜","lesson":"B2GR","dup":false},{"id":177,"en":"strawberry","zh":"草莓","lesson":"B2GR","dup":false},{"id":178,"en":"menu","zh":"菜單","lesson":"B2GR","dup":false},{"id":179,"en":"guava","zh":"芭樂","lesson":"B2GR","dup":false},{"id":180,"en":"grape","zh":"葡萄","lesson":"B2GR","dup":false},{"id":181,"en":"thirsty","zh":"口渴的","lesson":"B2GR","dup":false},{"id":182,"en":"sport","zh":"運動","lesson":"B2L1","dup":false},{"id":183,"en":"tennis","zh":"網球","lesson":"B2L1","dup":false},{"id":184,"en":"soccer","zh":"足球","lesson":"B2L1","dup":false},{"id":185,"en":"badminton","zh":"羽毛球","lesson":"B2L1","dup":false},{"id":186,"en":"baseball","zh":"棒球","lesson":"B2L1","dup":false},{"id":187,"en":"practice","zh":"練習","lesson":"B2L1","dup":false},{"id":188,"en":"after school","zh":"放學後","lesson":"B2L1","dup":false},{"id":189,"en":"every","zh":"每一","lesson":"B2L1","dup":false},{"id":190,"en":"team","zh":"隊伍","lesson":"B2L1","dup":false},{"id":191,"en":"but","zh":"但是","lesson":"B2L1","dup":false},{"id":192,"en":"can","zh":"會；能；可以","lesson":"B2L1","dup":false},{"id":193,"en":"worry","zh":"擔心","lesson":"B2L1","dup":false},{"id":194,"en":"really","zh":"真地","lesson":"B2L1","dup":false},{"id":195,"en":"study","zh":"研讀；研究","lesson":"B2L1","dup":false},{"id":196,"en":"video game","zh":"電玩遊戲","lesson":"B2L1","dup":false},{"id":197,"en":"either","zh":"也（用於否定句）","lesson":"B2L1","dup":false},{"id":198,"en":"must","zh":"一定；必須","lesson":"B2L1","dup":false},{"id":199,"en":"enjoy","zh":"享受","lesson":"B2L1","dup":false},{"id":200,"en":"sure","zh":"當然；確定的","lesson":"B2L1","dup":false},{"id":201,"en":"then","zh":"那麼；然後","lesson":"B2L1","dup":false},{"id":202,"en":"ticket","zh":"票；券","lesson":"B2L1","dup":false},{"id":203,"en":"together","zh":"一起","lesson":"B2L1","dup":false},{"id":204,"en":"how much","zh":"多少錢","lesson":"B2L1","dup":false},{"id":205,"en":"hundred","zh":"百","lesson":"B2L1","dup":false},{"id":206,"en":"dollar","zh":"元","lesson":"B2L1","dup":false},{"id":207,"en":"love","zh":"喜愛","lesson":"B2L1","dup":false},{"id":208,"en":"player","zh":"運動員；選手","lesson":"B2L1","dup":false},{"id":209,"en":"just","zh":"就；只；僅僅","lesson":"B2L1","dup":false},{"id":210,"en":"lose","zh":"輸掉（比賽）；失去","lesson":"B2L1","dup":false},{"id":211,"en":"cry","zh":"哭","lesson":"B2L1","dup":false},{"id":212,"en":"give up","zh":"放棄","lesson":"B2L1","dup":false},{"id":213,"en":"be proud of","zh":"以……為榮","lesson":"B2L1","dup":false},{"id":214,"en":"win","zh":"贏","lesson":"B2L1","dup":false},{"id":215,"en":"know","zh":"知道","lesson":"B2L1","dup":false},{"id":216,"en":"hard","zh":"辛苦的；困難的","lesson":"B2L1","dup":true},{"id":217,"en":"like","zh":"像","lesson":"B2L1","dup":false},{"id":218,"en":"get up","zh":"起床","lesson":"B2L2","dup":false},{"id":219,"en":"teeth","zh":"牙齒（tooth為單數形）","lesson":"B2L2","dup":false},{"id":220,"en":"face","zh":"臉","lesson":"B2L2","dup":false},{"id":221,"en":"take a shower","zh":"淋浴","lesson":"B2L2","dup":false},{"id":222,"en":"breakfast","zh":"早餐","lesson":"B2L2","dup":false},{"id":223,"en":"teach","zh":"教","lesson":"B2L2","dup":false},{"id":224,"en":"take a bath","zh":"泡澡","lesson":"B2L2","dup":false},{"id":225,"en":"mean","zh":"意指","lesson":"B2L2","dup":false},{"id":226,"en":"share","zh":"分享；共用","lesson":"B2L2","dup":false},{"id":227,"en":"use","zh":"使用","lesson":"B2L2","dup":false},{"id":228,"en":"hour","zh":"小時","lesson":"B2L2","dup":false},{"id":229,"en":"wait","zh":"等待","lesson":"B2L2","dup":false},{"id":230,"en":"exercise","zh":"運動","lesson":"B2L2","dup":false},{"id":231,"en":"jog","zh":"慢跑","lesson":"B2L2","dup":false},{"id":232,"en":"come on","zh":"算了吧","lesson":"B2L2","dup":false},{"id":233,"en":"Give me a break.","zh":"饒了我吧。","lesson":"B2L2","dup":false},{"id":234,"en":"college","zh":"大學","lesson":"B2L2","dup":false},{"id":235,"en":"busy","zh":"忙碌的","lesson":"B2L2","dup":false},{"id":236,"en":"start","zh":"開始","lesson":"B2L2","dup":false},{"id":237,"en":"ready","zh":"準備好的","lesson":"B2L2","dup":false},{"id":238,"en":"still","zh":"仍然","lesson":"B2L2","dup":false},{"id":239,"en":"play the guitar","zh":"彈吉他","lesson":"B2L2","dup":false},{"id":240,"en":"classmate","zh":"同學","lesson":"B2L2","dup":false},{"id":241,"en":"help","zh":"幫助","lesson":"B2L2","dup":false},{"id":242,"en":"homework","zh":"家庭作業","lesson":"B2L2","dup":false},{"id":243,"en":"does","zh":"助動詞","lesson":"B2L2","dup":false},{"id":244,"en":"I see.","zh":"我了解了。","lesson":"B2L2","dup":false},{"id":245,"en":"has","zh":"有","lesson":"B2L2","dup":false},{"id":246,"en":"month","zh":"月","lesson":"B2L3","dup":false},{"id":247,"en":"January","zh":"一月","lesson":"B2L3","dup":false},{"id":248,"en":"February","zh":"二月","lesson":"B2L3","dup":false},{"id":249,"en":"March","zh":"三月","lesson":"B2L3","dup":false},{"id":250,"en":"April","zh":"四月","lesson":"B2L3","dup":false},{"id":251,"en":"May","zh":"五月","lesson":"B2L3","dup":false},{"id":252,"en":"June","zh":"六月","lesson":"B2L3","dup":false},{"id":253,"en":"July","zh":"七月","lesson":"B2L3","dup":false},{"id":254,"en":"August","zh":"八月","lesson":"B2L3","dup":false},{"id":255,"en":"September","zh":"九月","lesson":"B2L3","dup":false},{"id":256,"en":"October","zh":"十月","lesson":"B2L3","dup":false},{"id":257,"en":"November","zh":"十一月","lesson":"B2L3","dup":false},{"id":258,"en":"December","zh":"十二月","lesson":"B2L3","dup":false},{"id":259,"en":"race","zh":"賽跑；競賽","lesson":"B2L3","dup":false},{"id":260,"en":"whose","zh":"誰的","lesson":"B2L3","dup":false},{"id":261,"en":"idea","zh":"想法；點子","lesson":"B2L3","dup":false},{"id":262,"en":"when","zh":"何時","lesson":"B2L3","dup":false},{"id":263,"en":"second","zh":"第二（的）","lesson":"B2L3","dup":false},{"id":264,"en":"date","zh":"日期；約會","lesson":"B2L3","dup":false},{"id":265,"en":"third","zh":"第三（的）","lesson":"B2L3","dup":false},{"id":266,"en":"away","zh":"離……之遠；離開","lesson":"B2L3","dup":false},{"id":267,"en":"join","zh":"參加","lesson":"B2L3","dup":false},{"id":268,"en":"first","zh":"第一（的）；首先","lesson":"B2L3","dup":false},{"id":269,"en":"runner","zh":"跑者","lesson":"B2L3","dup":false},{"id":270,"en":"work","zh":"工作","lesson":"B2L3","dup":false},{"id":271,"en":"take care of","zh":"照顧","lesson":"B2L3","dup":false},{"id":272,"en":"also","zh":"也","lesson":"B2L3","dup":false},{"id":273,"en":"play the role of...","zh":"扮演……的角色","lesson":"B2L3","dup":false},{"id":274,"en":"letter","zh":"信件","lesson":"B2L3","dup":false},{"id":275,"en":"dear","zh":"親愛的","lesson":"B2L3","dup":false},{"id":276,"en":"miss","zh":"想念","lesson":"B2L3","dup":false},{"id":277,"en":"housework","zh":"家事","lesson":"B2L3","dup":false},{"id":278,"en":"mop","zh":"拖（地）；拖把","lesson":"B2L3","dup":false},{"id":279,"en":"floor","zh":"地板；樓層","lesson":"B2L3","dup":false},{"id":280,"en":"do the dishes","zh":"洗碗盤","lesson":"B2L3","dup":false},{"id":281,"en":"everything","zh":"一切事物","lesson":"B2L3","dup":false},{"id":282,"en":"over there","zh":"在那邊","lesson":"B2L3","dup":false},{"id":283,"en":"food","zh":"食物","lesson":"B2L4","dup":false},{"id":284,"en":"bowl","zh":"碗","lesson":"B2L4","dup":false},{"id":285,"en":"rice","zh":"米；飯","lesson":"B2L4","dup":false},{"id":286,"en":"glass","zh":"玻璃杯；玻璃","lesson":"B2L4","dup":false},{"id":287,"en":"pie","zh":"派","lesson":"B2L4","dup":false},{"id":288,"en":"bottle","zh":"瓶子","lesson":"B2L4","dup":false},{"id":289,"en":"water","zh":"水；澆水","lesson":"B2L4","dup":false},{"id":290,"en":"plate","zh":"盤子","lesson":"B2L4","dup":false},{"id":291,"en":"noodle","zh":"麵條","lesson":"B2L4","dup":false},{"id":292,"en":"pancake","zh":"鬆餅","lesson":"B2L4","dup":false},{"id":293,"en":"party","zh":"派對","lesson":"B2L4","dup":false},{"id":294,"en":"how many","zh":"多少（個）","lesson":"B2L4","dup":false},{"id":295,"en":"need","zh":"需要","lesson":"B2L4","dup":false},{"id":296,"en":"flour","zh":"麵粉","lesson":"B2L4","dup":false},{"id":297,"en":"of course","zh":"當然","lesson":"B2L4","dup":false},{"id":298,"en":"which","zh":"哪一個","lesson":"B2L4","dup":false},{"id":299,"en":"piece","zh":"塊；片；張","lesson":"B2L4","dup":false},{"id":300,"en":"enough","zh":"足夠的","lesson":"B2L4","dup":false}], CHAR={"ariel":{"name":"Ariel","role":"Princess","passive":"Ocean Tempo｜海洋節奏：3 秒內答對額外 +25；弱點：Combo 加分上限較低。","skills":[["Ocean Melody｜海洋旋律","立即 +180 分。"],["Bubble Shield｜泡泡護盾","下一次答錯不扣分、不斷 Combo。"],["Treasure Voice｜珍寶歌聲","目前 Combo ×25 直接轉成加分。"]]},"belle":{"name":"Belle","role":"Princess","passive":"Book Wisdom｜書本智慧：Combo ≥4 後每題 +35；弱點：前 5 題速度獎勵 -10。","skills":[["Library Bonus｜圖書館加分","立即 +170 分。"],["Enchanted Rose｜魔法玫瑰","獲得一次答錯保護，並保留 Combo。"],["Speed Reading｜快速閱讀","接下來 3 題答對各 +65。"]]},"jasmine":{"name":"Jasmine","role":"Princess","passive":"Royal Courage｜皇室勇氣：後 10 題答對 +30；弱點：前半段加分較少。","skills":[["Magic Carpet｜魔毯疾行","接下來 2 題總分 ×1.25。"],["Tiger Guard｜神虎守護","接下來 2 次答錯不斷 Combo。"],["Palace Jewel｜宮殿寶石","Combo ≥5 時 +230，否則 +120。"]]},"eric":{"name":"Prince Eric","role":"Prince","passive":"Sea Captain｜海上船長：速度分最低 +45；弱點：Combo 加分成長較慢。","skills":[["Captain's Rush｜船長衝刺","立即 +180 分。"],["Anchor Guard｜船錨守護","下一次答錯不扣分、不斷 Combo。"],["Victory Sail｜勝利揚帆","接下來 2 題答對各 +65。"]]},"aladdin":{"name":"Aladdin","role":"Prince","passive":"One Jump Ahead｜快人一步：2.5 秒內答對 +40；弱點：答錯額外 -15。","skills":[["Street Dash｜街頭疾走","下一題 3 秒內答對額外 +160。"],["Genie Wish｜神燈願望","立即 +200 分。"],["Magic Escape｜魔法脫身","下一次答錯完全免除，Combo 保留。"]]},"flynn":{"name":"Flynn Rider","role":"Prince","passive":"Lucky Rogue｜幸運俠盜：Combo ≥3 每題 +30；弱點：速度分上限較低。","skills":[["Smolder Bonus｜迷人加分","立即 +160 分。"],["Escape Route｜逃脫路線","獲得 2 次答錯 Combo 保護。"],["Lucky Crown｜幸運王冠","立即獲得 100 + Combo ×20 分。"]]},"elsa":{"name":"Elsa","role":"Legendary","passive":"Frozen Queen｜冰雪女王：每題 +170；速度分最低 +120；前 3 次答錯不斷 Combo。","skills":[["Frozen Crown｜冰雪王冠","立即 +500；下一題答對再 +250。"],["Ice Shield｜冰晶護盾","獲得 3 次答錯 Combo 保護。"],["Let It Go｜冰雪釋放","接下來 4 題總分 ×1.5。"]]},"scar":{"name":"Scar","role":"Legendary","passive":"King's Scheme｜王者陰謀：每題 +170；Combo ≥3 再 +55；前 3 次答錯不斷 Combo。","skills":[["Be Prepared｜準備行動","立即 +500；下一題答對再 +250。"],["Hyena Guard｜鬣狗守衛","獲得 3 次答錯 Combo 保護。"],["King's Ambition｜王者野心","接下來 4 題總分 ×1.5。"]]}};
+const $=id=>document.getElementById(id);
+let selected="ariel",team="",lastTeam="",quiz=[],idx=0,score=0,combo=0,correct=0,timeLeft=90,timer=null,locked=false,startAt=0,used=[false,false,false],currentChoices=[];
+let shield=0,nextFast=0,bonusTurns=0,multiTurns=0,legendShield=0,belleTurns=0,jasmineShield=0,flynnShield=0;
+const duplicateEnglish=new Set(VOCAB.filter(x=>x.dup).map(x=>x.en.toLowerCase()));
+
+function shuffle(a){a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function sample(a,n){return shuffle(a).slice(0,n)}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function attr(s){return esc(s).replace(/"/g,"&quot;")}
+function clock(s){return Math.floor(Math.max(0,s)/60)+":"+String(Math.max(0,s)%60).padStart(2,"0")}
+function legendChoice(){return localStorage.getItem("royal_vocab_unlock")||""}
+function isLegend(id){return id==="elsa"||id==="scar"}
+
+function portrait(id){
+ const svg={
+ ariel:`<svg viewBox="0 0 150 170"><defs><linearGradient id="a1" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ff8fa4"/><stop offset="1" stop-color="#9c183d"/></linearGradient><linearGradient id="a2"><stop stop-color="#69dccb"/><stop offset="1" stop-color="#198e91"/></linearGradient></defs><ellipse cx="75" cy="150" rx="54" ry="17" fill="#0e0a1c" opacity=".35"/><path d="M28 76Q22 24 75 17Q128 25 122 79L114 137H36Z" fill="url(#a1)"/><ellipse cx="75" cy="80" rx="39" ry="46" fill="#ffd1b5"/><path d="M36 66Q43 22 84 24Q121 32 117 68Q98 51 79 54Q58 44 36 66Z" fill="#ad2447"/><path d="M44 58Q25 74 28 111Q45 100 50 74Z" fill="#b5284b"/><path d="M107 59Q130 76 121 115Q108 103 101 74Z" fill="#b5284b"/><ellipse cx="60" cy="80" rx="5" ry="7" fill="#2e7292"/><ellipse cx="91" cy="80" rx="5" ry="7" fill="#2e7292"/><path d="M64 104Q75 112 88 103" fill="none" stroke="#c85a69" stroke-width="3"/><path d="M35 137Q75 119 115 137L130 165H20Z" fill="url(#a2)"/><circle cx="75" cy="137" r="5" fill="#bff8e8"/></svg>`,
+ belle:`<svg viewBox="0 0 150 170"><defs><linearGradient id="b1"><stop stop-color="#8a4a22"/><stop offset="1" stop-color="#3f2118"/></linearGradient><linearGradient id="b2"><stop stop-color="#ffe785"/><stop offset="1" stop-color="#d9a529"/></linearGradient></defs><ellipse cx="75" cy="150" rx="54" ry="17" fill="#0e0a1c" opacity=".35"/><circle cx="75" cy="35" r="25" fill="#5b2f20"/><path d="M34 76Q34 30 75 26Q116 30 116 79L108 128H42Z" fill="url(#b1)"/><ellipse cx="75" cy="82" rx="38" ry="45" fill="#f7ceb1"/><path d="M37 64Q46 24 79 28Q111 31 116 66Q95 53 76 56Q55 50 37 64Z" fill="#5a2d20"/><ellipse cx="60" cy="82" rx="4.5" ry="6.5" fill="#5b452e"/><ellipse cx="90" cy="82" rx="4.5" ry="6.5" fill="#5b452e"/><path d="M63 105Q75 112 87 104" fill="none" stroke="#b95f63" stroke-width="3"/><path d="M28 164L39 136Q75 120 111 136L124 164Z" fill="url(#b2)"/><path d="M49 136Q75 150 101 136" fill="none" stroke="#fff2a9" stroke-width="4"/></svg>`,
+ jasmine:`<svg viewBox="0 0 150 170"><defs><linearGradient id="j1"><stop stop-color="#1c171c"/><stop offset="1" stop-color="#09090c"/></linearGradient><linearGradient id="j2"><stop stop-color="#55e1cf"/><stop offset="1" stop-color="#118e92"/></linearGradient></defs><ellipse cx="75" cy="150" rx="54" ry="17" fill="#0e0a1c" opacity=".35"/><circle cx="31" cy="74" r="19" fill="#121015"/><circle cx="119" cy="74" r="19" fill="#121015"/><path d="M34 73Q29 29 75 23Q121 29 116 75L107 130H43Z" fill="url(#j1)"/><ellipse cx="75" cy="82" rx="38" ry="45" fill="#dca47c"/><path d="M38 61Q51 26 78 28Q108 29 115 63Q92 51 75 55Q54 48 38 61Z" fill="#141116"/><path d="M50 35L75 18 101 35 92 43H58Z" fill="#61ddcf"/><circle cx="75" cy="29" r="5" fill="#51bde0"/><ellipse cx="60" cy="81" rx="4.5" ry="6.5" fill="#3a2b2a"/><ellipse cx="90" cy="81" rx="4.5" ry="6.5" fill="#3a2b2a"/><path d="M63 105Q75 112 88 103" fill="none" stroke="#a94f55" stroke-width="3"/><path d="M26 164L40 136Q75 120 110 136L125 164Z" fill="url(#j2)"/><circle cx="75" cy="139" r="7" fill="#63cbe3"/></svg>`,
+ eric:`<svg viewBox="0 0 150 170"><defs><linearGradient id="e1"><stop stop-color="#31251e"/><stop offset="1" stop-color="#0f0d0c"/></linearGradient></defs><ellipse cx="75" cy="150" rx="54" ry="17" fill="#0e0a1c" opacity=".35"/><path d="M34 74Q33 30 75 25Q117 31 116 78L106 128H44Z" fill="url(#e1)"/><ellipse cx="75" cy="82" rx="39" ry="45" fill="#e6b18d"/><path d="M37 61Q42 26 78 26Q112 29 117 63Q101 54 91 46Q69 57 37 61Z" fill="#211b18"/><ellipse cx="60" cy="81" rx="4.5" ry="6" fill="#315c7a"/><ellipse cx="91" cy="81" rx="4.5" ry="6" fill="#315c7a"/><path d="M63 105Q76 111 88 104" fill="none" stroke="#a25e55" stroke-width="3"/><path d="M27 164L39 134Q75 121 111 134L124 164Z" fill="#f0f1e9"/><path d="M65 130L75 147 86 130" fill="#1c6a8e"/><path d="M111 134L128 142 119 164H105Z" fill="#1d4966"/></svg>`,
+ aladdin:`<svg viewBox="0 0 150 170"><defs><linearGradient id="al1"><stop stop-color="#241712"/><stop offset="1" stop-color="#090909"/></linearGradient><linearGradient id="al2"><stop stop-color="#f0e7d4"/><stop offset="1" stop-color="#bcab93"/></linearGradient></defs><ellipse cx="75" cy="150" rx="54" ry="17" fill="#0e0a1c" opacity=".35"/><path d="M32 74Q28 31 75 24Q122 29 117 77L107 128H42Z" fill="url(#al1)"/><ellipse cx="75" cy="82" rx="38" ry="44" fill="#c98e66"/><path d="M36 59Q42 25 78 25Q111 27 118 61Q100 46 86 49Q70 39 57 51Q45 50 36 59Z" fill="#19110f"/><ellipse cx="60" cy="81" rx="4.5" ry="6.5" fill="#3c2721"/><ellipse cx="91" cy="81" rx="4.5" ry="6.5" fill="#3c2721"/><path d="M62 105Q75 114 89 103" fill="none" stroke="#98505a" stroke-width="3"/><path d="M28 164L40 136Q75 120 110 136L123 164Z" fill="url(#al2)"/><path d="M61 129L75 144 90 129" fill="#742646"/></svg>`,
+ flynn:`<svg viewBox="0 0 150 170"><defs><linearGradient id="f1"><stop stop-color="#78502d"/><stop offset="1" stop-color="#2d2119"/></linearGradient></defs><ellipse cx="75" cy="150" rx="54" ry="17" fill="#0e0a1c" opacity=".35"/><path d="M34 75Q32 32 75 25Q117 31 115 77L105 129H44Z" fill="url(#f1)"/><ellipse cx="75" cy="83" rx="39" ry="45" fill="#ddb08d"/><path d="M37 62Q42 27 78 26Q112 29 117 64Q100 53 84 52Q67 43 53 55Q44 54 37 62Z" fill="#553922"/><path d="M52 53L43 38 56 41" fill="#553922"/><ellipse cx="60" cy="82" rx="4.5" ry="6" fill="#547264"/><ellipse cx="91" cy="82" rx="4.5" ry="6" fill="#547264"/><path d="M63 106Q76 113 89 103" fill="none" stroke="#a65b5e" stroke-width="3"/><path d="M27 164L40 135Q75 121 110 135L124 164Z" fill="#42656b"/><path d="M55 132H95L87 145H63Z" fill="#c8b79a"/></svg>`,
+ elsa:`<svg viewBox="0 0 150 170"><defs><linearGradient id="el1"><stop stop-color="#fff8d6"/><stop offset="1" stop-color="#d6e8f4"/></linearGradient><linearGradient id="el2"><stop stop-color="#d9fbff"/><stop offset="1" stop-color="#67c9e7"/></linearGradient></defs><ellipse cx="75" cy="150" rx="54" ry="17" fill="#0e0a1c" opacity=".35"/><path d="M33 75Q30 31 74 22Q119 29 116 76L106 132H44Z" fill="url(#el1)"/><ellipse cx="75" cy="81" rx="38" ry="45" fill="#f5cfbd"/><path d="M38 59Q48 24 79 25Q108 28 116 60Q95 51 80 54Q59 46 38 59Z" fill="#f4e8bd"/><path d="M103 55Q124 88 111 135L96 111Z" fill="#eef9ff"/><ellipse cx="60" cy="80" rx="4.5" ry="6.5" fill="#4b88a8"/><ellipse cx="90" cy="80" rx="4.5" ry="6.5" fill="#4b88a8"/><path d="M63 104Q75 112 88 103" fill="none" stroke="#b95f74" stroke-width="3"/><path d="M25 164L41 135Q75 120 109 135L126 164Z" fill="url(#el2)"/><path d="M58 137L75 149 93 137" fill="none" stroke="#f7ffff" stroke-width="3"/></svg>`,
+ scar:`<svg viewBox="0 0 150 170"><defs><linearGradient id="s1"><stop stop-color="#9a5f31"/><stop offset="1" stop-color="#3a251c"/></linearGradient><linearGradient id="s2"><stop stop-color="#3a2b27"/><stop offset="1" stop-color="#171316"/></linearGradient></defs><ellipse cx="75" cy="150" rx="54" ry="17" fill="#0e0a1c" opacity=".35"/><circle cx="75" cy="82" r="53" fill="url(#s2)"/><path d="M38 50L27 18 57 35M112 50L125 19 94 36" fill="#7a4b2b"/><ellipse cx="75" cy="85" rx="39" ry="45" fill="url(#s1)"/><path d="M42 62Q75 42 109 62L102 48Q75 31 48 48Z" fill="#382820"/><ellipse cx="59" cy="78" rx="6" ry="5" fill="#b9db4a"/><ellipse cx="92" cy="78" rx="6" ry="5" fill="#b9db4a"/><path d="M50 67L63 72M88 72L103 65" stroke="#1d1717" stroke-width="4"/><path d="M91 70L84 97" stroke="#5f251f" stroke-width="3"/><path d="M63 111Q75 119 91 108" fill="none" stroke="#2b1d19" stroke-width="4"/><path d="M64 95L75 89 86 95 75 101Z" fill="#171313"/></svg>`
+ };
+ return svg[id]||svg.ariel
+}
+
+function renderChars(){
+ const unlocked=legendChoice();
+ if(isLegend(selected)&&selected!==unlocked)selected="ariel";
+ $("charGrid").innerHTML=Object.entries(CHAR).filter(([id,c])=>!isLegend(id)||id===unlocked).map(([id,c])=>`
+  <div class="char ${isLegend(id)?"legend":""} ${selected===id?"active":""}" onclick="selectChar('${id}')">
+   <div class="portrait">${portrait(id)}</div>
+   <div class="char-name">${c.name}</div><div class="char-role">${c.role}</div>
+   <div class="char-passive">${c.passive}</div>
+  </div>`).join("")
+}
+function selectChar(id){if(isLegend(id)&&legendChoice()!==id)return;selected=id;renderChars()}
+
+function rankData(){try{return JSON.parse(localStorage.getItem("royal_vocab_rank")||"{}")}catch(e){return{}}}
+function renderRank(){
+ const rows=Object.values(rankData()).sort((a,b)=>b.total-a.total||b.best-a.best).slice(0,10);
+ $("ranking").innerHTML=rows.length?rows.map((r,i)=>`
+  <div class="rank"><div class="rank-no">${i+1}</div><div><b>${esc(r.team)}</b>
+  <div class="rank-meta">${esc(CHAR[r.char]?.name||"Royal")}｜PLAY ${r.plays}｜BEST ${r.best}</div></div>
+  <div class="rank-score">${r.total}</div></div>`).join(""):'<div class="rule">尚無排行榜紀錄。</div>'
+}
+
+function pickQuiz(){
+ let ids,old=localStorage.getItem("royal_vocab_last_quiz")||"";
+ for(let tries=0;tries<12;tries++){
+   ids=sample(VOCAB.map(x=>x.id),25);
+   if(JSON.stringify(ids)!==old)break
+ }
+ localStorage.setItem("royal_vocab_last_quiz",JSON.stringify(ids));
+ let modeBag=shuffle([...Array(13).fill("e2c"),...Array(12).fill("c2e")]);
+ return ids.map((id,n)=>{
+   let v=VOCAB[id-1],mode=v.dup?"c2e":modeBag[n];
+   return {...v,mode}
+ })
+}
+function makeChoices(q){
+ if(q.mode==="e2c"){
+   let seen=new Set([q.zh]),wrong=[];
+   for(const x of shuffle(VOCAB)){if(wrong.length>=3)break;if(x.id!==q.id&&!seen.has(x.zh)){seen.add(x.zh);wrong.push(x.zh)}}
+   return shuffle([q.zh,...wrong])
+ }else{
+   let seen=new Set([q.en.toLowerCase()]),wrong=[];
+   for(const x of shuffle(VOCAB)){if(wrong.length>=3)break;let k=x.en.toLowerCase();if(x.id!==q.id&&!seen.has(k)){seen.add(k);wrong.push(x.en)}}
+   return shuffle([q.en,...wrong])
+ }
+}
+
+function renderSkills(){
+ const c=CHAR[selected];
+ [1,2,3].forEach(n=>{
+   const x=c.skills[n-1],el=$("skill"+n);
+   el.innerHTML=`<b>${x[0]}</b><small>${x[1]}</small>`;el.disabled=used[n-1]
+ })
+}
+
+function startGame(){
+ team=$("teamName").value.trim()||"Royal Team";lastTeam=team;quiz=pickQuiz();idx=0;score=0;combo=0;correct=0;timeLeft=90;
+ locked=false;used=[false,false,false];shield=0;nextFast=0;bonusTurns=0;multiTurns=0;legendMulti=0;legendShield=isLegend(selected)?3:0;belleTurns=0;jasmineShield=0;flynnShield=0;
+ $("home").classList.add("hidden");$("result").classList.add("hidden");$("game").classList.remove("hidden");
+ $("teamDisplay").textContent=team.slice(0,11);$("charDisplay").textContent=CHAR[selected].name;renderSkills();load();
+ clearInterval(timer);timer=setInterval(()=>{timeLeft--;update();if(timeLeft<=0)finish("TIME UP")},1000)
+}
+
+function load(){
+ if(idx>=25)return finish("ROYAL RUN COMPLETE");
+ locked=false;const q=quiz[idx];currentChoices=makeChoices(q);const answer=q.mode==="e2c"?q.zh:q.en;
+ $("directionTag").textContent=q.mode==="e2c"?"ENGLISH → 中文":"中文 → ENGLISH";
+ $("question").textContent=q.mode==="e2c"?q.en:q.zh;
+ $("direction").textContent=q.mode==="e2c"?"Choose the correct Chinese meaning.｜選出正確中文":"Choose the correct English word.｜選出正確英文";
+ $("options").innerHTML=currentChoices.map((x,n)=>`
+   <button class="option" data-a="${attr(x)}" onclick="answer(this.dataset.a)">
+    <span class="letter">${String.fromCharCode(65+n)}</span><span>${esc(x)}</span>
+   </button>`).join("");
+ $("feedback").innerHTML=`✨ WORD ${idx+1}/25｜${esc(q.lesson)}`;startAt=performance.now();update()
+}
+
+function speedBonus(sec){
+ let b=Math.max(0,Math.round(155-sec*24));
+ if(selected==="ariel"&&sec<=3)b+=25;
+ if(selected==="belle"&&idx<5)b=Math.max(0,b-10);
+ if(selected==="eric")b=Math.max(45,b);
+ if(selected==="aladdin"&&sec<=2.5)b+=40;
+ if(selected==="flynn")b=Math.min(130,b);
+ if(isLegend(selected))b=Math.max(120,b)+30;
+ return b
+}
+function comboBonus(){
+ let b=Math.min(72,(combo-1)*5);
+ if(selected==="ariel")b=Math.min(55,b);
+ if(selected==="belle"&&combo>=4)b+=35;
+ if(selected==="flynn"&&combo>=3)b+=30;
+ if(selected==="scar"&&combo>=3)b+=55;
+ return b
+}
+function charBonus(){
+ if(selected==="jasmine"&&idx>=15)return 30;
+ if(isLegend(selected))return 170;
+ return 0
+}
+
+function answer(a){
+ if(locked)return;locked=true;
+ const q=quiz[idx],right=q.mode==="e2c"?q.zh:q.en,yes=a===right,sec=Math.max(.1,(performance.now()-startAt)/1000);
+ document.querySelectorAll(".option").forEach(b=>{b.disabled=true;if(b.dataset.a===right)b.classList.add("correct");else if(b.dataset.a===a)b.classList.add("wrong")});
+ if(yes){
+   combo++;correct++;
+   let gain=120+speedBonus(sec)+comboBonus()+charBonus();
+   if(nextFast&&sec<=3){gain+=nextFast;nextFast=0}
+   if(bonusTurns>0){gain+=65;bonusTurns--}
+   if(multiTurns>0){gain=Math.round(gain*1.25);multiTurns--}
+   if(isLegend(selected)&&legendMulti>0){gain=Math.round(gain*1.5);legendMulti--}
+   score+=gain;
+   $("feedback").innerHTML=`✅ <b>${esc(q.en)}</b> = ${esc(q.zh)}<br><span class="gain">${sec.toFixed(1)} 秒｜+${gain}</span>`
+ }else{
+   let protectedWrong=false;
+   if(shield>0){shield--;protectedWrong=true}
+   if(jasmineShield>0){jasmineShield--;protectedWrong=true}
+   if(flynnShield>0){flynnShield--;protectedWrong=true}
+   if(isLegend(selected)&&legendShield>0){legendShield--;protectedWrong=true}
+   if(!protectedWrong)combo=0;
+   if(selected==="aladdin"&&!protectedWrong)score=Math.max(0,score-15);
+   $("feedback").innerHTML=`❌ <b>${esc(q.en)}</b> = ${esc(q.zh)}${protectedWrong?"<br>🛡️ Royal Shield：本次失誤不斷 Combo":""}`
+ }
+ update();setTimeout(()=>{idx++;idx>=25?finish("ROYAL RUN COMPLETE"):load()},850)
+}
+
+let legendMulti=0;
+function useSkill(n){
+ if(used[n-1]||locked)return;used[n-1]=true;$("skill"+n).disabled=true;let msg="";
+ if(selected==="ariel"){
+  if(n===1){score+=180;msg="+180"}
+  if(n===2){shield+=1;msg="獲得 1 次答錯保護"}
+  if(n===3){let b=combo*25;score+=b;msg=`Combo 轉換 +${b}`}
+ }
+ if(selected==="belle"){
+  if(n===1){score+=170;msg="+170"}
+  if(n===2){shield+=1;msg="獲得 1 次答錯保護"}
+  if(n===3){bonusTurns=3;msg="接下來 3 題各 +65"}
+ }
+ if(selected==="jasmine"){
+  if(n===1){multiTurns=2;msg="接下來 2 題 ×1.25"}
+  if(n===2){jasmineShield+=2;msg="獲得 2 次 Combo 保護"}
+  if(n===3){let b=combo>=5?230:120;score+=b;msg=`+${b}`}
+ }
+ if(selected==="eric"){
+  if(n===1){score+=180;msg="+180"}
+  if(n===2){shield+=1;msg="獲得 1 次答錯保護"}
+  if(n===3){bonusTurns=2;msg="接下來 2 題各 +70"}
+ }
+ if(selected==="aladdin"){
+  if(n===1){nextFast=160;msg="下一題 3 秒內 +160"}
+  if(n===2){score+=200;msg="+200"}
+  if(n===3){shield+=1;msg="下一次答錯完全免除"}
+ }
+ if(selected==="flynn"){
+  if(n===1){score+=160;msg="+160"}
+  if(n===2){flynnShield+=2;msg="獲得 2 次 Combo 保護"}
+  if(n===3){let b=100+combo*20;score+=b;msg=`+${b}`}
+ }
+ if(selected==="elsa"||selected==="scar"){
+  if(n===1){score+=500;nextFast=250;msg="+500，下一題再有 +250 機會"}
+  if(n===2){legendShield+=3;msg="增加 3 次答錯保護"}
+  if(n===3){legendMulti=4;msg="接下來 4 題 ×1.5"}
+ }
+ $("feedback").innerHTML=`🌟 <b>${CHAR[selected].skills[n-1][0]}</b> // ${msg}`;update()
+}
+
+function update(){
+ $("timeDisplay").textContent=clock(timeLeft);$("qDisplay").textContent=`${Math.min(idx+1,25)}/25`;
+ $("comboDisplay").textContent=combo;$("scoreDisplay").textContent=score;
+ $("timerFill").style.width=`${Math.max(0,timeLeft/90*100)}%`;
+ $("progressFill").style.width=`${idx/25*100}%`
+}
+
+function saveRank(){
+ let d=rankData(),k=team;
+ if(!d[k])d[k]={team:k,total:0,best:0,plays:0,char:selected};
+ d[k].total+=score;d[k].best=Math.max(d[k].best,score);d[k].plays++;d[k].char=selected;
+ localStorage.setItem("royal_vocab_rank",JSON.stringify(d))
+}
+
+function finish(reason){
+ clearInterval(timer);
+ let perfectFast=correct===25&&timeLeft>=12;
+ let legendary=isLegend(selected);
+ if(!legendary){
+   if(perfectFast){score+=650}
+   else if(score>=6000){score=5990}
+ }
+ let unlock="";
+ if(score>=6000&&!legendChoice()){
+   unlock=Math.random()<.5?"elsa":"scar";
+   localStorage.setItem("royal_vocab_unlock",unlock)
+ }
+ saveRank();$("game").classList.add("hidden");$("result").classList.remove("hidden");
+ $("resultName").textContent=`${team}｜${CHAR[selected].name}`;$("resultScore").textContent=score;
+ let gate=!legendary?(perfectFast?"👑 PERFECT SPEED BONUS +650":"🔒 未達成「25/25 全對＋快速完成」，一般角色最高不會越過 6000。"):"✨ Legendary scoring active.";
+ $("resultDetail").innerHTML=`${reason}<br>答對 ${correct}/25｜剩餘 ${clock(timeLeft)}<br>${gate}${unlock?`<br><span class="unlock">🔓 RANDOM LEGENDARY UNLOCKED：${CHAR[unlock].name}</span>`:""}`;
+ renderRank()
+}
+
+function goHome(){$("result").classList.add("hidden");$("home").classList.remove("hidden");renderChars();renderRank()}
+function restart(){$("teamName").value=lastTeam||team;startGame()}
+function demoTeam(){$("teamName").value="MAGIC WORDS"}
+function clearData(){
+ if(confirm("清除排行榜、上一局題組與 Legendary 解鎖？")){
+  localStorage.removeItem("royal_vocab_rank");localStorage.removeItem("royal_vocab_unlock");localStorage.removeItem("royal_vocab_last_quiz");
+  selected="ariel";renderChars();renderRank()
+ }
+}
+renderChars();renderRank();
+</script>
+</body>
+</html>
